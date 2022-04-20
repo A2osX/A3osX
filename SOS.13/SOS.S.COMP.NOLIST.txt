@@ -1,0 +1,35 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: COMP.SOS.NOLIST
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+:TABS			 17,23,40
+SL4:DR1:ASM		 SOSLDR.SRC,SOSLDR.OBJ,6,1
+SL4:DR1:ASM		 INIT.SRC,INIT.OBJ,6,1
+SL4:DR1:ASM		 SYSGLOB.SRC,SYSGLOB.OBJ,6,1
+SL4:DR1:ASM		 OPRMSG.SRC,OPRMSG.OBJ,6,1
+SL4:DR1:ASM		 BFM.INIT2.SRC,BFM.INIT2.OBJ,6,1
+SL4:DR1:ASM		 IPL.SRC1,IPL.OBJ,6,1
+SL4:DR1:ASM		 UMGR.SRC,UMGR.OBJ,6,1
+SL4:DR2:ASM		 DISK3.SRC,DISK3.OBJ,6,1
+SL4:DR2:ASM		 SYSERR.SRC,SYSERR.OBJ,6,1
+SL4:DR2:ASM		 SCMGR.SRC,SCMGR.OBJ,6,1
+SL4:DR2:ASM		 FMGR.SRC,FMGR.OBJ,6,1
+SL4:DR2:ASM		 CFMGR.SRC,CFMGR.OBJ,6,1
+SL4:DR2:ASM		 DEVMGR.SRC,DEVMGR.OBJ,6,1
+SL4:DR2:ASM		 BUFMGR.SRC,BUFMGR.OBJ,6,1
+SL4:DR2:ASM		 MEMMGR.A.SRC,MEMMGR.OBJ,6,1
+END
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: COMP.SOS.NOLIST
+*************************************************************************
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.13\sos.s.comp.nolist.txt
+LOAD /A3OSX.BUILD/SOS.13/sos.s
+ASM

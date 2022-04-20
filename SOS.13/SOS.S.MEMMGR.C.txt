@@ -1,0 +1,508 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+*************************************************************************  
+* APPLE /// SOS 1.3 SOURCE CODE FILE: MEMMGR.C.SRC  
+*************************************************************************  
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT  
+				 
+PAGE			  
+REP				 60  
+*  
+* GET.SEG.INFO(IN.SEGNUM; OUT.BASE.BKPG,LIMIT.BKPG,PGCT,SEGID)  
+*  
+REP				 60  
+*  
+GET.SEG.INFO	 EQU *  
+*  
+* IF SEG# OUT OF BOUNDS OR ST.FLINK(SEG#)=ST.FREE THEN ERR  
+*  
+LDX				 GSI.NUM  
+BEQ				 GSI.ERR ; ERR - INVALID SEGNUM  
+CPX				 #ST.CNT  
+BCS				 GSI.ERR ; ERR - INVALID SEGNUM  
+LDA				 ST.FLINK,X  
+BMI				 GSI.ERR ; ERR - INVALID SEGNUM  
+*  
+* RETURN BASE.BKPG TO CALLER  
+*  
+LDY				 ST.BASEH,X  
+LDA				 ST.BASEL,X  
+TAX				  
+JSR				 CNVRT.XBP  
+TYA				  
+LDY				 #1  
+STA				 (GSI.BASE),Y  
+DEY				  
+TXA				  
+STA				 (GSI.BASE),Y  
+*  
+* RETURN LIMIT.BKPG TO CALLER  
+*  
+LDX				 GSI.NUM  
+LDY				 ST.LIMH,X  
+LDA				 ST.LIML,X  
+TAX				  
+JSR				 CNVRT.XBP  
+TYA				  
+LDY				 #1  
+STA				 (GSI.LIM),Y  
+DEY				  
+TXA				  
+STA				 (GSI.LIM),Y  
+*  
+* RETURN SEGID TO CALLER  
+*  
+LDX				 GSI.NUM  
+LDA				 ST.ID,X  
+STA				 (GSI.ID),Y  
+*  
+* COMPUTE PAGE COUNT  
+*  
+SEC				  
+LDA				 ST.LIML,X  
+SBC				 ST.BASEL,X  
+TAY				  
+LDA				 ST.LIMH,X  
+SBC				 ST.BASEH,X  
+TAX				  
+INY				  
+BNE				 GSI010  
+INX				  
+*  
+* RETURN PAGE COUNT TO CALLER  
+*  
+GSI010			 TYA  
+LDY				 #0  
+STA				 (GSI.PGCT),Y  
+INY				  
+TXA				  
+				STA (GSI.PGCT),Y   
+*     
+				CLC    
+				RTS  ; NORMAL EXIT  
+*     
+GSI.ERR			 LDA #BADSEGNUM   
+				JSR SYSERR ; ERR EXIT  
+				PAGE    
+				REP 60   
+*  
+* GET.SEG.NUM(IN.BANKPAGE; OUT.SEGNUM) SYSTEM CALL  
+*  
+*  
+REP				 60  
+*  
+GET.SEG.NUM		 EQU *  
+*  
+* CONVERT BANKPAGE TO INTERNAL FORMAT  
+*  
+LDX				 GSN.BKPG  
+LDY				 GSN.BKPG+1  
+JSR				 CNVRT.IBP  
+BCS				 GSN.ERR ; ERR - INVALID BANK PAGE  
+STX				 GSN.BKPG  
+STY				 GSN.BKPG+1  
+*  
+* QUIT IF NO ENTRIES IN SEG TABLE  
+*  
+LDA				 ST.ENTRY  
+BEQ				 GSN.ERR1 ; ERR - SEG NOT FOUND  
+*  
+* L1: IF BANKPAGE>ST.LIM(SEG#) THEN ERR  
+*  
+GSN010			 TAX  
+LDA				 ST.LIML,X  
+CMP				 GSN.BKPG  
+LDA				 ST.LIMH,X  
+SBC				 GSN.BKPG+1  
+BCC				 GSN.ERR1 ; ERR - SEG NOT FOUND  
+*  
+* IF BANKPAGE>=ST.BASE(SEG#) THEN FOUND!  
+*  
+LDA				 GSN.BKPG  
+CMP				 ST.BASEL,X  
+LDA				 GSN.BKPG+1  
+SBC				 ST.BASEH,X  
+BCS				 GSN020  
+*  
+* SEG#:=ST.FLINK(SEG#); GOTO L1  
+*  
+LDA				 ST.FLINK,X  
+BEQ				 GSN.ERR1 ; ERR - SEG NOT FOUND  
+JMP				 GSN010  
+*  
+* RETURN SEG# TO CALLER  
+*  
+GSN020			 LDY #0  
+TXA				  
+STA				 (GSN.NUM),Y  
+CLC				  
+RTS				 ; NORMAL EXIT  
+*  
+GSN.ERR			 RTS ; ERROR EXIT  
+*  
+GSN.ERR1		 LDA #SEGNOTFND  
+JSR				 SYSERR ; ERROR EXIT  
+PAGE			  
+REP				 60  
+*  
+* RELEASE.SEG(IN.SEGNUM) SYSTEM CALL  
+*  
+REP				 60  
+*  
+RELEASE.SEG		 EQU *  
+*  
+* IF ST.FLINK(SEG#)=ST.FREE THEN ERR  
+*  
+LDX				 RLS.NUM  
+BEQ				 RLS.ALL ; RELEASE.SEG(SEG#=0)  
+CPX				 #ST.CNT  
+BCS				 RLS.ERR ; ERR - SEG# TOO LARGE  
+				LDA ST.FLINK,X   
+				BMI RLS.ERR ; ERR - INVALID SEGNUM  
+				BPL REL.SEG ; RELEASE.SEG(SEG#>0)  
+				REP 35   
+*     
+* RELEASE ALL     
+*     
+				REP 35   
+RLS.ALL			 LDX ST.ENTRY   
+				BEQ RLS0.EXIT   
+				STX RLS.NUM   
+*     
+RLS0.LOOP		 LDA ST.ID,X   
+				CMP #$10 ; CARRY SET/CLEARED HERE  
+*     
+				LDA ST.FLINK,X   
+				PHA    
+				BCC RLS006 ; IF ID=SYS SEG THEN SKIP  
+				JSR REL.SEG ; RELEASE ONE SEGMENT  
+RLS006			 PLA    
+				BEQ RLS0.EXIT   
+				STA RLS.NUM   
+				TAX    
+				BNE RLS0.LOOP ; ALWAYS TAKEN  
+*     
+RLS0.EXIT		 CLC    
+				RTS  ; NORMAL EXIT ; ALL NON SYSTEM SEGMENTS RELEASED.  
+				REP 35   
+*     
+* REL SEG     
+*     
+REP				 35  
+* Y:=ST.FLINK(SEG#)   
+* X:=ST.BLINK(SEG#)   
+*   
+REL.SEG			 TAY   
+LDA				 ST.BLINK,X  
+TAX				   
+*
+* IF X<>0 THEN ST.FLINK(X):=Y
+*ELSE ST.ENTRY:=Y
+*
+EQRLS010
+YA
+TAST.FLINK,X
+MPRLS020
+RLS010STYST.ENTRY
+*
+* IF Y<>0 THEN ST.BLINK(Y):=X   
+*   
+TYA				   
+RLS020			 BEQ RLS030   
+TXA				   
+STA				 ST.BLINK,Y   
+*   
+* ST.FLINK(SEG#):=ST.FREE   
+* ST.FREE:=SEG# AND #$80   
+*   
+RLS030			 LDA ST.FREE   
+LDX				 RLS.NUM   
+STA				 ST.FLINK,X   
+TXA				   
+ORA				 #$80   
+STA				 ST.FREE   
+*   
+CLC				   
+RTS				 ; NORMAL EXIT  
+*   
+RLS.ERR			 LDA #BADSEGNUM   
+JSR				 SYSERR ; ERR EXIT  
+PAGE			   
+REP				 60   
+*   
+* CONVERT INTERNAL BANK PAGE   
+*   
+* INPUT: EXTERNAL BANK (X)   
+* " PAGE (Y)   
+* OUTPUT: INTERNAL BKPG LOW (X)   
+* " BKPG HIGH (Y)   
+* REGION (A) 0=>VIRT BANK   
+* 1=>PHY BANK (0-$2000)   
+* 2=> " ($A000-$FFFF)  
+* ERROR: CARRY SET ("INVALID BANK PAGE")  
+*   
+				REP 60  
+*    
+CNVRT.IBP		 EQU *  
+*    
+* CONVERT FROM EXTERNAL TO INTERNAL FORMAT   
+*   
+* CASE OF BANK: ADD PAGE BIAS   
+*   
+TYA				   
+CPX				 #$F   
+BEQ				 CNVI010   
+BCS				 CNVI020   
+*   
+CMP				 #$20 ; BANK < "F"  
+BCC				 CNVI.ERR1   
+CMP				 #$A0   
+BCS				 CNVI.ERR1   
+SEC				   
+SBC				 #$20   
+JMP				 CNVI030   
+*   
+CNVI010			 CMP #$20 ; BANK = "F"  
+BCS				 CNVI.ERR1   
+CLC				   
+ADC				 #$80   
+JMP				 CNVI030   
+*   
+CNVI020			 CPX #$10 ; BANK = "10"  
+BNE				 CNVI.ERR1   
+CMP				 #$A0   
+BCC				 CNVI.ERR1   
+SEC				   
+SBC				 #$80   
+*   
+CNVI030			 TAY ; SHIFT BANK RIGHT ONE BIT  
+TXA				 ; INTO HIGH BIT OF PAGE BYTE.  
+LSR				 A   
+TAX				   
+TYA				   
+BCC				 CNVI040   
+ORA				 #$80   
+*   
+* EXCHANGE X & Y   
+*   
+CNVI040			 PHA   
+TXA				   
+TAY				   
+PLA				   
+TAX				   
+*   
+* COMPUTE REGION (VIRT=0,PHY1=1,PHY2=2)   
+*   
+JSR				 REGION ; REGION RETURNED IN A REG.  
+BCS				 CNVI.ERR1 ; ERR - INVALID BANK PAGE  
+*   
+RTS				 ; NORMAL EXIT  
+*   
+CNVI.ERR1		 LDA #BADBKPG   
+JSR				 SYSERR   
+PAGE			   
+REP				 60   
+*   
+* CONVERT EXTERNAL BANK PAGE   
+*   
+* INPUT: INTERNAL BKPG LOW (X)   
+* " HIGH (Y)   
+* OUTPUT: EXTERNAL BANK (X)   
+* " PAGE (Y)   
+* ERROR: NO ERROR CHECKING DONE. ASSUMES THAT INTERNAL #S  
+* ARE VALID.   
+*   
+REP				 60   
+*   
+CNVRT.XBP		 EQU *   
+*   
+* CONVERT FROM INTERNAL TO EXTERNAL FORMAT   
+*   
+TXA				   
+ASL				 A  
+TXA				   
+AND				 #$7F  
+TAX				   
+TYA				   
+ROL				 A  
+TAY				   
+*  
+* CASE OF BANK: ADD PAGE BIAS  
+*  
+TXA				  
+				CPY #$F   
+				BEQ CNVX020 ; BANK = "F"  
+				BCS CNVX010   
+*     
+				CLC  ; BANK < "F"  
+				ADC #$20   
+				JMP CNVX020   
+*     
+CNVX010			 CLC  ; BANK = "10"  
+				ADC #$80   
+*     
+* EXCHANGE X & Y     
+*     
+CNVX020			 PHA    
+				TYA    
+				TAX    
+				PLA    
+				TAY    
+				RTS  ; NORMAL EXIT  
+				PAGE    
+				REP 60   
+*   
+* REGION   
+*   
+* INPUT: INTERNAL BKPG LOW (X)   
+* " HIGH (Y)   
+* OUTPUT: REGION (A)   
+* INTERNAL BKPG LOW (X) UNCHANGED   
+* " HIGH (Y) "   
+* ERROR: CARRY SET ("INVALID BANK/PAGE")   
+*   
+REP				 60   
+*   
+REGION			 EQU *   
+STX				 RGN.BKPG   
+STY				 RGN.BKPG+1   
+*   
+* IF BANKPAGE>PHY2LIM THEN ERR   
+*   
+LDA				 #>PHY2LIM   
+CMP				 RGN.BKPG   
+LDA				 #<PHY2LIM   
+SBC				 RGN.BKPG+1   
+BCC				 RGN.ERR ; ERR - INVALID BANK PAGE  
+*   
+* IF BANKPAGE>=PHY2BASE THEN REGION:=2   
+*   
+LDA				 RGN.BKPG   
+CMP				 #>PHY2BASE   
+LDA				 RGN.BKPG+1   
+SBC				 #<PHY2BASE   
+BCC				 RGN010   
+LDA				 #2   
+BNE				 RGN040   
+*   
+* IF BANKPAGE>PHY1LIMIT THEN ERR   
+*   
+RGN010			 LDA #>PHY1LIM   
+CMP				 RGN.BKPG   
+LDA				 #<PHY1LIM   
+SBC				 RGN.BKPG+1   
+BCC				 RGN.ERR ; ERR - INVALID BANK PAGE  
+*   
+* IF BANKPAGE>=PHY1BASE THEN REGION:=1   
+*   
+LDA				 RGN.BKPG   
+CMP				 #>PHY1BASE   
+LDA				 RGN.BKPG+1   
+SBC				 #<PHY1BASE   
+BCC				 RGN020   
+LDA				 #1  
+BNE				 RGN040  
+*  
+* IF BANKPAGE>VIRTUAL LIMIT THEN ERR  
+*  
+RGN020			 LDA >VRT.LIM   
+				CMP RGN.BKPG   
+				LDA >VRT.LIM+1   
+				SBC RGN.BKPG+1   
+				BCC RGN.ERR   
+				LDA #0   
+*     
+RGN040			 CLC  ; "N" FLAG ALWAYS REFLECTS REGION VAL IN A REG!  
+				RTS  ; NORMAL EXIT  
+*     
+RGN.ERR			 SEC  ; INVALID BANK PAGE  
+				RTS    
+				PAGE    
+				REP 60   
+*  
+* GET FREE  
+*  
+* INPUT: PREVIOUS SEG # (A)  
+* OUTPUT: NEW SEG # (A)  
+* ERROR: CARRY SET ("SEG TBL FULL")  
+*  
+REP				 60  
+*  
+GET.FREE		 EQU *  
+*  
+* SAVE PREV SEG # IN X  
+* NOTE: PREV SEG # CARRIED IN X  
+* NEW SEG # CARRIED IN Y  
+*  
+TAX				  
+*  
+* IF NO FREE ENTRIES THEN ERR  
+*  
+LDA				 ST.FREE  
+CMP				 #$80  
+BEQ				 GTFR.ERR  
+*  
+* TURN OFF FREE FLAG (BIT7) AND DELINK FROM FREE LIST  
+*  
+AND				 #$7F  
+TAY				  
+LDA				 ST.FLINK,Y  
+STA				 ST.FREE  
+*  
+* IF PREV SEG # IS NULL THEN LINK NEW ENTRY TO START  
+* OF SEGMENT LIST  
+*  
+CPX				 #0  
+BNE				 GTFR010  
+LDA				 ST.ENTRY  
+STA				 ST.FLINK,Y  
+LDA				 #0  
+STA				 ST.BLINK,Y  
+STY				 ST.ENTRY  
+JMP				 GTFR020  
+*  
+* OTHERWISE LINK NEW ENTRY TO PREV SEG #  
+*  
+GTFR010			 LDA ST.FLINK,X  
+STA				 ST.FLINK,Y  
+TXA				  
+STA				 ST.BLINK,Y  
+TYA				  
+STA				 ST.FLINK,X  
+*  
+* IF ST.FLINK(NEW)<>NULL THEN  
+* ST.BLINK(ST.FLINK(NEW)):=NEWSEG #  
+GTFR020			 LDA ST.FLINK,Y  
+BEQ				 GTFR030  
+LDA				 ST.FLINK,Y  
+TAX				  
+TYA				  
+STA				 ST.BLINK,X  
+*  
+* RETURN WITH NEW SEG #  
+*  
+GTFR030			 TYA   
+				CLC   
+				RTS  ; NORMAL EXIT  
+*     
+GTFR.ERR		 LDA #SEGTBLFULL   
+				JSR SYSERR   
+*     
+				LST ON   
+ZZEND			 EQU *   
+ZZLEN			 EQU ZZEND-ZZORG   
+				IFNE ZZLEN-LENMEMMG   
+				FAIL 2,"SOSORG FILE IS INCORRECT FOR MEMMGR"  
+				FIN    
+				    
+*************************************************************************  
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: MEMMGR.C.SRC  
+*************************************************************************  
+				 
+				 
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.13\sos.s.memmgr.c.txt
+LOAD /A3OSX.BUILD/SOS.13/sos.s
+ASM

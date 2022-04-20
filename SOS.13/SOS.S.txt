@@ -1,0 +1,13 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+				.LIST OFF
+				.OP 6502
+				.OR $FE00
+				.TF /A3OSX.BUILD/SOS.KERNEL
+*--------------------------------------
+				.INB /A3OSX.BUILD/SOS.13/sos.s.ldr
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.13/sos.s
+ASM

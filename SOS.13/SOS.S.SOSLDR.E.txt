@@ -1,0 +1,450 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+*************************************************************************  
+* APPLE /// SOS 1.3 SOURCE CODE FILE: SOSLDR.E.SRC  
+*************************************************************************  
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT  
+				 
+PAGE			  
+REP				 100  
+*  
+* SET.DRIVES ( IN: A=# DRIVES  
+* IN: DIB1..4 )  
+* (INITIALIZES DIB LINKS IN KERNEL'S FLOPPY DRIVER)  
+				REP 100  
+*    
+SET.DRIVES		 EQU *  
+				TAY ; SAVE # OF DRIVES  
+				LDA #>DIB2 ; DIB1:=ADR(DIB2)  
+				STA DIB1  
+				LDA #<DIB2  
+				STA DIB1+1  
+				LDA #>DIB3 ; DIB2:=ADR(DIB3)  
+				STA DIB2  
+				LDA #<DIB3  
+				STA DIB2+1  
+				LDA #>DIB4 ; DIB3:=ADR(DIB4)  
+				STA DIB3  
+				LDA #<DIB4  
+				STA DIB3+1  
+*    
+				LDA #0 ; CASE (Y=# OF DRIVES)  
+				CPY #2  
+				BCC STDR010  
+				BEQ STDR020  
+				CPY #4  
+				BCC STDR030  
+				BCS STDR040  
+*    
+STDR010			 STA DIB1 ; 1: DIB1:=0  
+				STA DIB1+1  
+				RTS   
+*    
+STDR020			 STA DIB2 ; 2: DIB2:=0  
+				STA DIB2+1  
+				RTS   
+*    
+STDR030			 STA DIB3 ; 3: DIB3:=0  
+				STA DIB3+1  
+				RTS   
+*    
+STDR040			 STA DIB4 ; 4: DIB4:=0  
+				STA DIB4+1  
+				RTS ; RETURN  
+				PAGE   
+				REP 100  
+*   
+* INIT.KRNL ()   
+*   
+* (CALLS KERNEL INITIALIZATION MODULES)   
+REP				 100   
+*   
+INIT.KRNL		 EQU *   
+LDA				 E.REG ; SWITCH IN I/O BANK AND SELECT PRIMARY STACK  
+ORA				 #$44 ; E:=( 0.1.1.X:0.1.0.0 )  
+STA				 E.REG ; ( 1.I.S.R:W.P.R.R )  
+*   
+LDA				 #<SZPAGE ; SWITCH TO SOS ZPAGE  
+STA				 Z.REG   
+*   
+JSR				 INT.INIT ; CALL KERNEL INITIALIZATION ROUTINES  
+JSR				 EVQ.INIT   
+JSR				 BFM.INIT2   
+BCS				 INITK.ERR   
+JSR				 DMGR.INIT   
+JSR				 CFMGR.INIT   
+JSR				 MMGR.INIT   
+JSR				 BMGR.INIT   
+JSR				 BFM.INIT   
+				JSR CLK.INIT   
+*     
+				LDA E.REG ; SWITCH OUT I/O BANK AND RETURN TO ALTERNATE STACK  
+				AND #$BB ; E:=( 0.0.1.X:0.0.0.0 )  
+				STA E.REG ; ( 1.I.S.R:W.P.R.R )  
+*     
+				LDA #<CZPAGE ; SWITCH BACK TO USER ZPAGE  
+				STA Z.REG   
+*     
+				RTS  ; RETURN  
+*     
+*     
+INITK.ERR		 LDX #ERR0X ; ERROR("I/O ERROR")  
+				LDY #ERR0L   
+				JMP ERROR   
+				PAGE    
+				REP 100   
+*     
+* ADVANCE ( I/O: WORK.P    
+* OUT: SRC.P    
+* OUT: DST.P    
+* OUT: CNT )   
+* (ADVANCES WORK.P TO NEXT INTERP.KERNEL MODULE. INITS SRC.P, DST.P, CNT FOR MOVE)  
+REP				 100  
+*  
+ADVANCE			 EQU *  
+CLC				  
+LDY				 #2 ; Y:=0  
+LDA				 WORK.P ; WORK.P:=WORK.P+(WORK.P),Y + 4  
+ADC				 (WORK.P),Y  
+TAX				  
+INY				  
+LDA				 WORK.P+1  
+ADC				 (WORK.P),Y  
+PHA				  
+TXA				  
+ADC				 #4  
+STA				 WORK.P  
+PLA				  
+ADC				 #0  
+STA				 WORK.P+1  
+CLC				 ; SRC.P:=X:WORK.P+4  
+LDA				 WORK.P  
+ADC				 #>$0004  
+STA				 SRC.P  
+LDA				 WORK.P+1  
+ADC				 #<$0004  
+STA				 SRC.P+1  
+LDA				 CXPAGE+WORK.P+1  
+STA				 CXPAGE+SRC.P+1  
+LDY				 #0 ; DST.P:=0:(WORK.P)  
+STY				 CXPAGE+DST.P+1  
+LDA				 (WORK.P),Y  
+STA				 DST.P  
+INY				  
+LDA				 (WORK.P),Y  
+STA				 DST.P+1  
+INY				 ; Y:=2  
+LDA				 (WORK.P),Y ; CNT:=(WORK.P),Y  
+STA				 CNT  
+INY				  
+LDA				 (WORK.P),Y  
+STA				 CNT+1  
+RTS				 ; RETURN  
+PAGE			  
+REP				 100  
+*  
+* REVERSE ( IN: D.HDR.CNT  
+* IN: SDT.SIZE = CONSTANT  
+* I/O: DRIVER FILE,  
+* OUT: WORK.P ) )  
+*  
+* LOCAL: REV.SAVE, REV.TEMP  
+* (REVERSES TITLE/CODE/RELOC COUNTS TO ALLOW DRIVER FILE TO BE PROCESSED FROM BACK TO FRONT)  
+REP				 100  
+REVERSE			 EQU *  
+LDA				 #>D.HDR.CNT ; WORK.P:=80:D.HDR.CNT  
+STA				 WORK.P  
+LDA				 #<D.HDR.CNT  
+STA				 WORK.P+1  
+LDA				 #$80  
+STA				 CXPAGE+WORK.P+1   
+CLC				  ; WORK.P:=WORK.P+(WORK.P)+2  
+LDY				 #0   
+LDA				 WORK.P   
+ADC				 (WORK.P),Y   
+TAX				    
+INY				    
+LDA				 WORK.P+1   
+ADC				 (WORK.P),Y   
+PHA				    
+TXA				    
+ADC				 #2   
+STA				 WORK.P   
+PLA				    
+ADC				 #0   
+STA				 WORK.P+1   
+LDA				 (WORK.P),Y ; IF (WORK.P)=$FFFF  
+DEY				    
+				AND (WORK.P),Y ; THEN  
+				CMP #$FF   
+				BNE REV010   
+				LDX #ERR10X ; ERROR("EMPTY DRIVER FILE")  
+				LDY #ERR10L   
+				JSR ERROR   
+REV010			 LDA #$FF   
+				STA REV.SAVE   
+				STA REV.SAVE+1   
+*     
+REV020			 LDA REV.SAVE ;R1: STACK:=REV.SAVE  
+				PHA     
+				LDA REV.SAVE+1    
+				PHA     
+				LDY #0 ; REV.SAVE:=(WORK.P)  
+				LDA (WORK.P),Y    
+				STA REV.SAVE    
+				INY     
+				LDA (WORK.P),Y    
+				STA REV.SAVE+1    
+				PLA  ; (WORK.P):=STACK  
+				STA (WORK.P),Y    
+				DEY     
+				PLA     
+				STA (WORK.P),Y    
+				LDA REV.SAVE ; IF REV.SAVE = $FFFF THEN EXIT  
+				AND REV.SAVE+1    
+				CMP #$FF    
+				BEQ REV.EXIT    
+REV030			 BIT REV.SAVE+1 ; IF REV.SAVE >= $8000 THEN ERROR  
+				BMI REV040    
+				CLC  ; WORK.P:=WORK.P+REV.SAVE+2  
+				LDA WORK.P    
+				ADC REV.SAVE    
+				TAX     
+				LDA WORK.P+1    
+				ADC REV.SAVE+1    
+				PHA     
+				BCS REV040    
+				TXA     
+				ADC #2    
+				STA WORK.P    
+				PLA     
+				ADC #0    
+				STA WORK.P+1    
+				BCC REV020 ; IF C=FALSE THEN R1  
+REV040			 LDX #ERR5X ; ELSE ERROR("INVALID DRIVER FILE")  
+				LDY #ERR5L    
+				JSR ERROR    
+*      
+REV.EXIT		 RTS  ; RETURN  
+				PAGE    
+				REP 100   
+*   
+* DADVANCE ( I/O: WORK.P   
+* OUT: C="NO DRIVERS LEFT"   
+* OUT: SRC.P   
+* OUT: CNT   
+* OUT: REL.P )   
+* (ADVANCES WORK.P TO NEXT DRIVER MODULE. INITS SRC.P, CNT, REL.P FOR RELOCATION AND MOVE)  
+REP				 100   
+DADVANCE		 EQU *   
+LDY				 #0 ; IF (WORK.P)=$FFFF THEN EXIT "NO DRIVERS LEFT IN FILE"  
+				LDA (WORK.P),Y   
+				INY    
+				AND (WORK.P),Y   
+				CMP #$FF   
+				BNE DADV010   
+				SEC  ; C:="NO DRIVERS LEFT"  
+				RTS  ; RETURN  
+*     
+*     
+DADV010			 LDA WORK.P ; REL.P:=X:WORK.P  
+				STA REL.P   
+				LDA WORK.P+1   
+				STA REL.P+1   
+				LDA CXPAGE+WORK.P+1   
+				STA CXPAGE+REL.P+1   
+*     
+				JSR DADD ; ADVANCE TO CODE COUNT FIELD  
+*     
+				LDY #0 ; CNT:=(WORK.P)  
+				LDA (WORK.P),Y   
+				STA CNT   
+				INY    
+				LDA (WORK.P),Y   
+				STA CNT+1   
+*     
+				JSR DADD ; ADVANCE TO TITLE CNT FIELD  
+*     
+				CLC  ; SRC.P:=X:WORK.P+2  
+				LDA WORK.P   
+				ADC #2   
+				STA SRC.P   
+				LDA WORK.P+1   
+				ADC #0   
+				STA SRC.P+1   
+				LDA CXPAGE+WORK.P+1   
+				STA CXPAGE+SRC.P+1   
+*     
+				JSR DADD ; ADVANCE TO RELOC FIELD OF NEXT DRIVER  
+				CLC  ; C:="DRIVERS LEFT"  
+				RTS  ; RETURN  
+				PAGE    
+				REP 100   
+*     
+* DADD ( I/O: WORK.P )    
+*     
+* (ADVANCES WORK.P TO NEXT FIELD IN DRIVER MODULE)  
+				REP 100   
+DADD			 EQU *   
+				SEC  ; WORK.P:=WORK.P-(WORK.P)-2  
+				LDY #0   
+				LDA WORK.P   
+				SBC (WORK.P),Y   
+				TAX    
+				INY    
+				LDA WORK.P+1   
+				SBC (WORK.P),Y   
+				PHA    
+				TXA    
+				SBC #2   
+				STA WORK.P   
+				PLA    
+				SBC #0   
+				STA WORK.P+1   
+				RTS  ; RETURN  
+				PAGE    
+				REP 100   
+*     
+* FLAGS ( IN: SRC.P    
+* OUT: PG.ALIGN    
+* OUT: FIRST.ADIB   
+* OUT: OV="ALL DIBS INACTIVE" )   
+*     
+* LOCAL: PREV.ADIB.P, DIB.P   
+* (PROCESSES "INACTIVE" & "PAGE ALIGN" FLAGS IN DRIVER MODULE'S DIBS"  
+REP				 100   
+FLAGS			 EQU *   
+SEC				 ; C="FIRST DIB"  
+FLAG010			 JSR NEXT.DIB ; NEXT.DIB(SRC.P.IN, DIB.P PG.ALIGN C OV.OUT)  
+BVC				 FLAG015 ; IF OV <> "INACTIVE" THEN ACTIVE DIB FOUND  
+BCC				 FLAG010 ; IF C <> "LAST DIB" THEN CHECK NEXT DIB  
+RTS				 ; RETURN (OV:="ALL DIBS INACTIVE")  
+*   
+FLAG015			 PHP  ; PUSH STATUS  
+				SEC  ; FIRST.ADIB:=DIB.P-SRC.P  
+				LDA DIB.P   
+				SBC SRC.P   
+				STA FIRST.ADIB   
+				LDA DIB.P+1   
+				SBC SRC.P+1   
+				STA FIRST.ADIB+1   
+				LDA DIB.P ; PREV.ADIB.P:=X:DIB.P  
+				STA PREV.ADIB.P   
+				LDA DIB.P+1   
+				STA PREV.ADIB.P+1   
+				LDA CXPAGE+DIB.P+1   
+				STA CXPAGE+PREV.ADIB.P+1   
+				PLP  ; PULL STATUS  
+				BCS FLAG100 ; IF C="LAST DIB" THEN EXIT  
+*     
+FLAG020			 JSR NEXT.DIB ; NEXT.DIB(SRC.P.IN, DIB.P PG.ALIGN C OV.OUT)  
+				PHP  ; PUSH STATUS  
+				LDY #0 ; IF OV="INACTIVE DIB"  
+				BVC FLAG025   
+				SEC  ; THEN  
+				LDA PREV.ADIB.P ; (PREV.ADIB.P):=PREV.ADIB.P-SRC.P  
+				SBC SRC.P   
+				STA (PREV.ADIB.P),Y   
+				INY    
+				LDA PREV.ADIB.P+1   
+				SBC SRC.P+1   
+				STA (PREV.ADIB.P),Y   
+				JMP FLAG050   
+*     
+FLAG025			 SEC  ; ELSE  
+				LDA DIB.P ; (PREV.ADIB.P):=DIB.P-SRC.P  
+				SBC SRC.P   
+				STA (PREV.ADIB.P),Y   
+				INY    
+				LDA DIB.P+1   
+				TAX    
+				SBC SRC.P+1   
+				STA (PREV.ADIB.P),Y   
+				STX PREV.ADIB.P+1 ; PREV.ADIB.P:=DIB.P  
+				LDA DIB.P   
+				STA PREV.ADIB.P   
+FLAG050			 PLP  ; PULL STATUS  
+				BCC FLAG020 ; IF C <> "LAST DIB" THEN PROCESS NEXT DIB  
+*     
+FLAG100			 CLV  ; OV:="ACTIVE DIBS"  
+				RTS  ; RETURN  
+				PAGE    
+				REP 100   
+*  
+* NEXT.DIB ( IN: C="FIRST DIB"  
+* IN: SRC.P  
+* OUT: DIB.P  
+* OUT: PG.ALIGN  
+* OUT: C="LAST DIB"  
+* OUT: OV="INACTIVE DIB" )  
+*  
+* LOCAL: DIB.FLAGS, DIB.DCB = CONSTANT  
+* (ADVANCES TO NEXT DIB IN DRIVER MODULE)  
+REP				 100  
+NEXT.DIB		 EQU *  
+LDY				 #0  
+BCC				 NXTD010 ; IF C = "FIRST DIB"  
+				STY PG.ALIGN ; THEN  
+				STY PG.ALIGN+1 ; PG.ALIGN:=0  
+				LDA SRC.P ; DIB.P:=X:SRC.P  
+				STA DIB.P    
+				LDA SRC.P+1    
+				STA DIB.P+1    
+				LDA CXPAGE+SRC.P+1    
+				STA CXPAGE+DIB.P+1    
+				JMP NXTD020    
+NXTD010			 LDA SRC.P ; ELSE  
+				ADC (DIB.P),Y ; DIB.P:=SRC.P+(DIB.P)  
+				TAX     
+				INY     
+				LDA SRC.P+1    
+				ADC (DIB.P),Y    
+				STA DIB.P+1    
+				STX DIB.P   
+*     
+NXTD020			 LDY #DIB.FLAGS ; IF (DIB.P),DIB.FLAGS.BIT7 = "INACTIVE"  
+				LDA (DIB.P),Y    
+				BMI NXTD030    
+				BIT NXTD999 ; THEN  
+				BVS NXTD040 ; OV:="INACTIVE"  
+*   ELSE   
+NXTD030			 AND #$40 ; IF (DIB.P),DIB.FLAGS.BIT6 = "PAGE ALIGN"  
+				BEQ NXTD040    
+				CLC  ; THEN  
+				LDA #DIB.DCB+2 ; PAGE.ALIGN:=DIB.DCB+2+(SRC.P),DIB.DCB  
+				TAY     
+				DEY     
+				DEY     
+				ADC (SRC.P),Y    
+				STA PG.ALIGN    
+				INY     
+				LDA #0    
+				ADC (SRC.P),Y    
+				STA PG.ALIGN+1    
+				CLV  ; OV:="ACTIVE"  
+*      
+NXTD040			 LDY #0 ; IF (DIB.P) = 0  
+				LDA (DIB.P),Y    
+				INY     
+				ORA (DIB.P),Y    
+				BNE NXTD998    
+				SEC  ; THEN C:="LAST DIB"  
+				BCS NXTD999    
+NXTD998			 CLC  ; ELSE C:=NOT "LAST DIB"  
+NXTD999			 RTS  ; RETURN  
+				REP 100   
+				    
+				CHN SOSLDR.F.SRC   
+				    
+				RTS  ; RETURN  
+				    
+*************************************************************************  
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: SOSLDR.E.SRC  
+*************************************************************************  
+				 
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.13\sos.s.sosldr.e.txt
+LOAD /A3OSX.BUILD/SOS.13/sos.s
+ASM

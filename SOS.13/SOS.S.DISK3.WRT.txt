@@ -1,0 +1,178 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+*************************************************************************  
+* APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.WRT.SRC  
+*************************************************************************  
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT  
+				 
+PAGE			  
+REP				 40  
+* --- WRITE ---  
+REP				 40  
+*  
+WRITEREQ		 EQU *  
+JSR				 BLK2SECT ;COMPUTE TRK/SECTOR THIS BLOCK  
+LDA				 E.REG ;SET 2 MHZ  
+AND				 #$7F  
+STA				 E.REG  
+JSR				 PRENIB ;PRENIBBLIZE FOR WRITE  
+JSR				 SECTORIO ;WRITE IT OUT...  
+BCS				 WRITERR ;=>SOMETHING'S WRONG  
+*  
+INC				 SECTOR ;BUMP TO NEXT  
+INC				 SECTOR ; LOGICAL SECTOR  
+INC				 BUF+1 ;BUMP SECTOR BUFFER ADDRESS  
+LDA				 E.REG ;SET 2 MHZ  
+AND				 #$7F  
+STA				 E.REG  
+JSR				 PRENIB ;PRENIBBLIZE FOR WRITE  
+JSR				 SECTORIO ;WRITE IT OUT  
+BCS				 WRITERR ;=>SOMETHING'S WRONG  
+*  
+* MORE BYTES TO DO?  
+*  
+JSR				 MOREBLKS ;SETUP FOR NEXT  
+BNE				 WRITEREQ ;=>MORE TO DO  
+LDA				 #0 ;GOOD RETURN  
+JMP				 EXIT  
+*  
+WRITERR			 EQU *  
+JMP				 EXIT ;RETURN ERROR CODE  
+PAGE			  
+REP				 40  
+* --- STATUS ---  
+REP				 40  
+*  
+STATUS			 EQU *  
+LDX				 #$60 ;DUMMY SLOT  
+LDA				 Q6H,X ;SENSE WRITE PROTECT  
+LDA				 Q7L,X  
+ASL				 A ;PRESERVE IT IN CARRY  
+LDA				 Q6L,X ;BACK TO READ MODE  
+LDA				 #0 ;NOW MOVE BIT TO  
+ROL				 A ; PROPER POSITION  
+ROL				 A ; ($02)  
+LDY				 #0  
+STA				 (D.STATBUF),Y ;RETURN IT  
+LDA				 #0 ;GOOD RETURN  
+JMP				 EXIT ;DONE  
+PAGE			  
+REP				 40  
+* --- INIT ---  
+REP				 40  
+*  
+INIT			 EQU *  
+LDA				 INITFLAG ;INIT'ED YET?  
+BMI				 GOODINIT ;=>YES, DONE  
+*  
+LDA				 #$60 ;SETUP SLOT FOR  
+STA				 IBSLOT ; CORE ROUTINES  
+LDA				 #$FF ;PREVENT SECOND  
+STA				 INITFLAG ; INIT  
+LDA				 #0 ;CLEAR STUFF OUT  
+STA				 PREVUNIT ;SOSBOOT JUST USED .D1  
+LDY				 #4  
+CLRDRVS			 EQU *  
+LDA				 #0  
+STA				 DRIVESEL-1,Y ;NOBODY SELECTED  
+STA				 UPTIME-1,Y ;ALL OFF  
+STA				 DRVTRACK-1,Y   
+DEY				    
+BNE				 CLRDRVS   
+DO				 1-TEST ;ONLY IF NOT TESTING  
+*   
+* SET UP .D1 SINCE LOADER'S USING IT:   
+*   
+LDA				 E.REG ;SET 1MHZ FOR THE  
+ORA				 #$80 ; STATEMACHINE I/O  
+STA				 E.REG   
+JSR				 CHKDRV ;IS .D1 MOTOR SPINNING?  
+BEQ				 INIT2 ;=>NO, MOTOR'S OFF  
+LDA				 #T200MS ;UPTIME GOOD FOR READS  
+STA				 UPTIME+0   
+INIT2			 EQU *   
+LDA				 #1   
+STA				 DRIVESEL+0 ;.D1 IS THE CURRENT DRIVE  
+LDA				 $0300+CURTRK ;RETRIEVE CURRENT TRACK  
+STA				 DRVTRACK+0 ;REMEMBER IT  
+FIN				   
+*   
+* SET UP JMP TABLE FOR CORRECT ROM:   
+*   
+DO				 REV0ROM ;ONLY IF SUPPORTING IT!  
+LDA				 $F1B9 ;LOOK FOR START OF RDADR  
+CMP				 #$A0 ;IS IT RDADR (REV1)?  
+BEQ				 INITREV1 ;=>YES  
+CMP				 #$60 ;IS IT END OF READ (REV0)?  
+BNE				 INITERR ;=>NEITHER!  
+LDY				 #0 ;REV=0  
+BEQ				 INITVECT ;(ALWAYS TAKEN)  
+INITREV1		 EQU *   
+LDY				 #VSIZE   
+INITVECT		 EQU *   
+STY				 ROMREV ;SET ROM REVISION INDICATOR  
+LDX				 #VSIZE   
+MOVEVECT		 EQU *   
+LDA				 REV0,Y ;GET A BYTE  
+STA				 JMPTAB,Y ;MOVE IT  
+INY				   
+DEX				   
+BNE				 MOVEVECT   
+FIN				   
+GOODINIT		 EQU *   
+LDA				 #0 ;RETCODE=GOOD, IF YOU CARE  
+CLC				 ;SAY 'GOOD INIT'  
+BCC				 EXIT ;(ALWAYS TAKEN)  
+DO				 REV0ROM   
+INITERR			 EQU *   
+SEC				 ;SAY 'BAD INIT'  
+* FALL THRU TO EXIT   
+FIN				   
+PAGE			   
+REP				 40   
+* -- EXIT PATH --   
+REP				 40   
+*   
+EXIT			 EQU *   
+PHA				 ;SAVE RETURN CODE  
+*   
+* UPDATE UPTIME BY 50 MS (3 SECTOR-TIMES)   
+* TO ACCOUNT FOR READ/WRITE TIME:   
+*   
+LDA				 D.COMMAND ;GET COMMAND  
+CMP				 #2 ;SENSE OR INIT?  
+BCS				 EXIT2 ;=>YES, NO TIME USED UP  
+LDA				 #2 ;TIME=50 MS (2 UNITS)  
+JSR				 ADDTIME ;BUMP UPTIME(S)  
+*   
+* RESTORE CALLER ENVIRONMENT:   
+*   
+EXIT2			 EQU *   
+LDA				 E.REG ;GET CURRENT STATE  
+AND				 #$20 ; OF THE SCREEN  
+ORA				 ESAVE ;MERGE WITH CALLER STATE  
+STA				 E.REG   
+JSR				 FIXIRQ ;RE-ENABLE IRQ IF OK  
+LDA				 MOTOROFF ;START MOTOR-OFF TIMEOUT  
+PLA				 ;RESTORE RETURN CODE  
+DO				 TEST ;IF TEST, NO SYSERR  
+RTS				   
+				ELSE   
+				BNE GOERR ;=>ERROR RETURN VIA SYSERR  
+				CLC    
+				RTS  ;GOOD RETURN W/CARRY CLEAR  
+GOERR			 EQU *   
+				JSR SYSERR ;RETURN VIA SYSERR  
+				FIN    
+				    
+				CHN DISK3.SIO.SRC   
+				    
+*************************************************************************  
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.WRT.SRC  
+*************************************************************************  
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.13\sos.s.disk3.wrt.txt
+LOAD /A3OSX.BUILD/SOS.13/sos.s
+ASM

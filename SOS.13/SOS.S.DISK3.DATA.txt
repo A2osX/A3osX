@@ -1,0 +1,92 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+*************************************************************************  
+* APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.DATA.SRC  
+*************************************************************************  
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT  
+				 
+				PAGE    
+* GENERAL DATA:     
+*     
+PREVUNIT		 DS 1 ;PRIOR UNIT ACCESSED (FOR REPEAT)  
+PREVCMD			 DS 1 ;PRIOR CMD (FOR REPEAT)  
+*     
+ESAVE			 DS 1 ;SAVED E.REG  
+VBLSAVE			 DS 1 ;SAVED E.IER  
+INITFLAG		 DFB 0 ;<0 IS INITTED  
+				DO REV0ROM   
+ROMREV			 DS 1 ;0=REV0, <>0=REV1  
+				FIN    
+*  
+* MOTOR-UP TIMES PER COMMAND  
+T50MS			 EQU $02 ; 50MS FOR MONTIMEH  
+T200MS			 EQU $08 ;200 MS FOR MONTIMEH  
+T1SEC			 EQU $27 ;1-SEC FOR MONTIMEH  
+*     
+MTIMES			 DFB T200MS,T1SEC,T50MS ;READ,WRITE,SENSE  
+*     
+				REP 40   
+* DRIVE TABLES:     
+*     
+DRIVESEL		 DS 4 ;NONZERO IF SELECTED  
+*     
+UPTIME			 DS 4 ;MOTOR RUNTIME SINCE STARTED  
+DRVTRACK		 DS 4 ;CURRENT HEAD POSITION  
+				PAGE    
+				DO REV0ROM ;ONLY IF SUPPORTING IT!  
+* JUMP TABLE TO MONITOR ROUTINES.   
+* THIS TABLE FILLED IN BY 'INIT'.   
+*    
+JMPTAB			 EQU *   
+RDADR			 JMP *   
+READ			 JMP *   
+WRITE			 JMP *   
+SEEK			 JMP *   
+MSWAIT			 JMP *   
+PRENIB			 JMP *   
+POSTNIB			 JMP *   
+*    
+REV0			 EQU * ;REV0 ADDRESSES  
+JMP				 $F1BD ;RDADR  
+JMP				 $F148 ;READ  
+JMP				 $F219 ;WRITE  
+JMP				 $F400 ;SEEK  
+JMP				 $F456 ;MSWAIT  
+JMP				 $F2C6 ;PRENIB  
+JMP				 $F311 ;POSTNIB  
+VSIZE			 EQU *-REV0 ;TABLE SIZE  
+*    
+REV1			 EQU * ;REV1 ADDRESSES  
+JMP				 $F1B9 ;RDADR  
+JMP				 $F148 ;READ  
+JMP				 $F216 ;WRITE  
+JMP				 $F400 ;SEEK  
+JMP				 $F456 ;MSWAIT  
+JMP				 $F2C4 ;PRENIB  
+JMP				 $F30F ;POSTNIB  
+ELSE			  ;FOR REV1 WE USE EQUATES  
+RDADR			 EQU $F1B9 ;RDADR  
+READ			 EQU $F148 ;READ  
+WRITE			 EQU $F216 ;WRITE  
+SEEK			 EQU $F400 ;SEEK  
+MSWAIT			 EQU $F456 ;MSWAIT  
+PRENIB			 EQU $F2C4 ;PRENIB  
+POSTNIB			 EQU $F30F ;POSTNIB  
+FIN				    
+				   
+ZZEND			 EQU *   
+ZZLEN			 EQU *-ZZORG   
+IFNE			 ZZLEN-LENDISK3   
+FAIL			 2,"SOSORG FILE IS INCORRECT FOR DISK3"  
+FIN				    
+				   
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.DATA.SRC
+*************************************************************************
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.13\sos.s.disk3.data.txt
+LOAD /A3OSX.BUILD/SOS.13/sos.s
+ASM
