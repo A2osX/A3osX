@@ -16,8 +16,6 @@ The foundation of A3osX enabling its multi-user multitasking capabilities is a r
 
 A3osX is designed to work on any Apple /// or Apple ///+ computer.
 
-Consult the **[documentation](#documentation)** section below to find other resources available to you for learning how to install, use, develop and test A3osX.
-
 ## How You Can Help
 
 The A3osX Team welcomes your help in making this the best operating environment for the Apple ///!  Specifically, the more users who can test the most current RELEASE, CANDIDATE or STABLE media on their unique hardware and report back their findings, the better A2osX becomes.  In addition, comments on, suggestions, or contributions to our documentation are greatly appreciated.  Lastly, A3osX would not be what it is without our great core development team. We could certainly use more developers, especially in Assembly (S-C Assembler familiar even better) to contribute new utilities, applications and features for A3osX.
@@ -39,8 +37,8 @@ A3osX is licensed under the GNU General Public License.
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-The full A3osX license can be found **[Here](../LICENSE)**.
+The full A3osX license can be found **[Here](LICENSE)**.
 
 ## Copyright
 
-Copyright 2022, Remy Gibert and the A2osX contributors.
+Copyright 2022, Remy Gibert and the A3osX contributors.
