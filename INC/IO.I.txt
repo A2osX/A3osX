@@ -4,7 +4,8 @@ NEW
 * HARDWARE EQUATES  
 *--------------------------------------
 Z.REG			 .EQ $FFD0  
-E.REG			 .EQ $FFDF  
+E.REG			 .EQ $FFDF
+B.REG			 .EQ $FFEF
 *    
 KBPORT			 .EQ $C008  
 *    
