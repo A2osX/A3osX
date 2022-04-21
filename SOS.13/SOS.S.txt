@@ -3,7 +3,7 @@ NEW
 *--------------------------------------
 				.LIST OFF
 				.OP 6502
-				.OR $FE00
+				.OR $1E00
 				.TF /A3OSX.BUILD/SOS.KERNEL
 *--------------------------------------
 				.INB /A3OSX.BUILD/SOS.13/sos.s.ldr

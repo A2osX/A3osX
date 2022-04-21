@@ -1,0 +1,1440 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+*
+* MEMORY MANAGER (VERSION = 1.1O )
+* (DATE = 8/04/81)
+*
+* THIS MODULE CONTAINS ALL OF THE MEMORY MANAGEMENT SYSTEM
+* CALLS SUPPORTED BY THE SARA OPERATING SYSTEM. IT IS
+* ALSO CALLED BY THE BUFFER MANAGER.
+*
+*--------------------------------------
+*
+* SEGMENT TABLE
+* (NOTE: ENTRY 0 IS NOT USED)
+*
+ST.FREE			 .BS 1 ; PTR TO FIRST FREE SEG TABLE ENTRY
+ST.ENTRY		 .BS 1 ; PTR TO HIGHEST ALLOC SEG TABLE ENTRY
+ST.SIZ			 .EQ 7
+ST.CNT			 .EQ 32
+ST.TBL			 .BS ST.SIZ*ST.CNT
+ST.BLINK		 .EQ ST.TBL ; BACK LINK TO PREV ALLOC SEG ENTRY
+ST.FLINK		 .EQ ST.BLINK+ST.CNT ; FORWARD LINK "
+ST.BASEL		 .EQ ST.FLINK+ST.CNT ; BASE BANK/PAGE
+ST.BASEH		 .EQ ST.BASEL+ST.CNT
+ST.LIML			 .EQ ST.BASEH+ST.CNT ; LIMIT BANK/PAGE
+ST.LIMH			 .EQ ST.LIML+ST.CNT
+ST.ID			 .EQ ST.LIMH+ST.CNT ; SEG ID
+*
+* DATA DECLARATIONS
+*
+ZPAGE			 .EQ $40 ; BEGINNING OF ZPAGE TEMP SPACE FOR MEMORY MANAGER
+VRT.BASE		 .EQ $0 ; INTERNAL BK/PG PTR TO LOWEST VIRT PAGE
+VRT.LIM			 .EQ ZPAGE+$0 ; &$1, INTERNAL BK/PG PTR TO HIGHEST VIRT PAGE
+PHY1BASE		 .EQ $0780 ; BANK "F",PAGE "0"
+PHY1LIM			 .EQ $079F ; BANK "F",PAGE "1F"
+PHY2BASE		 .EQ $0820 ; BANK "10",PAGE "A0"
+PHY2LIM			 .EQ $087F ; BANK "10",PAGE "FF"
+*
+* REQUEST.SEG DATA DECLARATIONS
+*
+M.TPARMX		 .EQ $60 ; BEGINNING ADDRESS OF MMGR SOS CALL PARMS
+M.RQCODE		 .EQ M.TPARMX
+RQ.BASE			 .EQ M.TPARMX+1 ; BASE.BANK/PAGE
+RQ.LIM			 .EQ M.TPARMX+3 ; LIMIT.BANK/PAGE
+RQ.ID			 .EQ M.TPARMX+5
+RQ.NUM			 .EQ M.TPARMX+6
+*
+RQ.REGION		 .EQ ZPAGE+$2 ;VRT(0),PHY0(1),PHY1(2)
+*
+* FIND.SEG DATA DECLARATIONS
+*
+SRCHMODE		 .EQ M.TPARMX+1 ; SEARCH MODE (0,1,2)
+F.ID			 .EQ M.TPARMX+2 ; SEG ID
+F.PGCT			 .EQ M.TPARMX+3 ; PAGE COUNT (LO
+FX.PGCT			 .EQ ZPAGE+$3 ; &$4, INTERNAL PAGE COUNT
+F.BASE			 .EQ M.TPARMX+5 ; BASE.BANK/PAGE
+F.LIM			 .EQ M.TPARMX+7 ; LIMIT.BANK/PAGE
+F.NUM			 .EQ M.TPARMX+9 ; SEG NUM
+F.ERR			 .EQ ZPAGE+$5 ; ERROR FLAG
+TRUE			 .EQ $80
+FALSE			 .EQ $0
+CFS.PGCT		 .EQ ZPAGE+$6 ; &7, CURRENT FREE SEGMENT'S PAGE COUNT
+CFS.BASE		 .EQ ZPAGE+$8 ; &9, " BASE.BANK/PAGE
+CFS.LIM			 .EQ ZPAGE+$A ; &$B, " LIMIT.BANK/PAGE
+CFS.BLINK		 .EQ ZPAGE+$C ; " BACK LINK
+CFS.BASE0		 .EQ ZPAGE+$D ; &$E, " BASE (SMODE=0)
+CFS.BASE1		 .EQ ZPAGE+$F ; &$10, " BASE (SMODE=1)
+CFS.NEXT		 .EQ ZPAGE+$11 ; " NEXT ENTRY
+CFS.PREV		 .EQ ZPAGE+$12 ; " PREV ENTRY
+CFS.PTR			 .EQ ZPAGE+$13 ; &$14 " POINTER TO NXT FREE PG
+BFS.PGCT		 .EQ ZPAGE+$15 ; &$16, BIGGEST FREE SEGMENT'S PAGE COUNT
+BFS.BASE		 .EQ ZPAGE+$17 ; &$18 " BASE.BANK/PAGE
+BFS.LIM			 .EQ ZPAGE+$19 ; &$1A " LIMIT.BANK/PAGE
+BFS.BLINK		 .EQ ZPAGE+$1B ; " BACK LINK
+*
+* CHANGE.SEG DATA DECLARATIONS
+*
+CHG.NUM			 .EQ M.TPARMX+1 ; SEGNUM PARM
+CHG.MODE		 .EQ M.TPARMX+2 ; CHANGE MODE PARM
+CHG.PGCT		 .EQ M.TPARMX+3 ; PAGE COUNT PARM
+CHG.PGCTX		 .EQ ZPAGE+$1C ; &$1D, INTERNAL STORE FOR PGCT
+CHG.NEW			 .EQ ZPAGE+$1E ; &$1F, BANK/PAGE OF SEG'S NEW LIMIT OR BASE
+*
+* GET.SEG.INFO DATA DECLARATIONS
+*
+GSI.NUM			 .EQ M.TPARMX+1
+GSI.BASE		 .EQ M.TPARMX+2
+GSI.LIM			 .EQ M.TPARMX+4
+GSI.PGCT		 .EQ M.TPARMX+6
+GSI.ID			 .EQ M.TPARMX+8
+*
+* GET.SEG.NUM DATA DECLARATIONS 000133 *
+GSN.BKPG		 .EQ M.TPARMX+1
+GSN.NUM			 .EQ M.TPARMX+3
+*
+* RELEASE.SEG DATA DECLARATIONS
+*
+RLS.NUM			 .EQ M.TPARMX+1 ; SEG NUM
+*
+* REGION - DATA DECLARATIONS
+*
+RGN.BKPG		 .BS 2 ; TEMP CONTAINER FOR BANK/PAGE
+*
+* MMGR
+*
+* THIS ROUTINE IS THE MAIN ENTRANCE TO THE MEMORY MANAGER
+* MODULE. IT FUNCTIONS AS A SWITCH, BASED UPON THE RECEIVED
+* REQUEST CODE, TO TRANSFER CONTROL TO THE ROUTINE THAT
+* HANDLES THE SPECIFIC SYSTEM CALL.
+*
+MMGR			lda M.RQCODE
+				beq MMGR010 ; "REQ.SEG"
+				cmp #1
+				beq MMGR020 ; "FIND.SEG"
+				cmp #2
+				beq MMGR030 ; "CHANGE.SEG"
+				cmp #3
+				beq MMGR040 ; "GET.SEG.INFO"
+				cmp #4
+				beq MMGR050 ; "GET.SEG.NUM"
+				cmp #5
+				beq MMGR060 ; "RELEASE.SEG"
+*
+				lda #BADSCNUM
+				jsr SYSERR
+*
+MMGR010			jmp REQ.SEG
+MMGR020			jmp FIND.SEG
+MMGR030			jmp CHG.SEG
+MMGR040			jmp GET.SEG.INFO
+MMGR050			jmp GET.SEG.NUM
+MMGR060			jmp RELEASE.SEG
+*
+* REQUEST.SEG(IN.BASE.BANKPAGE,LIMIT.BANKPAGE,SEGID; OUT.SEGNUM)
+* CONVERT CALLER'S BASE.BANK/PAGE TO INTERNAL FMT
+*
+REQ.SEG			ldx RQ.BASE
+				ldy RQ.BASE+1
+				jsr CNVRT.IBP
+				bcc RQ005
+*
+RQ.ERR			rts						ERR EXIT - INVALID BANK/PAGE
+*
+RQ005			stx RQ.BASE
+				sty	RQ.BASE+1
+				sta	RQ.REGION
+*
+* CONVERT CALLER'S LIMIT.BANK/PAGE TO INTERNAL FMT
+*
+				ldx RQ.LIM
+				ldy RQ.LIM+1
+				jsr CNVRT.IBP
+				bcs RQ.ERR ; ERR - INVALID BANK/PAGE
+				stx RQ.LIM
+				sty RQ.LIM+1
+*
+* IF BASE AND LIMIT ARE IN DIFFERENT REGIONS THEN ERR
+*
+				cmp RQ.REGION
+				bne RQ.ERR1 ; ERR - INVALID BANK/PAGE PAIR
+*
+* IF CALLER'S BASE > LIMIT THEN ERR
+*
+				lda RQ.LIM
+				cmp RQ.BASE
+				lda RQ.LIM+1
+				sbc RQ.BASE+1
+				bcc RQ.ERR1 ; ERR - INVALID BANK/PAGE PAIR
+*
+* PREV SEGNUM:=NULL; NEXT SEGNUM:=FIRST ENTRY
+*
+				ldx	#0
+				ldy	ST.ENTRY ; NOTE: PREV/NEXT CARRIED IN X & Y REGISTERS
+*
+* IF NO SEGS IN SEG TABLE THEN ALLOCATE REQUESTED SEG
+*
+				beq	RQ030
+*
+* IF FIRST SEG IN SEG TABLE BELOW REQUESTED SEG
+* THEN ALLOCATE SEG
+*
+				lda ST.LIML,Y
+				cmp RQ.BASE
+				lda ST.LIMH,Y
+				sbc RQ.BASE+1
+				bcc RQ030
+*
+* ADVANCE TO NEXT SEG ENTRY
+*
+RQ010			tya
+				tax
+				lda ST.FLINK,Y
+				tay
+*
+* IF THERE IS NO NEXT SEG ENTRY
+* IF REQUESTED SEG IS BELOW PREV SEG
+* THEN ALLOCATE REQ SEG
+* ELSE ERR
+*
+				bne RQ020
+				lda RQ.LIM
+				cmp ST.BASEL,X
+				lda RQ.LIM+1
+				sbc ST.BASEH,X
+				bcc RQ030
+*
+				bcs RQ.ERR2 	ERR - SEGMENT REQUEST DENIED
+*
+* IF REQUESTED LIMIT >= PREV SEG'S BASE THEN ERR
+*
+RQ020			lda RQ.LIM
+				cmp ST.BASEL,X
+				lda RQ.LIM+1
+				sbc ST.BASEH,X
+				bcs RQ.ERR2 			ERR - SEGMENT REQUEST DENIED
+*
+* IF REQUESTED BASE > NEXT SEG'S LIMIT
+* THEN ALLOCATE REQUESTED SEGMENT
+*
+				lda ST.LIML,Y
+				cmp RQ.BASE
+				lda ST.LIMH,Y
+				sbc RQ.BASE+1
+				bcs RQ010 				NO, ADVANCE TO NEXT SEGMENT
+*
+RQ030			txa 					ALLOCATE REQUESTED SEGMENT
+				jsr	GET.FREE
+				bcs	RQ.ERR3 ; ERR - SEG TABLE FULL
+*
+* ENTER BASE,LIMIT AND ID IN NEW SEG ENTRY
+*
+				tax
+				lda RQ.BASE
+				sta ST.BASEL,X
+				lda RQ.BASE+1
+				sta ST.BASEH,X
+
+				lda RQ.LIM
+				sta ST.LIML,X
+				lda RQ.LIM+1
+				sta ST.LIMH,X
+
+				lda RQ.ID
+				sta ST.ID,X
+*
+* RETURN NEW SEG NUM TO CALLER AND RETURN
+*
+				ldy #0
+				txa
+				sta (RQ.NUM),Y
+
+				clc
+				rts				 		; NORMAL EXIT
+
+RQ.ERR1			lda #BADBKPG
+				jsr	SYSERR 				; ERR EXIT
+
+RQ.ERR2			lda #SEGRQDN
+				jsr	SYSERR 				; ERR EXIT
+
+RQ.ERR3			lda #SEGTBLFULL
+				jsr	SYSERR				; ERR EXIT
+*
+* FIND.SEG(IN.SRCHMODE,SEGID; INOUT.PAGECT;
+* OUT.BASE.BKPG,LIMIT.BKPG,SEGNUM)
+*
+* RETRIEVE PAGE COUNT PARAMETER AND CLEAR ERR FLAG
+*
+FIND.SEG		ldy #0
+				lda (F.PGCT),Y
+				sta FX.PGCT
+				iny
+				lda (F.PGCT),Y
+				sta FX.PGCT+1
+
+				bne FIND001
+				lda FX.PGCT
+				bne FIND001
+				lda #BADPGCNT 				; ERR, PAGECT=0, EXIT
+				jsr SYSERR
+*
+FIND001			lda #FALSE
+				sta F.ERR
+*
+* IF SEARCH MODE>2 THEN ERR
+*
+				lda SRCHMODE
+				cmp #3
+				bcc FIND005
+				lda #BADSRCHMODE
+				jsr SYSERR 					; ERR EXIT
+*
+* INITIALIZE NEXT FREE SEGMENT SUBROUTINE,
+* AND BIGGEST FREE SEGMENT PAGE COUNT
+*
+FIND005			jsr NXTFRSEG.I
+				lda #0
+				sta BFS.PGCT
+				sta BFS.PGCT+1
+*
+* GET NEXT FREE SEGMENT
+*
+FIND010			jsr NXTFRSEG
+				bcc FIND015 			; PROCESS FREE SEGMENT
+*
+* NO MORE FREE SEGMENTS LEFT
+* RETURN BIGGEST FREE SEGMENT FOUND
+* ALONG WITH ERR
+*
+				lda #TRUE
+				sta F.ERR
+				ldx #0 					; SEG#:=0
+				jmp FIND070
+*
+* FREE SEGMENT FOUND.
+* IF FREE SEGMENT > BIGGEST FREE SEGMENT THEN BFS:=CFS
+*
+FIND015			lda BFS.PGCT
+				cmp CFS.PGCT
+				lda BFS.PGCT+1
+				sbc CFS.PGCT+1
+				bcs FIND030
+
+				ldx #6
+FIND020			lda CFS.PGCT,X
+				sta BFS.PGCT,X
+				dex
+				bpl FIND020
+*
+* IF BFS.PGCT<F.PGCT THEN GET NEXT FREE SEGMENT
+*
+FIND030			lda BFS.PGCT
+				cmp	FX.PGCT
+				lda	BFS.PGCT+1
+				sbc	FX.PGCT+1
+				bcc	FIND010
+*
+* BFS.BASE:=BFS.LIM-FX.PGCT+1
+* BFS.PGCT:=FX.PGCT
+*
+				lda BFS.LIM
+				sbc FX.PGCT
+				sta BFS.BASE
+				lda BFS.LIM+1
+				sbc FX.PGCT+1
+				sta BFS.BASE+1
+				inc BFS.BASE
+				bne FIND050
+				inc BFS.BASE+1
+*
+FIND050			lda FX.PGCT
+				sta BFS.PGCT
+				lda FX.PGCT+1
+				sta BFS.PGCT+1
+*
+* DELINK ENTRY FROM FREE LIST, AND LINK
+* IT INTO SEGMENT LIST
+*
+				lda BFS.BLINK
+				jsr GET.FREE
+				bcc FIND060
+				rts				  ; ERR - SEG TABLE FULL
+*
+* ST.ID(NEW):=F.ID
+* ST.BASE(NEW):=BFS.BASE
+* ST.LIM(NEW):=BFS.LIM
+*
+FIND060			tax
+				lda F.ID
+				sta ST.ID,X
+
+				lda BFS.BASE
+				sta ST.BASEL,X
+				lda BFS.BASE+1
+				sta ST.BASEH,X
+
+				lda BFS.LIM
+				sta ST.LIML,X
+				lda BFS.LIM+1
+				sta ST.LIMH,X
+*
+* RETURN SEGNUM, PAGE COUNT, BASE BANK/PAGE, AND LIMIT BANK/PAGE
+* TO CALLER
+FIND070			ldy #0
+				txa
+				sta (F.NUM),Y
+*
+				lda BFS.PGCT
+				sta (F.PGCT),Y
+				iny
+				lda BFS.PGCT+1
+				sta (F.PGCT),Y
+*
+				ldx BFS.BASE
+				ldy BFS.BASE+1
+				jsr CNVRT.XBP
+				tya
+				ldy #1
+				sta (F.BASE),Y
+				dey
+				txa
+				sta (F.BASE),Y
+*
+				ldx BFS.LIM
+				ldy BFS.LIM+1
+				jsr CNVRT.XBP
+				tya
+				ldy #1
+				sta (F.LIM),Y
+				dey
+				txa
+				sta (F.LIM),Y
+*
+				lda F.ERR ; IF ERR FLAG TRUE THEN REPORT IT.
+				bne FIND.ERR
+*
+				clc
+				rts  ; NORMAL EXIT
+*
+FIND.ERR		lda #SEGRQDN
+				jsr SYSERR ; ERR EXIT
+
+* NEXT FREE SEGMENT - INITIALIZATION
+*
+* INPUT: SEGMENT TABLE
+* OUTPUT: CFS.PTR "1ST FREE BANK/PAGE IN VIRTUAL MEMORY
+* CFS.PREV "PREVIOUS SEGMENT EXAMINED"
+* CFS.NEXT "SEGMENT FOLLOWING CFS.PREV"
+* ERROR: NONE (IF NO FREE BK/PG FOUND, THEN CFS.PTR="FFFF")
+*
+* CFS.PTR := VRT.LIM
+* CFS.PREV := 0
+* CFS.NEXT := ST.ENTRY
+*
+NXTFRSEG.I		lda >VRT.LIM
+				sta CFS.PTR
+				lda >VRT.LIM+1
+				sta CFS.PTR+1
+
+				lda #0
+				sta CFS.PREV
+
+				ldx ST.ENTRY
+				stx CFS.NEXT
+
+* L0: IF CFS.NEXT=0 THEN DONE
+*
+FRSGI010		beq FRSGI.EXIT
+*
+* IF ST.LIM(CFS.NEXT)<=VRT.LIM THEN GOTO L1
+*
+				lda >VRT.LIM
+				cmp ST.LIML,X
+				lda >VRT.LIM+1
+				sbc ST.LIMH,X
+				bcs FRSGI020
+*
+* CFS.PREV:=CFS.NEXT
+* CFS.NEXT:=ST.FLINK(CFS.NEXT)
+* GOTO L0
+*
+				stx CFS.PREV
+				lda ST.FLINK,X
+				tax
+				stx CFS.NEXT
+				jmp FRSGI010
+*
+* L1: IF ST.LIM(CFS.NEXT)<VRT.LIM THEN DONE
+*
+FRSGI020		lda ST.LIML,X
+				cmp >VRT.LIM
+				lda ST.LIMH,X
+				sbc >VRT.LIM+1
+				bcc FRSGI.EXIT
+
+				jsr NXTFRPG
+
+FRSGI.EXIT		rts ; NORMAL EXIT
+*
+* NEXT FREE SEGMENT
+*
+* INPUT: SEG TABLE
+* OUTPUT: CFS.BLINK
+* CFS.BASE
+* CFS.LIMIT
+* CFS.PGCT
+* OWN: CFS.PREV
+* CFS.NEXT
+* CFS.PTR
+*
+* BUILDS A CANDIDATE FREE SEGMENT, WHOSE LIMIT BANK/PAGE =
+* THE CURRENT FREE PAGE (CFS.PTR).
+*
+* IF CFS.PTR="FFFF" THEN EXIT
+*
+NXTFRSEG		lda CFS.PTR+1
+				bpl FRSG010
+*
+				sec
+				rts				 ; EXIT - NO MORE FREE SEGMENTS LEFT
+*
+* CFS.BLINK:=CFS.PREV
+* CFS.LIM:=CFS.PTR
+*
+FRSG010			lda CFS.PREV
+				sta CFS.BLINK
+*
+				lda CFS.PTR
+				sta CFS.LIM
+				lda CFS.PTR+1
+				sta CFS.LIM+1
+*
+* IF CFS.NEXT=0 THEN CFS.BASE:=0
+* ELSE CFS.BASE:=ST.LIM(CFS.NEXT)+1
+*
+				lda CFS.NEXT
+				bne FRSG020
+				lda #0
+				sta CFS.BASE
+				sta CFS.BASE+1
+				beq FRSG030
+*
+FRSG020			ldx CFS.NEXT
+				clc
+				lda ST.LIML,X
+				adc #1
+				sta CFS.BASE
+				lda ST.LIMH,X
+				adc #0
+				sta CFS.BASE+1
+*
+* CFS.BASE0:=CFS.LIM AND $FF80
+*
+FRSG030			ldy CFS.LIM+1
+				sty CFS.BASE0+1
+				lda CFS.LIM
+				and #$80
+				sta CFS.BASE0
+*
+* CFS.BASE1:=CFS.BASE0-32K
+*
+				sec
+				sbc #$80
+				sta CFS.BASE1
+				tya
+				sbc #0
+				sta CFS.BASE1+1
+				bcs FRSG035
+				lda #0
+				sta CFS.BASE1
+				sta CFS.BASE1+1
+*
+* IF CFS.BASE>=CFS.BASE0 THEN GOTO L1
+*
+FRSG035			lda CFS.BASE
+				cmp CFS.BASE0
+				lda CFS.BASE+1
+				sbc CFS.BASE0+1
+				bcs FRSG050
+*
+* IF SEARCH MODE=0 THEN CFS.BASE:=CFS.BASE0
+* GOTO L1
+*
+				lda SRCHMODE
+				bne FRSG040
+				lda CFS.BASE0
+				sta CFS.BASE
+				lda CFS.BASE0+1
+				sta CFS.BASE+1
+				jmp FRSG050
+*
+* IF CFS.BASE<CFS.BASE1 AND SEARCH MODE=1
+* THEN CFS.BASE:=CFS.BASE1
+*
+FRSG040			lda CFS.BASE
+				cmp CFS.BASE1
+				lda CFS.BASE+1
+				sbc CFS.BASE1+1
+				bcs FRSG050
+
+				lda SRCHMODE
+				cmp #1
+				bne FRSG050
+
+				lda CFS.BASE1
+				sta CFS.BASE
+				lda CFS.BASE1+1
+				sta CFS.BASE+1
+*
+* L1: CFS.PGCT:=CFS.LIM-CFS.BASE+1
+*
+FRSG050			sec
+				lda CFS.LIM
+				sbc CFS.BASE
+				sta CFS.PGCT
+				lda CFS.LIM+1
+				sbc CFS.BASE+1
+				sta CFS.PGCT+1
+				inc CFS.PGCT
+				bne FRSG052
+				inc CFS.PGCT+1
+*
+* ADVANCE FREE PAGE POINTER TO NEXT FREE PAGE
+*
+* IF SEARCH MODE<>1 THEN L2:
+*
+FRSG052			lda SRCHMODE
+				cmp	#1
+				bne	FRSG060
+*
+* IF CFS.BASE < CFS.BASE0 THEN CFS.PTR:=CFS.BASE0-1
+*
+				lda CFS.BASE
+				cmp CFS.BASE0
+				lda CFS.BASE+1
+				sbc CFS.BASE0+1
+				bcs FRSG060
+
+				ldy CFS.BASE0+1
+				ldx CFS.BASE0
+				bne FRSG055
+				dey
+
+FRSG055			dex
+				stx CFS.PTR
+				sty CFS.PTR+1
+
+				jmp FRSG070 ; AND EXIT
+* L2: CFS.PTR:=CFS.BASE-1
+*
+FRSG060			sec
+				lda CFS.BASE
+				sbc #1
+				sta CFS.PTR
+				lda CFS.BASE+1
+				sbc #0
+				sta CFS.PTR+1
+*
+* IF CFS.PTR="FFFF" OR CFS.NEXT=0 THEN EXIT
+*
+				bcc FRSG070
+				lda CFS.NEXT
+				beq FRSG070
+*
+* IF CFS.PTR > ST.LIM(CFS.NEXT) THEN EXIT
+*
+				ldx CFS.NEXT
+				lda ST.LIML,X
+				cmp CFS.PTR
+				lda ST.LIMH,X
+				sbc CFS.PTR+1
+				bcc FRSG070
+*
+* OTHERWISE, ADVANCE CFS PTR TO NEXT FREE PAGE BELOW NEXT
+* SEGMENT IN SEGMENT LIST
+*
+				jsr NXTFRPG
+*
+FRSG070			clc
+				rts				 ; EXIT - FREE SEGMENT FOUND
+*
+* NEXT FREE PAGE
+*
+* "WALKS" THE FREE PAGE PTR (CFS.PTR) TO THE NEXT FREE PAGE
+* IMMEDIATELY BELOW THE CURRENT FREE SEGMENT.
+*
+* L0: CFS.PTR:=ST.BASE(CFS.NEXT)-1
+* IF CFS.PTR="FFFF" THEN DONE
+*
+NXTFRPG			ldx CFS.NEXT
+				sec
+				lda ST.BASEL,X
+				sbc #1
+				sta CFS.PTR
+				lda ST.BASEH,X
+				sbc #0
+				sta CFS.PTR+1
+				bcc NFRPG.EXIT
+*
+* CFS.PREV:=CFS.NEXT
+* CFS.NEXT:=ST.FLINK(CFS.NEXT)
+*
+				stx CFS.PREV
+				lda ST.FLINK,X
+				tax
+				stx CFS.NEXT
+*
+* IF CFS.NEXT=0 OR ST.LIM(CFS.NEXT)<CFS.PTR
+* THEN DONE
+* ELSE GOTO L0
+*
+				beq NFRPG.EXIT
+				lda ST.LIML,X
+				cmp CFS.PTR
+				lda ST.LIMH,X
+				sbc CFS.PTR+1
+				bcs NXTFRPG
+*
+NFRPG.EXIT		rts ; NORMAL EXIT
+*
+* CHANGE.SEG(IN.SEGNUM,CHG.MODE; INOUT.PAGECT) SYSTEM CALL
+*
+* MOVE CALLER'S PAGE COUNT TO INTERNAL BUFFER
+*
+CHG.SEG			ldy #0
+				lda (CHG.PGCT),Y
+				sta CHG.PGCTX
+				iny
+				lda (CHG.PGCT),Y
+				sta CHG.PGCTX+1
+*
+* IF SEG# OUT OF RANGE OR ST.FLINK(SEG#)=FREE THEN ERR
+*
+				ldx CHG.NUM
+				beq CHGS.ERR
+				cpx #ST.CNT
+				bcs CHGS.ERR
+				lda ST.FLINK,X
+				bpl CHGS005
+*
+CHGS.ERR		lda #BADSEGNUM
+				jsr SYSERR ; ERR EXIT
+
+* CASE OF CHANGE MODE
+
+CHGS005			ldy CHG.MODE
+				cpy #1
+				bcc CHGS010
+				beq CHGS020
+				cpy #3
+				bcc CHGS030
+				beq CHGS040
+*
+				lda #BADCHGMODE
+				jsr SYSERR ; ERR EXIT
+
+* CHANGE MODE = 0(BASE UP)
+
+* CHG.NEW:=ST.BASE(SEG#)+PGCT
+*
+CHGS010			clc
+				lda ST.BASEL,X
+				adc CHG.PGCTX
+				sta CHG.NEW
+				lda ST.BASEH,X
+				adc CHG.PGCTX+1
+				sta CHG.NEW+1
+*
+				bcs CHGS014 ; OVERFLOW, PEG IT
+*
+* IF CHG.NEW <= ST.LIM(SEG#) THEN EXIT
+*
+				lda ST.LIML,X
+				cmp CHG.NEW
+				lda ST.LIMH,X
+				sbc CHG.NEW+1
+				bcs CHGS016
+*
+* OTHERWISE, CHG.NEW:=ST.LIM(SEG#)
+*
+CHGS014			lda ST.LIML,X
+				sta CHG.NEW
+				lda ST.LIMH,X
+				sta CHG.NEW+1
+*
+CHGS016			jmp CHGS.EXIT
+
+* CHANGE MODE = 1(BASE DOWN)
+
+* CHG.NEW:=ST.BASE(SEG#)-PGCT
+
+CHGS020			sec
+				lda ST.BASEL,X
+				sbc CHG.PGCTX
+				sta CHG.NEW
+				lda ST.BASEH,X
+				sbc CHG.PGCTX+1
+				sta CHG.NEW+1
+				bcs CHGS050
+				bcc CHGS052 ; OVERFLOW, PEG IT
+
+* CHANGE MODE = 2(LIMIT UP)
+
+* CHG.NEW:=ST.LIM(SEG#)+PGCT
+*
+CHGS030			clc
+				lda ST.LIML,X
+				adc CHG.PGCTX
+				sta CHG.NEW
+				lda ST.LIMH,X
+				adc CHG.PGCTX+1
+				sta CHG.NEW+1
+				bcc CHGS050
+				bcs CHGS052 ; OVERFLOW, PEG IT
+
+* CHANGE MODE = 3(LIMIT DOWN)
+
+* CHG.NEW:=ST.LIM(SEG#)-PGCT
+*
+CHGS040			sec
+				lda ST.LIML,X
+				sbc CHG.PGCTX
+				sta CHG.NEW
+				lda ST.LIMH,X
+				sbc CHG.PGCTX+1
+				sta CHG.NEW+1
+				bcc CHGS044 ; OVERFLOW, PEG IT
+*
+* IF CHG.NEW >= ST.BASE(SEG#) THEN EXIT
+*
+				lda CHG.NEW
+				cmp ST.BASEL,X
+				lda CHG.NEW+1
+				sbc ST.BASEH,X
+				bcs CHGS046
+*
+* OTHERWISE CHG.NEW:=ST.BASE(SEG#)
+*
+CHGS044			lda ST.BASEL,X
+				sta CHG.NEW
+				lda ST.BASEH,X
+				sta CHG.NEW+1
+*
+CHGS046			jmp CHGS.EXIT
+*
+* DETERMINE NEW BANK/PAGE'S REGION,
+* IF NEW BANK/PAGE IS INVALID THEN
+* SET TO BASE OR LIMIT (CASE CHANGE MODE)
+*
+CHGS050			ldx CHG.NEW
+				ldy CHG.NEW+1
+				jsr REGION
+				bcs CHGS052
+				bne CHGS052
+				beq CHGS100
+
+CHGS052			lda CHG.MODE
+				cmp #1
+				bne CHGS054
+
+				ldx #>VRT.BASE
+				ldy #<VRT.BASE
+				jmp CHGS056
+
+CHGS054			ldx >VRT.LIM
+				ldy	>VRT.LIM+1
+
+CHGS056			stx CHG.NEW
+				sty	CHG.NEW+1
+*
+* COMPUTE BANK/PAGE OF ADJACENT SEGMENT, IF ANY
+* CASE CHANGE MODE
+*
+CHGS100			ldx CHG.NUM
+				lda CHG.MODE
+				cmp #1
+				bne CHGS200
+* "1" IF ST.FLINK(SEG#)=0 THEN EXIT
+				lda ST.FLINK,X
+				beq CHGS.EXIT
+* X,Y:=ST.LIM(ST.FLINK(SEG#))+1
+				tay
+				lda ST.LIML,Y
+				tax
+				lda ST.LIMH,Y
+				tay
+				inx
+				bne CHGS110
+				iny
+* IF CHG.NEW < X,Y THEN CHG.NEW:=X,Y
+CHGS110			cpy CHG.NEW+1
+				bcc CHGS.EXIT
+				beq CHGS120
+				bcs CHGS300
+CHGS120			cpx CHG.NEW
+				bcc CHGS.EXIT
+				bcs CHGS300
+* "2" IF ST.BLINK(SEG#)=0 THEN EXIT
+CHGS200			lda ST.BLINK,X
+				beq CHGS.EXIT
+*X,Y:= ST.BASE(ST.BLINK(SEG#))-1
+				tay
+				lda ST.BASEL,Y
+				tax
+				lda ST.BASEH,Y
+				tay
+				txa
+				bne CHGS210
+				dey
+
+CHGS210			dex
+* IF CHG.NEW > X,Y THEN CHG.NEW:=X,Y CPY CHG.NEW+1
+				bcc CHGS300
+				beq CHGS220
+				bcs CHGS.EXIT
+CHGS220			cpx CHG.NEW
+				bcs CHGS.EXIT
+
+CHGS300			stx CHG.NEW
+				sty CHG.NEW+1
+*
+* COMPUTE DELTA PAGE COUNT AND RETURN IT TO CALLER
+* (CASE OF CHG.MODE)
+*
+CHGS.EXIT		ldx CHG.NUM
+				ldy #0
+				lda CHG.MODE
+				cmp #1
+				bcc CHGS500
+				beq CHGS510
+				cmp #3
+				bcc CHGS520
+				beq CHGS530
+*
+* "0" -- PAGECOUNT:=NEW-BASE
+*
+CHGS500			sec
+				lda CHG.NEW
+				sbc ST.BASEL,X
+				sta (CHG.PGCT),Y
+				lda CHG.NEW+1
+				sbc ST.BASEH,X
+				jmp CHGS600
+*
+* "1" -- PAGECOUNT:=BASE-NEW
+*
+CHGS510			sec
+				lda ST.BASEL,X
+				sbc CHG.NEW
+				sta (CHG.PGCT),Y
+				lda ST.BASEH,X
+				sbc CHG.NEW+1
+				jmp CHGS600
+*
+* "2" -- PAGECOUNT:=NEW-LIM
+*
+CHGS520			sec
+				lda CHG.NEW
+				sbc ST.LIML,X
+				sta (CHG.PGCT),Y
+				lda CHG.NEW+1
+				sbc ST.LIMH,X
+				jmp CHGS600
+*
+* "3" -- PAGECOUNT:=LIM-NEW
+*
+CHGS530			sec
+				lda ST.LIML,X
+				sbc CHG.NEW
+				sta (CHG.PGCT),Y
+				lda ST.LIMH,X
+				sbc CHG.NEW+1
+
+CHGS600			iny
+				sta (CHG.PGCT),Y
+*
+* IF NEW PAGE COUNT < REQUESTED PAGECOUNT THEN ERR
+*
+				tax
+				dey
+				lda (CHG.PGCT),Y
+				cmp CHG.PGCTX
+				txa
+				sbc CHG.PGCTX+1
+				bcs CHGS610
+				lda #SEGRQDN
+				jsr SYSERR ; ERR EXIT
+*
+* OTHERWISE, ENTER CHG.NEW IN SEGMENT TABLE AND EXIT
+*
+CHGS610			ldx CHG.NUM
+				lda CHG.MODE
+				cmp #2
+				lda CHG.NEW
+				ldy CHG.NEW+1
+				bcs CHGS620
+
+				sta ST.BASEL,X
+				tya
+				sta ST.BASEH,X
+				clc
+				rts  ; NORMAL EXIT
+
+CHGS620			sta ST.LIML,X
+				tya
+				sta ST.LIMH,X
+				clc
+				rts  ; NORMAL EXIT
+*
+* GET.SEG.INFO(IN.SEGNUM; OUT.BASE.BKPG,LIMIT.BKPG,PGCT,SEGID)
+*
+* IF SEG# OUT OF BOUNDS OR ST.FLINK(SEG#)=ST.FREE THEN ERR
+*
+GET.SEG.INFO	ldx GSI.NUM
+				beq GSI.ERR ; ERR - INVALID SEGNUM
+				cpx #ST.CNT
+				bcs GSI.ERR ; ERR - INVALID SEGNUM
+				lda ST.FLINK,X
+				bmi GSI.ERR ; ERR - INVALID SEGNUM
+*
+* RETURN BASE.BKPG TO CALLER
+*
+				ldy ST.BASEH,X
+				lda ST.BASEL,X
+				tax
+				jsr CNVRT.XBP
+				tya
+				ldy #1
+				sta (GSI.BASE),Y
+				dey
+				txa
+				sta (GSI.BASE),Y
+*
+* RETURN LIMIT.BKPG TO CALLER
+*
+				ldx GSI.NUM
+				ldy ST.LIMH,X
+				lda ST.LIML,X
+				tax
+				jsr CNVRT.XBP
+				tya
+				ldy #1
+				sta (GSI.LIM),Y
+				dey
+				txa
+				sta (GSI.LIM),Y
+*
+* RETURN SEGID TO CALLER
+*
+				ldx GSI.NUM
+				lda ST.ID,X
+				sta (GSI.ID),Y
+*
+* COMPUTE PAGE COUNT
+*
+				sec
+				lda ST.LIML,X
+				sbc ST.BASEL,X
+				tay
+				lda ST.LIMH,X
+				sbc ST.BASEH,X
+				tax
+				iny
+				bne GSI010
+				inx
+*
+* RETURN PAGE COUNT TO CALLER
+*
+GSI010			tya
+				ldy #0
+				sta (GSI.PGCT),Y
+				iny
+				txa
+				sta (GSI.PGCT),Y
+
+				clc
+				rts  ; NORMAL EXIT
+
+GSI.ERR			lda #BADSEGNUM
+				jsr SYSERR ; ERR EXIT
+*
+* GET.SEG.NUM(IN.BANKPAGE; OUT.SEGNUM) SYSTEM CALL
+*
+*
+* CONVERT BANKPAGE TO INTERNAL FORMAT
+*
+GET.SEG.NUM		ldx GSN.BKPG
+				ldy GSN.BKPG+1
+				jsr CNVRT.IBP
+				bcs GSN.ERR ; ERR - INVALID BANK PAGE
+				stx GSN.BKPG
+				sty GSN.BKPG+1
+*
+* QUIT IF NO ENTRIES IN SEG TABLE
+*
+				lda ST.ENTRY
+				beq GSN.ERR1 ; ERR - SEG NOT FOUND
+*
+* L1: IF BANKPAGE>ST.LIM(SEG#) THEN ERR
+*
+GSN010			tax
+				lda ST.LIML,X
+				cmp GSN.BKPG
+				lda ST.LIMH,X
+				sbc GSN.BKPG+1
+				bcc GSN.ERR1 ; ERR - SEG NOT FOUND
+*
+* IF BANKPAGE>=ST.BASE(SEG#) THEN FOUND!
+*
+				lda GSN.BKPG
+				cmp ST.BASEL,X
+				lda GSN.BKPG+1
+				sbc ST.BASEH,X
+				bcs GSN020
+*
+* SEG#:=ST.FLINK(SEG#); GOTO L1
+*
+				lda ST.FLINK,X
+				beq GSN.ERR1 ; ERR - SEG NOT FOUND
+				jmp GSN010
+*
+* RETURN SEG# TO CALLER
+*
+GSN020			ldy #0
+				txa
+				sta (GSN.NUM),Y
+				clc
+				rts ; NORMAL EXIT
+*
+GSN.ERR			rts ; ERROR EXIT
+*
+GSN.ERR1		lda #SEGNOTFND
+				jsr	SYSERR ; ERROR EXIT
+*
+* RELEASE.SEG(IN.SEGNUM) SYSTEM CALL
+*
+* IF ST.FLINK(SEG#)=ST.FREE THEN ERR
+*
+RELEASE.SEG		ldx RLS.NUM
+				beq RLS.ALL ; RELEASE.SEG(SEG#=0)
+				cpx #ST.CNT
+				bcs RLS.ERR ; ERR - SEG# TOO LARGE
+				lda ST.FLINK,X
+				bmi RLS.ERR ; ERR - INVALID SEGNUM
+				bpl REL.SEG ; RELEASE.SEG(SEG#>0)
+*
+* RELEASE ALL
+*
+RLS.ALL			ldx ST.ENTRY
+				beq RLS0.EXIT
+				stx RLS.NUM
+
+RLS0.LOOP		lda ST.ID,X
+				cmp #$10 ; CARRY SET/CLEARED HERE
+
+				lda ST.FLINK,X
+				pha
+				bcc RLS006 ; IF ID=SYS SEG THEN SKIP
+				jsr REL.SEG ; RELEASE ONE SEGMENT
+RLS006			pla
+				beq RLS0.EXIT
+				sta RLS.NUM
+				tax
+				bne RLS0.LOOP ; ALWAYS TAKEN
+
+RLS0.EXIT		clc
+				rts  ; NORMAL EXIT ; ALL NON SYSTEM SEGMENTS RELEASED.
+*
+* REL SEG
+*
+* Y:=ST.FLINK(SEG#)
+* X:=ST.BLINK(SEG#)
+*
+REL.SEG			tay
+				lda ST.BLINK,X
+				tax
+*
+* IF X<>0 THEN ST.FLINK(X):=Y
+*ELSE ST.ENTRY:=Y
+*
+				beq RLS010
+				tya
+				sta ST.FLINK,X
+				jmp RLS020
+RLS010			sty ST.ENTRY
+*
+* IF Y<>0 THEN ST.BLINK(Y):=X
+*
+				tya
+RLS020			beq RLS030
+				txa
+				sta	ST.BLINK,Y
+*
+* ST.FLINK(SEG#):=ST.FREE
+* ST.FREE:=SEG# AND #$80
+*
+RLS030			lda ST.FREE
+				ldx RLS.NUM
+				sta ST.FLINK,X
+				txa
+				ora #$80
+				sta ST.FREE
+*
+				clc
+				rts				 ; NORMAL EXIT
+*
+RLS.ERR			lda #BADSEGNUM
+				jsr	SYSERR ; ERR EXIT
+*
+* CONVERT INTERNAL BANK PAGE
+*
+* INPUT: EXTERNAL BANK (X)
+* " PAGE (Y)
+* OUTPUT: INTERNAL BKPG LOW (X)
+* " BKPG HIGH (Y)
+* REGION (A) 0=>VIRT BANK
+* 1=>PHY BANK (0-$2000)
+* 2=> " ($A000-$FFFF)
+* ERROR: CARRY SET ("INVALID BANK PAGE")
+*
+* CONVERT FROM EXTERNAL TO INTERNAL FORMAT
+*
+* CASE OF BANK: ADD PAGE BIAS
+*
+CNVRT.IBP		tya
+				cpx #$F
+				beq CNVI010
+				bcs CNVI020
+
+				cmp #$20 ; BANK < "F"
+				bcc CNVI.ERR1
+				cmp #$A0
+				bcs CNVI.ERR1
+				sec
+				sbc #$20
+				jmp CNVI030
+
+CNVI010			cmp #$20 ; BANK = "F"
+				bcs CNVI.ERR1
+				clc
+				adc #$80
+				jmp CNVI030
+
+CNVI020			cpx #$10 ; BANK = "10"
+				bne CNVI.ERR1
+				cmp #$A0
+				bcc CNVI.ERR1
+				sec
+				sbc #$80
+
+CNVI030			tay ; SHIFT BANK RIGHT ONE BIT
+				txa ; INTO HIGH BIT OF PAGE BYTE.
+				lsr A
+				tax
+				tya
+				bcc CNVI040
+				ora #$80
+*
+* EXCHANGE X & Y
+*
+CNVI040			pha
+				txa
+				tay
+				pla
+				tax
+*
+* COMPUTE REGION (VIRT=0,PHY1=1,PHY2=2)
+*
+				jsr REGION ; REGION RETURNED IN A REG.
+				bcs CNVI.ERR1 ; ERR - INVALID BANK PAGE
+*
+				rts				 ; NORMAL EXIT
+*
+CNVI.ERR1		lda #BADBKPG
+				jsr SYSERR
+*
+* CONVERT EXTERNAL BANK PAGE
+*
+* INPUT: INTERNAL BKPG LOW (X)
+* " HIGH (Y)
+* OUTPUT: EXTERNAL BANK (X)
+* " PAGE (Y)
+* ERROR: NO ERROR CHECKING DONE. ASSUMES THAT INTERNAL #S
+* ARE VALID.
+*
+* CONVERT FROM INTERNAL TO EXTERNAL FORMAT
+*
+CNVRT.XBP		txa
+				asl
+				txa
+				and #$7F
+				tax
+				tya
+				rol
+				tay
+*
+* CASE OF BANK: ADD PAGE BIAS
+*
+				txa
+				cpy #$F
+				beq CNVX020 ; BANK = "F"
+				bcs CNVX010
+*
+				clc  ; BANK < "F"
+				adc #$20
+				jmp CNVX020
+*
+CNVX010			clc  ; BANK = "10"
+				adc #$80
+*
+* EXCHANGE X & Y
+*
+CNVX020			pha
+				tya
+				tax
+				pla
+				tay
+				rts  ; NORMAL EXIT
+*
+* REGION
+*
+* INPUT: INTERNAL BKPG LOW (X)
+* " HIGH (Y)
+* OUTPUT: REGION (A)
+* INTERNAL BKPG LOW (X) UNCHANGED
+* " HIGH (Y) "
+* ERROR: CARRY SET ("INVALID BANK/PAGE")
+*
+REGION			stx RGN.BKPG
+				sty RGN.BKPG+1
+*
+* IF BANKPAGE>PHY2LIM THEN ERR
+*
+				lda #>PHY2LIM
+				cmp RGN.BKPG
+				lda #<PHY2LIM
+				sbc RGN.BKPG+1
+				bcc RGN.ERR ; ERR - INVALID BANK PAGE
+*
+* IF BANKPAGE>=PHY2BASE THEN REGION:=2
+*
+				lda RGN.BKPG
+				cmp #>PHY2BASE
+				lda RGN.BKPG+1
+				sbc #<PHY2BASE
+				bcc RGN010
+				lda #2
+				bne RGN040
+*
+* IF BANKPAGE>PHY1LIMIT THEN ERR
+*
+RGN010			lda #>PHY1LIM
+				cmp RGN.BKPG
+				lda #<PHY1LIM
+				sbc RGN.BKPG+1
+				bcc RGN.ERR ; ERR - INVALID BANK PAGE
+*
+* IF BANKPAGE>=PHY1BASE THEN REGION:=1
+*
+				lda RGN.BKPG
+				cmp #>PHY1BASE
+				lda RGN.BKPG+1
+				sbc #<PHY1BASE
+				bcc RGN020
+				lda #1
+				bne RGN040
+*
+* IF BANKPAGE>VIRTUAL LIMIT THEN ERR
+*
+RGN020			lda >VRT.LIM
+				cmp RGN.BKPG
+				lda >VRT.LIM+1
+				sbc RGN.BKPG+1
+				bcc RGN.ERR
+				lda #0
+*
+RGN040			clc  ; "N" FLAG ALWAYS REFLECTS REGION VAL IN A REG!
+				rts  ; NORMAL EXIT
+*
+RGN.ERR			sec  ; INVALID BANK PAGE
+				rts
+*
+* GET FREE
+*
+* INPUT: PREVIOUS SEG # (A)
+* OUTPUT: NEW SEG # (A)
+* ERROR: CARRY SET ("SEG TBL FULL")
+*
+* SAVE PREV SEG # IN X
+* NOTE: PREV SEG # CARRIED IN X
+* NEW SEG # CARRIED IN Y
+*
+GET.FREE		tax
+*
+* IF NO FREE ENTRIES THEN ERR
+*
+				lda ST.FREE
+				cmp #$80
+				beq GTFR.ERR
+*
+* TURN OFF FREE FLAG (BIT7) AND DELINK FROM FREE LIST
+*
+				and #$7F
+				tay
+				lda ST.FLINK,Y
+				sta ST.FREE
+*
+* IF PREV SEG # IS NULL THEN LINK NEW ENTRY TO START
+* OF SEGMENT LIST
+*
+				cpx #0
+				bne GTFR010
+				lda ST.ENTRY
+				sta ST.FLINK,Y
+				lda #0
+				sta ST.BLINK,Y
+				sty ST.ENTRY
+				jmp GTFR020
+*
+* OTHERWISE LINK NEW ENTRY TO PREV SEG #
+*
+GTFR010			lda ST.FLINK,X
+				sta ST.FLINK,Y
+				txa
+				sta ST.BLINK,Y
+				tya
+				sta ST.FLINK,X
+*
+* IF ST.FLINK(NEW)<>NULL THEN
+* ST.BLINK(ST.FLINK(NEW)):=NEWSEG #
+GTFR020			lda ST.FLINK,Y
+				beq GTFR030
+				lda ST.FLINK,Y
+				tax
+				tya
+				sta ST.BLINK,X
+*
+* RETURN WITH NEW SEG #
+*
+GTFR030			tya
+				clc
+				rts  ; NORMAL EXIT
+*
+GTFR.ERR		lda #SEGTBLFULL
+				jsr SYSERR
+*
+				.LIST ON
+ZZEND			.EQ *
+ZZLEN			.EQ ZZEND-ZZORG
+
+				.DO ZZLEN=LENMEMMG
+				.ELSE
+				FAIL 2,"SOSORG FILE IS INCORRECT FOR MEMMGR"
+				.FIN
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.13/sos.s.memmgr.txt
+LOAD /A3OSX.BUILD/SOS.13/sos.s
+ASM
