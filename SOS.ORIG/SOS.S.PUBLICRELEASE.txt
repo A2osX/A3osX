@@ -18,3 +18,8 @@ NEW
 
 
 
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.PUBLICRELEASE
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
+ASM

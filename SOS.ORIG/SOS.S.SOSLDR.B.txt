@@ -93,6 +93,6 @@ NEW
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.sosldr.b
-LOAD /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.SOSLDR.B
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM

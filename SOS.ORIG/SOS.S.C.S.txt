@@ -19,3 +19,8 @@ END
 
 
 
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.C.S
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
+ASM

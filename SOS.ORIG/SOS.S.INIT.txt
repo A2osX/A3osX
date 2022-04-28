@@ -9,9 +9,9 @@ NEW
 
 *				.TI "SOS 1.1 INITIALIZATION"
 * REL
-INCLUDE SOSORG,6,1,254
+* INCLUDE SOSORG,6,1,254
 				.or ORGINIT
-ZZORG				.eq *
+ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 100
 * COPYRIGHT (C) APPLE COMPUTER INC. 1981
@@ -106,33 +106,33 @@ ZZORG				.eq *
 *
 * CONSTANT DECLARATIONS
 *
-TRUE				.eq $80
-FALSE				.eq $00
-BITON6				.eq $40
-BITON7				.eq $80
+TRUE			.eq $80
+FALSE			.eq $00
+BITON6			.eq $40
+BITON7			.eq $80
 *
 * SYSTEM CONTROL REGISTERS
 *
-E.REG				.eq $FFDF ;ENVIRONMENT REGISTER
-Z.REG				.eq $FFD0 ;ZERO PAGE REGISTER
+E.REG			.eq $FFDF ;ENVIRONMENT REGISTER
+Z.REG			.eq $FFD0 ;ZERO PAGE REGISTER
 *				.TI "INTERRUPT SYSTEM INITIALIZATION"
 *
 * 6522 REGISTERS
 *
-D.DDRB				.eq $FFD2
-D.DDRA				.eq $FFD3
-D.ACR				.eq $FFDB
-D.PCR				.eq $FFDC
-D.IFR				.eq $FFDD
-D.IER				.eq $FFDE
-E.IORB				.eq $FFE0
-E.DDRB				.eq $FFE2
-E.DDRA				.eq $FFE3
-E.ACR				.eq $FFEB
-E.PCR				.eq $FFEC
-E.IFR				.eq $FFED
-E.IER				.eq $FFEE
-ACIASTAT				.eq $C0F1
+D.DDRB			.eq $FFD2
+D.DDRA			.eq $FFD3
+D.ACR			.eq $FFDB
+D.PCR			.eq $FFDC
+D.IFR			.eq $FFDD
+D.IER			.eq $FFDE
+E.IORB			.eq $FFE0
+E.DDRB			.eq $FFE2
+E.DDRA			.eq $FFE3
+E.ACR			.eq $FFEB
+E.PCR			.eq $FFEC
+E.IFR			.eq $FFED
+E.IER			.eq $FFEE
+ACIASTAT		.eq $C0F1
 *
 *
 * REP 60
@@ -144,9 +144,9 @@ ACIASTAT				.eq $C0F1
 * REP 60
 *
 *
-INT.INIT				.eq *
+INT.INIT		.eq *
 				sei ;DISABLE INTERRUPTS
-				lda #>ZPGSTART ;SET UP MIH
+				lda #ZPGSTART ;SET UP MIH
 				sta ZPGSTACK ; ZERO PAGE STACK POINTER
 *
 				lda E.REG ;SELECT $C000 I/O SPACE
@@ -194,15 +194,15 @@ INT.INIT				.eq *
 *
 				lda #FALSE
 				sta NMIFLAG ;CLEAR NMI WAIT FLAG
-				ldy #>SIRTBLSIZ-1
-INTI010				sta SIRTABLE,Y ; ALLOCATION TABLE
+				ldy #SIRTBLSIZ-1
+INTI010			sta SIRTABLE,Y ; ALLOCATION TABLE
 				dey 
 				bpl INTI010
 				lda #TRUE
 				sta SIRTABLE+$0A ;LOCK DOWN ANY SLOT SIR
 *
 				ldx #$05
-INTI020				lda RAMVECT,X ;SET UP VECTORS
+INTI020			lda RAMVECT,X ;SET UP VECTORS
 				sta $FFFA,X ; AT $FFFA - $FFFF
 				lda RAMJMPS,X ;SET UP JMP INSTRUCTIONS
 				sta $FFCA,X ; AT $FFCA - $FFCF
@@ -210,10 +210,10 @@ INTI020				lda RAMVECT,X ;SET UP VECTORS
 				bpl INTI020
 				rts 
 *
-RAMVECT				.da NMI.RCVR
+RAMVECT			.da NMI.RCVR
 				.da COLDSTRT
 				.da IRQ.RCVR
-RAMJMPS				jmp NMI.RCVR
+RAMJMPS			jmp NMI.RCVR
 				jmp IRQ.RCVR
 *				.TI "EVENT QUEUE INITIALIZATION"
 * REP 60
@@ -225,25 +225,25 @@ RAMJMPS				jmp NMI.RCVR
 * REP 60
 *
 *
-EVQ.INIT				.eq *
+EVQ.INIT		.eq *
 *
 * CLEAR ALL ENTRIES
 *
-				ldy #>EVQ.LEN
+				ldy #EVQ.LEN
 				lda #0
-EVQI010				sta EV.QUEUE-1,Y
+EVQI010			sta EV.QUEUE-1,Y
 				dey 
 				bne EVQI010
 *
 * SET UP FREE LIST
 *
-				ldx #>EVQ.CNT-2
-				lda #>EVQ.SIZ
+				ldx #EVQ.CNT-2
+				lda #EVQ.SIZ
 				sta EVQ.FREE
-EVQI020				tay
+EVQI020			tay
 				clc 
 
-				adc #>EVQ.SIZ
+				adc #EVQ.SIZ
 				sta EVQ.LINK,Y
 				dex 
 				bne EVQI020
@@ -262,13 +262,13 @@ EVQI020				tay
 *
 * REP 60
 *
-PCLK				.eq $F0
-CKSUM				.eq $F2
-CLKICR				.eq $11 ; CLOCK INTERRUPT CONTROL REG
-CLKSTBY				.eq $16 ; CLOCK STANDBY INTERRUPT
-CLOCK				.eq $C070
+PCLK			.eq $F0
+CKSUM			.eq $F2
+CLKICR			.eq $11 ; CLOCK INTERRUPT CONTROL REG
+CLKSTBY			.eq $16 ; CLOCK STANDBY INTERRUPT
+CLOCK			.eq $C070
 *
-CLK.INIT				.eq *
+CLK.INIT		.eq *
 				lda #$D0
 				sta PCLK ;POINT (PCLK) TO 8F:FFD0
 				lda #$FF
@@ -279,7 +279,7 @@ CLK.INIT				.eq *
 				sta CKSUM ;INITIALIZE CHECKSUM
 *
 				ldy #$00
-CLK010				lda (PCLK),Y ;COPY SAVED CLOCK DATA
+CLK010			lda (PCLK),Y ;COPY SAVED CLOCK DATA
 				sta PCLOCK,Y ; TO PSEUDO CLOCK
 				eor CKSUM
 				sta CKSUM ;UPDATE CHECKSUM
@@ -291,10 +291,10 @@ CLK010				lda (PCLK),Y ;COPY SAVED CLOCK DATA
 				beq CLK030
 *
 				lda #$00
-CLK020				dey
+CLK020			dey
 				sta PCLOCK,Y ;ZERO PSEUDO CLOCK
 				bne CLK020
-CLK030				lda E.REG
+CLK030			lda E.REG
 				pha 
 				ora #$80 ; SET 1 MHZ
 				sta E.REG
@@ -320,10 +320,10 @@ CLK030				lda E.REG
 *
 * REP 60
 *
-CFMGR.INIT				.eq *
+CFMGR.INIT		.eq *
 				lda #$80
 				ldx #CFCB.MAX-1
-CFINIT010				sta CFCB.DEV,X
+CFINIT010		sta CFCB.DEV,X
 
 				dex 
 				bpl CFINIT010
@@ -338,17 +338,17 @@ CFINIT010				sta CFCB.DEV,X
 *
 * REP 60
 *
-D.TPARMX				.eq $C0
-REQCODE				.eq D.TPARMX+$00
-DNUM				.eq D.TPARMX+$01
-DNUM.TEMP				.bs 1
+D.TPARMX		.eq $C0
+REQCODE			.eq D.TPARMX+$00
+DNUM			.eq D.TPARMX+$01
+DNUM.TEMP		.bs 1
 *
 *
-DMGR.INIT				.eq *
+DMGR.INIT		.eq *
 				ldx MAX.DNUM
 				inc MAX.DNUM ; MAX.DNUM:=MAX DEV NUMBER IN SYSTEM+1
 				stx DNUM.TEMP
-DMI110				lda #8 ; INITIALIZE ALL DEVICES IN SYSTEM (D.INIT)
+DMI110			lda #8 ; INITIALIZE ALL DEVICES IN SYSTEM (D.INIT)
 				sta REQCODE
 				lda DNUM.TEMP
 				sta DNUM
@@ -366,13 +366,13 @@ DMI110				lda #8 ; INITIALIZE ALL DEVICES IN SYSTEM (D.INIT)
 *
 * REP 60
 *
-BMGR.INIT				.eq *
+BMGR.INIT		.eq *
 				lda #$FF ; USED WHEN FINDING LOWEST BUFFER IN TBL (BUFCOMPACT)
 				sta XBYTE.T
 *
 				ldx #BUF.CNT-1
 				lda #$80
-BUFI010				sta PGCT.T,X ;SET ALL ENTRIES "FREE"
+BUFI010			sta PGCT.T,X ;SET ALL ENTRIES "FREE"
 				dex 
 				bne BUFI010
 *
@@ -391,7 +391,7 @@ BUFI010				sta PGCT.T,X ;SET ALL ENTRIES "FREE"
 *
 * REP 60
 *
-MMGR.INIT				.eq *
+MMGR.INIT		.eq *
 *
 * INIT SEGMENT TABLE
 *
@@ -403,7 +403,7 @@ MMGR.INIT				.eq *
 				ldy #ST.CNT-1
 				lda #$80 ; SET LAST LINK TO NULL
 				sta ST.FLINK,Y
-MEMI010				tya
+MEMI010			tya
 				ora #$80
 				dey 
 
@@ -428,7 +428,7 @@ MEMI010				tya
 				clc 
 				rts ; NORMAL EXIT
 *
-MEMI.ERR				lda #MEM2SML ; FATAL ERR - MEM < 64K
+MEMI.ERR		lda #MEM2SML ; FATAL ERR - MEM < 64K
 				jsr SYSDEATH
 * PAGE
 * REP 60
@@ -437,8 +437,8 @@ MEMI.ERR				lda #MEM2SML ; FATAL ERR - MEM < 64K
 *
 * REP 60
 *
-SISTER				.eq $1400 ;BFM XPAGE
-BFM.INIT				.eq *
+SISTER			.eq $1400 ;BFM XPAGE
+BFM.INIT		.eq *
 				lda #BFMFCB1 ; ADDRESS OF PAGE 1 OF FCB
 				sta >FCBZPP+1
 				lda #BFMFCB2 ; AND PAGE 2
@@ -449,7 +449,7 @@ BFM.INIT				.eq *
 				sta SISTER+FCBZPP+1 ; PREPARE PART OF EXTEND BYTE
 				sta SISTER+FCBZPP+3
 				tay ; MAKE ZERO INTO INDEX
-CLRBUFFS				.eq *
+CLRBUFFS		.eq *
 				sta PATHBUF,Y ; PATHNAME BUFFER PAGE
 				sta VCB,Y ; VOLUME CONTROL BLOCK PAGE
 				sta (>FCBZPP),Y ; BOTH FILE CONTROL BLOCK PAGES
@@ -457,11 +457,11 @@ CLRBUFFS				.eq *
 				iny 
 				bne CLRBUFFS
 				ldx #$3F ; SIZE OF MY ZERO PAGE STUFF
-CLRZWRK				sta 0,X ; ZERO PAGE ZEROED
+CLRZWRK			sta 0,X ; ZERO PAGE ZEROED
 				sta WORKSPC,X
 				dex 
 				bpl CLRZWRK
-				lda #<PATHBUF
+				lda /PATHBUF
 				sta PFIXPTR+1
 				lda #BFMFCB1
 				sta FCBADDRH
@@ -473,11 +473,11 @@ CLRZWRK				sta 0,X ; ZERO PAGE ZEROED
 				rts 
 *
 LST ON
-ZZEND				.eq *
-ZZLEN				.eq ZZEND-ZZORG
+ZZEND			.eq *
+ZZLEN			.eq ZZEND-ZZORG
 IFNE ZZLEN-LENINIT
 FAIL 2,"SOSORG FILE IS INCORRECT FOR INIT"
-FIN
+				.fin
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: INIT.SRC
@@ -488,6 +488,6 @@ FIN
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.init
-LOAD /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.INIT
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM

@@ -7,12 +7,12 @@ NEW
 *************************************************************************
 * ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
 
-INCLUDE SOSORG,6,1,254
+* INCLUDE SOSORG,6,1,254
 				.or ???????
 ---------------------------------
 IFNE ZZLEN-LEN????
 FAIL 2,"SOSORG FILE IS INCORRECT FOR ??????"
-FIN
+				.fin
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: LCHK
@@ -21,3 +21,8 @@ FIN
 
 
 
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.LCHK
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
+ASM

@@ -9,9 +9,9 @@ NEW
 
 *				.TI "SOS 1.1 SYSTEM ERROR ROUTINES"
 * REL
-INCLUDE SOSORG,6,1,254
+* INCLUDE SOSORG,6,1,254
 				.or ORGSERR
-ZZORG				.eq *
+ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
 * COPYRIGHT (C) APPLE COMPUTER INC. 1980
@@ -38,33 +38,33 @@ ZZORG				.eq *
 *
 * REP 60
 *
-E.REG				.eq $FFDF
-Z.REG				.eq $FFD0
-B.REG				.eq $FFEF
+E.REG			.eq $FFDF
+Z.REG			.eq $FFD0
+B.REG			.eq $FFEF
 *
-S.SAVE				.eq $09 ; REGISTER SAVE AREA
-PCH.SAVE				.eq $08
-PCL.SAVE				.eq $07
-P.SAVE				.eq $06
-A.SAVE				.eq $05
-X.SAVE				.eq $04
-Y.SAVE				.eq $03
-E.SAVE				.eq $02
-Z.SAVE				.eq $01
-B.SAVE				.eq $00
+S.SAVE			.eq $09 ; REGISTER SAVE AREA
+PCH.SAVE		.eq $08
+PCL.SAVE		.eq $07
+P.SAVE			.eq $06
+A.SAVE			.eq $05
+X.SAVE			.eq $04
+Y.SAVE			.eq $03
+E.SAVE			.eq $02
+Z.SAVE			.eq $01
+B.SAVE			.eq $00
 *
-NMI.VECTOR				.eq $FFFA
+NMI.VECTOR		.eq $FFFA
 *
-TXT.CLR				.eq $C050
-MIX.CLR				.eq $C052
-HIRES.CLR				.eq $C056
+TXT.CLR			.eq $C050
+MIX.CLR			.eq $C052
+HIRES.CLR		.eq $C056
 *
-PG2.CLR				.eq $C054
+PG2.CLR			.eq $C054
 *
-MSGBASE				.eq $7E4
-MSGBASE2				.eq $BE4
-MSG				.as ' SYSTEM FAILURE = $'
-MSGLEN				.eq *-MSG
+MSGBASE			.eq $7E4
+MSGBASE2		.eq $BE4
+MSG			.as ' SYSTEM FAILURE = $'
+MSGLEN			.eq *-MSG
 * PAGE
 * REP 60
 *
@@ -75,7 +75,7 @@ MSGLEN				.eq *-MSG
 * AND THE CALL TO THIS ROUTINE MUST ALWAYS BE A JSR.
 *
 * REP 60
-SYSERR				.eq *
+SYSERR			.eq *
 *
 				sta SERR
 
@@ -87,7 +87,7 @@ SYSERR				.eq *
 				lda SERR
 				bne SERR.EXIT
 				clc 
-SERR.EXIT				rts ; RETURNS ONE LEVEL BEYOND CALLER
+SERR.EXIT		rts ; RETURNS ONE LEVEL BEYOND CALLER
 * PAGE
 * REP 60
 *
@@ -99,7 +99,7 @@ SERR.EXIT				rts ; RETURNS ONE LEVEL BEYOND CALLER
 * CALL TO THIS ROUTINE MUST ALWAYS BE A JSR.
 *
 * REP 60
-SYSDEATH				.eq *
+SYSDEATH		.eq *
 *
 				sta SDEATH.REGS+A.SAVE ; SAVE REGISTERS
 				stx SDEATH.REGS+X.SAVE
@@ -124,7 +124,7 @@ SYSDEATH				.eq *
 				cld 
 *
 				ldx #0 ; SAVE SYSTEM STACK PAGE IN PAGE $17
-SD005				lda $100,X
+SD005			lda $100,X
 				sta $1700,X
 				dex 
 				bne SD005
@@ -153,12 +153,12 @@ SD005				lda $100,X
 *
 				ldx #MSGLEN+1 ; ENSURE BKGRND SET TO INVERSE SPACES
 				lda #$20 ; SPACE CHAR W/INVERSE
-SD010				sta MSGBASE2-1,X
+SD010			sta MSGBASE2-1,X
 				dex 
 				bpl SD010
 *
-SD015				ldx #0 ; MOVE MSG TO TEXT SCREEN
-SD020				lda MSG,X
+SD015			ldx #0 ; MOVE MSG TO TEXT SCREEN
+SD020			lda MSG,X
 				sta MSGBASE-1,X
 
 				inx 
@@ -177,34 +177,34 @@ SD020				lda MSG,X
 				and #$0F
 				jsr PRINT ; SECOND DIGIT
 *
-				lda #>SD100
+				lda #SD100
 				sta NMI.VECTOR
-				lda #<SD100
+				lda /SD100
 				sta NMI.VECTOR+1
 *
 *
 				jmp * ; HANG UNTIL REBOOT (CTRL/RESET)
 * REP 60
-SD100				rti ; NMI VECTOR POINT HERE TO MASK THEM OUT
+SD100			rti ; NMI VECTOR POINT HERE TO MASK THEM OUT
 *
 *
 * PRINT SUBROUTINE
 *
-PRINT				.eq *
+PRINT			.eq *
 				cmp #$A
 				bcs PRNT100
 				adc #$30 ; "0"-"9"
 				bcc PRNT110 ; ALWAYS TAKEN
-PRNT100				adc #$36 ; "A"-"F"
-PRNT110				sta MSGBASE-1,X
+PRNT100			adc #$36 ; "A"-"F"
+PRNT110			sta MSGBASE-1,X
 				rts 
 *
 LST ON
-ZZEND				.eq *
-ZZLEN				.eq ZZEND-ZZORG
+ZZEND			.eq *
+ZZLEN			.eq ZZEND-ZZORG
 IFNE ZZLEN-LENSERR
 FAIL 2,"SOSORG FILE IS INCORRECT FOR SYSERR"
-FIN
+				.fin
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: SYSERR.SRC
@@ -215,6 +215,6 @@ FIN
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.syserr
-LOAD /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.SYSERR
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM

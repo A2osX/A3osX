@@ -101,9 +101,9 @@ NEW
 * REP 60
 * PAGE
 *
-IDBYTE				.da $81
+IDBYTE			.hs 81
 *
-ALLOCSIR				.eq *
+ALLOCSIR		.eq *
 				clc 
 				php 
 				sei 
@@ -123,7 +123,7 @@ ALLOCSIR				.eq *
 				sty SIRARGS+1 ;SET POINTER TO TABLE
 *
 				ldy #$00
-ASIR010				lda (SIRARGS),Y ;GET SIR NUMBER
+ASIR010			lda (SIRARGS),Y ;GET SIR NUMBER
 				cmp #SIRTBLSIZ
 				tax 
 				bcs ASIR020
@@ -153,8 +153,8 @@ ASIR010				lda (SIRARGS),Y ;GET SIR NUMBER
 				sta IDBYTE
 				bmi SIREXIT
 *
-ASIR020				stx SIRTEMP ;SAVE BAD SIR NUMBER
-ASIR030				sec
+ASIR020			stx SIRTEMP ;SAVE BAD SIR NUMBER
+ASIR030			sec
 				tya 
 				sbc #5
 				tay 
@@ -166,12 +166,12 @@ ASIR030				sec
 				sta SIRTABLE,X ;RELEASE ALLOCATED SIRS
 				beq ASIR030
 *
-ASIR040				ldx SIRTEMP ;RETURN BAD SIR
+ASIR040			ldx SIRTEMP ;RETURN BAD SIR
 				sec 
 *
 *
 *
-SIREXIT				pla
+SIREXIT			pla
 				sta Z.REG ;RESTORE Z REGISTER
 				pla 
 				sta E.REG ;RESTORE E REGISTER
@@ -179,12 +179,12 @@ SIREXIT				pla
 				pla 
 				ora #BITON0
 				pha 
-SIREXIT1				plp
+SIREXIT1		plp
 				rts 
 *
 *
 *
-DEALCSIR				.eq *
+DEALCSIR		.eq *
 				clc 
 				php 
 				sei 
@@ -204,7 +204,7 @@ DEALCSIR				.eq *
 				sty SIRARGS+1 ;SET POINTER TO TABLE
 *
 				ldy #$00
-DSIR010				lda (SIRARGS),Y ;GET SIR NUMBER
+DSIR010			lda (SIRARGS),Y ;GET SIR NUMBER
 				tax 
 				cpx #SIRTBLSIZ
 				bcs DSIR030
@@ -221,7 +221,7 @@ DSIR010				lda (SIRARGS),Y ;GET SIR NUMBER
 				bcc DSIR010
 *
 				ldy SIRARGSIZ
-DSIR020				sec
+DSIR020			sec
 				tya 
 				sbc #5
 				tay 
@@ -232,7 +232,7 @@ DSIR020				sec
 				sta SIRTABLE,X
 				beq DSIR020
 *
-DSIR030				sec
+DSIR030			sec
 				bcs SIREXIT
 *				.TI "SELECT I/O EXPANSION ROM"
 * REP 60
@@ -261,7 +261,7 @@ DSIR030				sec
 *
 * REP 60
 *
-SELC800				.eq *
+SELC800			.eq *
 				cmp #$05 ;CHECK SLOT NUMBER
 				bcs SC8EXIT ; INVALID
 				php 
@@ -271,9 +271,9 @@ SELC800				.eq *
 				sta CNADDR+2 ; AND MODIFY BIT ADDRESS
 				bit $C020
 				bit $CFFF ;DESELECT PREVIOUS SLOT
-CNADDR				bit $C0FF ; AND SELECT CURRENT SLOT
+CNADDR			bit $C0FF ; AND SELECT CURRENT SLOT
 				plp 
-SC8EXIT				rts
+SC8EXIT			rts
 *				.TI "NMI DISABLE / ENABLE"
 * REP 60
 *
@@ -285,7 +285,7 @@ SC8EXIT				rts
 *
 * REP 60
 *
-NMIDSBL				.eq *
+NMIDSBL			.eq *
 				ldx E.REG
 				bit NMIFLAG
 				bpl NDS020
@@ -295,22 +295,22 @@ NMIDSBL				.eq *
 				lda #$00
 				sta NMICNTR
 				sta NMICNTR+1
-NDS010				bit NMIFLAG ;NMI PENDING?
+NDS010			bit NMIFLAG ;NMI PENDING?
 				bpl NDS020 ; NO
 				inc NMICNTR ;BUMP NMI COUNTER
 				bne NDS010 ; AND RECHECK NMI FLAG
 				inc NMICNTR+1
 				bne NDS010
-				lda #>NMIHANG ;CAN'T LOCK NMI
+				lda #NMIHANG ;CAN'T LOCK NMI
 				jsr SYSDEATH
-NDS020				txa ;GET E.REG
+NDS020			txa ;GET E.REG
 				and #BITOFF4 ;DISABLE NMI
 				sta E.REG
 				rts 
 *
 *
 *
-NMIENBL				.eq *
+NMIENBL			.eq *
 				lda E.REG
 				ora #BITON4 ;ENABLE NMI
 				sta E.REG
@@ -323,7 +323,7 @@ NMIENBL				.eq *
 *
 * REP 60
 *
-NMIDBUG				.eq *
+NMIDBUG			.eq *
 
 				tsx ;SAVE THE STACK POINTER
 				stx NMISPSV
@@ -334,7 +334,7 @@ NMIDBUG				.eq *
 				sta E.REG
 				jsr $F901 ;CALL THE MONITOR
 *
-NMICONT				.eq *
+NMICONT			.eq *
 				lda E.REG
 				ora #BITON2 ;FORCE PRIMARY STACK
 				sta E.REG
@@ -399,7 +399,7 @@ NMICONT				.eq *
 *
 * REP 60
 *
-QUEEVENT				.eq *
+QUEEVENT		.eq *
 				clc 
 				php 
 				sei 
@@ -429,7 +429,7 @@ QUEEVENT				.eq *
 				sta EVQ.FREE
 *
 				ldy #EVQ.SIZ-2
-QEV010				lda (QEVARGS),Y ;COPY ARGUMENTS
+QEV010			lda (QEVARGS),Y ;COPY ARGUMENTS
 				sta EVQ.BANK,X ; INTO NEW ENTRY
 				dex 
 				dey 
@@ -437,7 +437,7 @@ QEV010				lda (QEVARGS),Y ;COPY ARGUMENTS
 *
 				ldx QEV.THIS
 				ldy #0
-QEV020				sty QEV.LAST
+QEV020			sty QEV.LAST
 				lda EVQ.LINK,Y
 				tay 
 				lda EVQ.PRI,Y ;SCAN EVENT QUEUE
@@ -450,22 +450,22 @@ QEV020				sty QEV.LAST
 				ldy QEV.LAST
 				sta EVQ.LINK,Y
 *
-Q.EXIT				pla
+Q.EXIT			pla
 				sta Z.REG ;RESTORE Z REGISTER
 				pla 
 				sta E.REG ;RESTORE E REGISTER
 				plp 
 				rts 
 *
-Q.FULL				lda #>EVQOVFL ;EVENT QUEUE OVERFLOW
+Q.FULL			lda #EVQOVFL ;EVENT QUEUE OVERFLOW
 				jsr SYSDEATH
 LST ON
 
-ZZEND				.eq *
-ZZLEN				.eq ZZEND-ZZORG
+ZZEND			.eq *
+ZZLEN			.eq ZZEND-ZZORG
 IFNE ZZLEN-LENIPL
 FAIL 2,"SOSORG FILE IS INCORRECT FOR IPL"
-FIN
+				.fin
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: IPL.SRC2
@@ -475,3 +475,8 @@ FIN
 
 
 
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.IPL.SRC2
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
+ASM

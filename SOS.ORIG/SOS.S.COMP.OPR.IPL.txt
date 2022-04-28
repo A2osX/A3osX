@@ -20,3 +20,8 @@ END
 
 
 
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.COMP.OPR.IPL
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
+ASM

@@ -17,7 +17,7 @@ NEW
 * DESTROYS: ALL REGISTERS
 * REP 40
 *
-UNITSEL				.eq *
+UNITSEL			.eq *
 				ldy D.UNITNUM ;GET DRIVENUM
 				lda #0 ;ASSUME NO SEEKWAIT
 				sta SEEKWAIT ; WILL BE NEEDED
@@ -41,7 +41,7 @@ UNITSEL				.eq *
 * REP 40
 * MOTOR(S) SPINNING: OURS?
 *
-SPINNING				.eq *
+SPINNING		.eq *
 				lda DRIVESEL,Y ;HAD WE BEEN SELECTED?
 				bne GOFORIT ;=>YES, GO FOR IT RIGHT AWAY.
 *
@@ -70,7 +70,7 @@ SPINNING				.eq *
 * DEPENDING OF HOW LONG THE MOTOR'S BEEN ON,
 * THIS COMMAND MAY REQUIRE A MOTOR DELAY.
 *
-GOFORIT				.eq *
+GOFORIT			.eq *
 				ldx D.COMMAND ;GET CURRENT COMMAND
 				lda MTIMES,X ;GET REQUIRED UPTIME FOR IT
 				sec 
@@ -84,7 +84,7 @@ GOFORIT				.eq *
 * ALL MOTORS WERE OFF. CHOOSE THE
 * APPROPRIATE MOTOR-ON TIME:
 *
-SETTIME				.eq *
+SETTIME			.eq *
 				lda #0 ;INDICATE THAT
 				sta UPTIME,Y ; THE DRIVE WAS OFF
 				ldx D.COMMAND ;GET CURRENT COMMAND
@@ -93,7 +93,7 @@ SETTIME				.eq *
 *
 * SELECT THE DRIVE & START IT:
 *
-SELECT				.eq *
+SELECT			.eq *
 				sta MONTIMEH ;NEGATE IT BECAUSE
 				lda #0 ; IT GETS INCREMENTED
 				sec ; INSTEAD OF
@@ -105,7 +105,7 @@ SELECT				.eq *
 				lda MS.INT ;MOTOR SELECT INTERNAL
 				jmp UNITRET ;=>ALL DONE!
 *
-SELEXT				.eq *
+SELEXT			.eq *
 				lda IS.EXT ;I/O SELECT EXTERNAL
 				cpy #2 ;ARE WE 2, 3, OR 4 ?
 				bcs NOTD2 ;=>DEFINITELY 3 OR 4
@@ -113,18 +113,18 @@ SELEXT				.eq *
 				lda MS.EXT2 ; ONLY .D2
 				jmp UNITRET ;=>ALL DONE!
 *
-NOTD2				.eq *
+NOTD2			.eq *
 				bne ISD4 ;=>DEFINITELY NOT 3
 				lda MS.EXT1 ;MOTOR SELECT
 				lda MD.EXT2 ; ONLY .D3
 				jmp UNITRET ;=>ALL DONE!
 *
-ISD4				.eq *
+ISD4			.eq *
 				lda MS.EXT1 ;MOTOR SELECT
 				lda MS.EXT2 ; ONLY .D4
 *
 *
-UNITRET				.eq *
+UNITRET			.eq *
 				lda MOTORON ;PROVIDE MOTOR POWER
 				lda #1 ;SAY WE'VE SELECTED
 				sta DRIVESEL,Y ; THIS DRIVE
@@ -137,14 +137,14 @@ UNITRET				.eq *
 				lda MONTIMEH ;ANY MOTORTIME?
 				bpl UNITRTS ;=>NO, WE GO FOR IT.
 				ldy #5 ;5*10 MS
-UNITDEL				.eq *
+UNITDEL			.eq *
 				lda #100 ;100*100US IS 10MS
 				jsr MSWAIT
 				dey 
 				bne UNITDEL
 				lda #2 ;INCLUDE THE 50MS
 				jsr ADDTIME ; IN MOTOR UPTIME(S)
-UNITRTS				.eq *
+UNITRTS			.eq *
 				rts 
 * SKP 5
 * REP 40
@@ -154,12 +154,12 @@ UNITRTS				.eq *
 * DESTROYS: AC,X
 * REP 40
 *
-EXTDESEL				.eq *
+EXTDESEL		.eq *
 				lda MD.EXT1 ;DESELECT ALL EXTERNAL
 				lda MD.EXT2 ; DRIVE MOTORS
 				ldx #3 ;SHOW THAT THEY ARE
 				lda #0 ; ARE ALL DEAD DUCKS
-EDS1				sta DRIVESEL,X
+EDS1			sta DRIVESEL,X
 
 				sta UPTIME,X ;DRIVE MOTORS ARE OFF
 				dex 
@@ -177,6 +177,6 @@ EDS1				sta DRIVESEL,X
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.disk3.usel
-LOAD /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.DISK3.USEL
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM

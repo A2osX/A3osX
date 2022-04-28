@@ -17,3 +17,8 @@ SL4:DR1:ASM BFM.INIT2.SRC,BFM.INIT2.OBJ,6,1
 
 
 
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.C.BI2
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
+ASM

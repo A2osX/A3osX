@@ -20,7 +20,7 @@ NEW
 *
 * REP 60
 *
-NXTFRSEG.I				.eq *
+NXTFRSEG.I		.eq *
 *
 * CFS.PTR := VRT.LIM
 * CFS.PREV := 0
@@ -39,7 +39,7 @@ NXTFRSEG.I				.eq *
 *
 * L0: IF CFS.NEXT=0 THEN DONE
 *
-FRSGI010				beq FRSGI.EXIT
+FRSGI010		beq FRSGI.EXIT
 *
 * IF ST.LIM(CFS.NEXT)<=VRT.LIM THEN GOTO L1
 *
@@ -61,7 +61,7 @@ FRSGI010				beq FRSGI.EXIT
 *
 * L1: IF ST.LIM(CFS.NEXT)<VRT.LIM THEN DONE
 *
-FRSGI020				lda ST.LIML,X
+FRSGI020		lda ST.LIML,X
 				cmp >VRT.LIM
 				lda ST.LIMH,X
 				sbc >VRT.LIM+1
@@ -70,7 +70,7 @@ FRSGI020				lda ST.LIML,X
 *
 				jsr NXTFRPG
 *
-FRSGI.EXIT				rts ; NORMAL EXIT
+FRSGI.EXIT		rts ; NORMAL EXIT
 * PAGE
 * REP 60
 *
@@ -91,7 +91,7 @@ FRSGI.EXIT				rts ; NORMAL EXIT
 *
 * REP 60
 *
-NXTFRSEG				.eq *
+NXTFRSEG		.eq *
 *
 * IF CFS.PTR="FFFF" THEN EXIT
 *
@@ -104,7 +104,7 @@ NXTFRSEG				.eq *
 * CFS.BLINK:=CFS.PREV
 * CFS.LIM:=CFS.PTR
 *
-FRSG010				lda CFS.PREV
+FRSG010			lda CFS.PREV
 				sta CFS.BLINK
 *
 				lda CFS.PTR
@@ -122,7 +122,7 @@ FRSG010				lda CFS.PREV
 				sta CFS.BASE+1
 				beq FRSG030
 *
-FRSG020				ldx CFS.NEXT
+FRSG020			ldx CFS.NEXT
 				clc 
 				lda ST.LIML,X
 				adc #1
@@ -133,7 +133,7 @@ FRSG020				ldx CFS.NEXT
 *
 * CFS.BASE0:=CFS.LIM AND $FF80
 *
-FRSG030				ldy CFS.LIM+1
+FRSG030			ldy CFS.LIM+1
 				sty CFS.BASE0+1
 				lda CFS.LIM
 				and #$80
@@ -154,7 +154,7 @@ FRSG030				ldy CFS.LIM+1
 *
 * IF CFS.BASE>=CFS.BASE0 THEN GOTO L1
 *
-FRSG035				lda CFS.BASE
+FRSG035			lda CFS.BASE
 				cmp CFS.BASE0
 				lda CFS.BASE+1
 				sbc CFS.BASE0+1
@@ -175,7 +175,7 @@ FRSG035				lda CFS.BASE
 * IF CFS.BASE<CFS.BASE1 AND SEARCH MODE=1
 * THEN CFS.BASE:=CFS.BASE1
 *
-FRSG040				lda CFS.BASE
+FRSG040			lda CFS.BASE
 				cmp CFS.BASE1
 				lda CFS.BASE+1
 				sbc CFS.BASE1+1
@@ -192,7 +192,7 @@ FRSG040				lda CFS.BASE
 *
 * L1: CFS.PGCT:=CFS.LIM-CFS.BASE+1
 *
-FRSG050				sec
+FRSG050			sec
 				lda CFS.LIM
 				sbc CFS.BASE
 				sta CFS.PGCT
@@ -207,7 +207,7 @@ FRSG050				sec
 *
 * IF SEARCH MODE<>1 THEN L2:
 *
-FRSG052				lda SRCHMODE
+FRSG052			lda SRCHMODE
 				cmp #1
 				bne FRSG060
 *
@@ -223,14 +223,14 @@ FRSG052				lda SRCHMODE
 				ldx CFS.BASE0
 				bne FRSG055
 				dey 
-FRSG055				dex
+FRSG055			dex
 				stx CFS.PTR
 				sty CFS.PTR+1
 *
 				jmp FRSG070 ; AND EXIT
 * L2: CFS.PTR:=CFS.BASE-1
 *
-FRSG060				sec
+FRSG060			sec
 				lda CFS.BASE
 				sbc #1
 				sta CFS.PTR
@@ -259,7 +259,7 @@ FRSG060				sec
 *
 				jsr NXTFRPG
 *
-FRSG070				clc
+FRSG070			clc
 				rts ; EXIT - FREE SEGMENT FOUND
 * PAGE
 * REP 60
@@ -271,7 +271,7 @@ FRSG070				clc
 *
 * REP 60
 *
-NXTFRPG				.eq *
+NXTFRPG			.eq *
 *
 * L0: CFS.PTR:=ST.BASE(CFS.NEXT)-1
 * IF CFS.PTR="FFFF" THEN DONE
@@ -305,7 +305,7 @@ NXTFRPG				.eq *
 				sbc CFS.PTR+1
 				bcs NXTFRPG
 *
-NFRPG.EXIT				rts ; NORMAL EXIT
+NFRPG.EXIT		rts ; NORMAL EXIT
 * PAGE
 * REP 60
 *
@@ -313,7 +313,7 @@ NFRPG.EXIT				rts ; NORMAL EXIT
 *
 * REP 60
 *
-CHG.SEG				.eq *
+CHG.SEG			.eq *
 *
 * MOVE CALLER'S PAGE COUNT TO INTERNAL BUFFER
 *
@@ -334,12 +334,12 @@ CHG.SEG				.eq *
 				lda ST.FLINK,X
 				bpl CHGS005
 *
-CHGS.ERR				lda #BADSEGNUM
+CHGS.ERR		lda #BADSEGNUM
 				jsr SYSERR ; ERR EXIT
 * REP 35
 * CASE OF CHANGE MODE
 * REP 35
-CHGS005				ldy CHG.MODE
+CHGS005			ldy CHG.MODE
 				cpy #1
 				bcc CHGS010
 				beq CHGS020
@@ -355,7 +355,7 @@ CHGS005				ldy CHG.MODE
 * REP 35
 * CHG.NEW:=ST.BASE(SEG#)+PGCT
 *
-CHGS010				clc
+CHGS010			clc
 				lda ST.BASEL,X
 				adc CHG.PGCTX
 				sta CHG.NEW
@@ -375,18 +375,18 @@ CHGS010				clc
 *
 * OTHERWISE, CHG.NEW:=ST.LIM(SEG#)
 *
-CHGS014				lda ST.LIML,X
+CHGS014			lda ST.LIML,X
 				sta CHG.NEW
 				lda ST.LIMH,X
 				sta CHG.NEW+1
 *
-CHGS016				jmp CHGS.EXIT
+CHGS016			jmp CHGS.EXIT
 * REP 35
 * CHANGE MODE = 1(BASE DOWN)
 * REP 35
 * CHG.NEW:=ST.BASE(SEG#)-PGCT
 *
-CHGS020				sec
+CHGS020			sec
 				lda ST.BASEL,X
 				sbc CHG.PGCTX
 				sta CHG.NEW
@@ -400,7 +400,7 @@ CHGS020				sec
 * REP 35
 * CHG.NEW:=ST.LIM(SEG#)+PGCT
 *
-CHGS030				clc
+CHGS030			clc
 				lda ST.LIML,X
 				adc CHG.PGCTX
 				sta CHG.NEW
@@ -415,7 +415,7 @@ CHGS030				clc
 * REP 35
 * CHG.NEW:=ST.LIM(SEG#)-PGCT
 *
-CHGS040				sec
+CHGS040			sec
 				lda ST.LIML,X
 				sbc CHG.PGCTX
 				sta CHG.NEW
@@ -434,39 +434,39 @@ CHGS040				sec
 *
 * OTHERWISE CHG.NEW:=ST.BASE(SEG#)
 *
-CHGS044				lda ST.BASEL,X
+CHGS044			lda ST.BASEL,X
 				sta CHG.NEW
 				lda ST.BASEH,X
 				sta CHG.NEW+1
 *
-CHGS046				jmp CHGS.EXIT
+CHGS046			jmp CHGS.EXIT
 *
 * DETERMINE NEW BANK/PAGE'S REGION,
 * IF NEW BANK/PAGE IS INVALID THEN
 * SET TO BASE OR LIMIT (CASE CHANGE MODE)
 *
-CHGS050				ldx CHG.NEW
+CHGS050			ldx CHG.NEW
 				ldy CHG.NEW+1
 				jsr REGION
 				bcs CHGS052
 				bne CHGS052
 				beq CHGS100
-CHGS052				lda CHG.MODE
+CHGS052			lda CHG.MODE
 				cmp #1
 				bne CHGS054
-				ldx #>VRT.BASE
-				ldy #<VRT.BASE
+				ldx #VRT.BASE
+				ldy /VRT.BASE
 				jmp CHGS056
-CHGS054				ldx >VRT.LIM
+CHGS054			ldx >VRT.LIM
 				ldy >VRT.LIM+1
-CHGS056				stx CHG.NEW
+CHGS056			stx CHG.NEW
 				sty CHG.NEW+1
 * PAGE
 *
 * COMPUTE BANK/PAGE OF ADJACENT SEGMENT, IF ANY
 * CASE CHANGE MODE
 *
-CHGS100				ldx CHG.NUM
+CHGS100			ldx CHG.NUM
 				lda CHG.MODE
 				cmp #1
 				bne CHGS200
@@ -483,16 +483,16 @@ CHGS100				ldx CHG.NUM
 				bne CHGS110
 				iny 
 * IF CHG.NEW < X,Y THEN CHG.NEW:=X,Y
-CHGS110				cpy CHG.NEW+1
+CHGS110			cpy CHG.NEW+1
 				bcc CHGS.EXIT
 				beq CHGS120
 				bcs CHGS300
-CHGS120				cpx CHG.NEW
+CHGS120			cpx CHG.NEW
 
 				bcc CHGS.EXIT
 				bcs CHGS300
 * "2" IF ST.BLINK(SEG#)=0 THEN EXIT
-CHGS200				lda ST.BLINK,X
+CHGS200			lda ST.BLINK,X
 				beq CHGS.EXIT
 * X,Y:= ST.BASE(ST.BLINK(SEG#))-1
 				tay 
@@ -503,16 +503,16 @@ CHGS200				lda ST.BLINK,X
 				txa 
 				bne CHGS210
 				dey 
-CHGS210				dex
+CHGS210			dex
 * IF CHG.NEW > X,Y THEN CHG.NEW:=X,Y
 				cpy CHG.NEW+1
 				bcc CHGS300
 				beq CHGS220
 				bcs CHGS.EXIT
-CHGS220				cpx CHG.NEW
+CHGS220			cpx CHG.NEW
 				bcs CHGS.EXIT
 *
-CHGS300				stx CHG.NEW
+CHGS300			stx CHG.NEW
 				sty CHG.NEW+1
 * PAGE
 * REP 35
@@ -521,7 +521,7 @@ CHGS300				stx CHG.NEW
 * (CASE OF CHG.MODE)
 *
 * REP 35
-CHGS.EXIT				ldx CHG.NUM
+CHGS.EXIT		ldx CHG.NUM
 				ldy #0
 				lda CHG.MODE
 				cmp #1
@@ -533,7 +533,7 @@ CHGS.EXIT				ldx CHG.NUM
 *
 * "0" -- PAGECOUNT:=NEW-BASE
 *
-CHGS500				sec
+CHGS500			sec
 				lda CHG.NEW
 				sbc ST.BASEL,X
 				sta (CHG.PGCT),Y
@@ -543,7 +543,7 @@ CHGS500				sec
 *
 * "1" -- PAGECOUNT:=BASE-NEW
 *
-CHGS510				sec
+CHGS510			sec
 				lda ST.BASEL,X
 				sbc CHG.NEW
 				sta (CHG.PGCT),Y
@@ -553,7 +553,7 @@ CHGS510				sec
 *
 * "2" -- PAGECOUNT:=NEW-LIM
 *
-CHGS520				sec
+CHGS520			sec
 				lda CHG.NEW
 				sbc ST.LIML,X
 				sta (CHG.PGCT),Y
@@ -563,7 +563,7 @@ CHGS520				sec
 *
 * "3" -- PAGECOUNT:=LIM-NEW
 *
-CHGS530				sec
+CHGS530			sec
 				lda ST.LIML,X
 				sbc CHG.NEW
 				sta (CHG.PGCT),Y
@@ -571,7 +571,7 @@ CHGS530				sec
 				sbc CHG.NEW+1
 *
 
-CHGS600				iny
+CHGS600			iny
 				sta (CHG.PGCT),Y
 *
 * IF NEW PAGE COUNT < REQUESTED PAGECOUNT THEN ERR
@@ -588,7 +588,7 @@ CHGS600				iny
 *
 * OTHERWISE, ENTER CHG.NEW IN SEGMENT TABLE AND EXIT
 *
-CHGS610				ldx CHG.NUM
+CHGS610			ldx CHG.NUM
 				lda CHG.MODE
 				cmp #2
 				lda CHG.NEW
@@ -602,7 +602,7 @@ CHGS610				ldx CHG.NUM
 				rts ; NORMAL EXIT
 *
 *
-CHGS620				sta ST.LIML,X
+CHGS620			sta ST.LIML,X
 				tya 
 				sta ST.LIMH,X
 				clc 
@@ -620,6 +620,6 @@ CHGS620				sta ST.LIML,X
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.memmgr.b
-LOAD /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.MEMMGR.B
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM

@@ -14,7 +14,7 @@ NEW
 *
 * REP 60
 *
-GET.SEG.INFO				.eq *
+GET.SEG.INFO		.eq *
 *
 * IF SEG# OUT OF BOUNDS OR ST.FLINK(SEG#)=ST.FREE THEN ERR
 *
@@ -73,7 +73,7 @@ GET.SEG.INFO				.eq *
 *
 * RETURN PAGE COUNT TO CALLER
 *
-GSI010				tya
+GSI010			tya
 				ldy #0
 				sta (GSI.PGCT),Y
 				iny 
@@ -84,7 +84,7 @@ GSI010				tya
 				clc 
 				rts ; NORMAL EXIT
 *
-GSI.ERR				lda #BADSEGNUM
+GSI.ERR			lda #BADSEGNUM
 				jsr SYSERR ; ERR EXIT
 * PAGE
 * REP 60
@@ -94,7 +94,7 @@ GSI.ERR				lda #BADSEGNUM
 *
 * REP 60
 *
-GET.SEG.NUM				.eq *
+GET.SEG.NUM		.eq *
 *
 * CONVERT BANKPAGE TO INTERNAL FORMAT
 *
@@ -112,7 +112,7 @@ GET.SEG.NUM				.eq *
 *
 * L1: IF BANKPAGE>ST.LIM(SEG#) THEN ERR
 *
-GSN010				tax
+GSN010			tax
 				lda ST.LIML,X
 				cmp GSN.BKPG
 				lda ST.LIMH,X
@@ -135,15 +135,15 @@ GSN010				tax
 *
 * RETURN SEG# TO CALLER
 *
-GSN020				ldy #0
+GSN020			ldy #0
 				txa 
 				sta (GSN.NUM),Y
 				clc 
 				rts ; NORMAL EXIT
 *
-GSN.ERR				rts ; ERROR EXIT
+GSN.ERR			rts ; ERROR EXIT
 *
-GSN.ERR1				lda #SEGNOTFND
+GSN.ERR1		lda #SEGNOTFND
 				jsr SYSERR ; ERROR EXIT
 * PAGE
 * REP 60
@@ -152,7 +152,7 @@ GSN.ERR1				lda #SEGNOTFND
 *
 * REP 60
 *
-RELEASE.SEG				.eq *
+RELEASE.SEG		.eq *
 *
 * IF ST.FLINK(SEG#)=ST.FREE THEN ERR
 *
@@ -163,30 +163,30 @@ RELEASE.SEG				.eq *
 
 				lda ST.FLINK,X
 				bmi RLS.ERR ; ERR - INVALID SEGNUM
-				bpl REL.SEG ; RELEASE.SEG(SEG#>0)
+				bpl REL.SEG ; RELEASE.SEG(SEG#0)
 * REP 35
 *
 * RELEASE ALL
 *
 * REP 35
-RLS.ALL				ldx ST.ENTRY
+RLS.ALL			ldx ST.ENTRY
 				beq RLS0.EXIT
 				stx RLS.NUM
 *
-RLS0.LOOP				lda ST.ID,X
+RLS0.LOOP		lda ST.ID,X
 				cmp #$10 ; CARRY SET/CLEARED HERE
 *
 				lda ST.FLINK,X
 				pha 
 				bcc RLS006 ; IF ID=SYS SEG THEN SKIP
 				jsr REL.SEG ; RELEASE ONE SEGMENT
-RLS006				pla
+RLS006			pla
 				beq RLS0.EXIT
 				sta RLS.NUM
 				tax 
 				bne RLS0.LOOP ; ALWAYS TAKEN
 *
-RLS0.EXIT				clc
+RLS0.EXIT		clc
 				rts ; NORMAL EXIT ; ALL NON SYSTEM SEGMENTS RELEASED.
 * REP 35
 *
@@ -196,7 +196,7 @@ RLS0.EXIT				clc
 * Y:=ST.FLINK(SEG#)
 * X:=ST.BLINK(SEG#)
 *
-REL.SEG				tay
+REL.SEG			tay
 				lda ST.BLINK,X
 				tax 
 *
@@ -207,19 +207,19 @@ REL.SEG				tay
 				tya 
 				sta ST.FLINK,X
 				jmp RLS020
-RLS010				sty ST.ENTRY
+RLS010			sty ST.ENTRY
 *
 * IF Y<>0 THEN ST.BLINK(Y):=X
 *
 				tya 
-RLS020				beq RLS030
+RLS020			beq RLS030
 				txa 
 				sta ST.BLINK,Y
 *
 * ST.FLINK(SEG#):=ST.FREE
 * ST.FREE:=SEG# AND #$80
 *
-RLS030				lda ST.FREE
+RLS030			lda ST.FREE
 				ldx RLS.NUM
 				sta ST.FLINK,X
 				txa 
@@ -229,7 +229,7 @@ RLS030				lda ST.FREE
 				clc 
 				rts ; NORMAL EXIT
 *
-RLS.ERR				lda #BADSEGNUM
+RLS.ERR			lda #BADSEGNUM
 				jsr SYSERR ; ERR EXIT
 * PAGE
 * REP 60
@@ -248,7 +248,7 @@ RLS.ERR				lda #BADSEGNUM
 *
 * REP 60
 *
-CNVRT.IBP				.eq *
+CNVRT.IBP		.eq *
 *
 * CONVERT FROM EXTERNAL TO INTERNAL FORMAT
 *
@@ -267,20 +267,20 @@ CNVRT.IBP				.eq *
 				sbc #$20
 				jmp CNVI030
 *
-CNVI010				cmp #$20 ; BANK = "F"
+CNVI010			cmp #$20 ; BANK = "F"
 				bcs CNVI.ERR1
 				clc 
 				adc #$80
 				jmp CNVI030
 *
-CNVI020				cpx #$10 ; BANK = "10"
+CNVI020			cpx #$10 ; BANK = "10"
 				bne CNVI.ERR1
 				cmp #$A0
 				bcc CNVI.ERR1
 				sec 
 				sbc #$80
 *
-CNVI030				tay ; SHIFT BANK RIGHT ONE BIT
+CNVI030			tay ; SHIFT BANK RIGHT ONE BIT
 				txa ; INTO HIGH BIT OF PAGE BYTE.
 				lsr A
 				tax 
@@ -290,7 +290,7 @@ CNVI030				tay ; SHIFT BANK RIGHT ONE BIT
 *
 * EXCHANGE X & Y
 *
-CNVI040				pha
+CNVI040			pha
 				txa 
 				tay 
 				pla 
@@ -303,7 +303,7 @@ CNVI040				pha
 *
 				rts ; NORMAL EXIT
 *
-CNVI.ERR1				lda #BADBKPG
+CNVI.ERR1		lda #BADBKPG
 				jsr SYSERR
 * PAGE
 * REP 60
@@ -319,7 +319,7 @@ CNVI.ERR1				lda #BADBKPG
 *
 * REP 60
 *
-CNVRT.XBP				.eq *
+CNVRT.XBP		.eq *
 *
 * CONVERT FROM INTERNAL TO EXTERNAL FORMAT
 *
@@ -344,12 +344,12 @@ CNVRT.XBP				.eq *
 				adc #$20
 				jmp CNVX020
 *
-CNVX010				clc ; BANK = "10"
+CNVX010			clc ; BANK = "10"
 				adc #$80
 *
 * EXCHANGE X & Y
 *
-CNVX020				pha
+CNVX020			pha
 				tya 
 				tax 
 				pla 
@@ -369,42 +369,42 @@ CNVX020				pha
 *
 * REP 60
 *
-REGION				.eq *
+REGION			.eq *
 				stx RGN.BKPG
 				sty RGN.BKPG+1
 *
 * IF BANKPAGE>PHY2LIM THEN ERR
 *
-				lda #>PHY2LIM
+				lda #PHY2LIM
 				cmp RGN.BKPG
-				lda #<PHY2LIM
+				lda /PHY2LIM
 				sbc RGN.BKPG+1
 				bcc RGN.ERR ; ERR - INVALID BANK PAGE
 *
 * IF BANKPAGE>=PHY2BASE THEN REGION:=2
 *
 				lda RGN.BKPG
-				cmp #>PHY2BASE
+				cmp #PHY2BASE
 				lda RGN.BKPG+1
-				sbc #<PHY2BASE
+				sbc /PHY2BASE
 				bcc RGN010
 				lda #2
 				bne RGN040
 *
 * IF BANKPAGE>PHY1LIMIT THEN ERR
 *
-RGN010				lda #>PHY1LIM
+RGN010			lda #PHY1LIM
 				cmp RGN.BKPG
-				lda #<PHY1LIM
+				lda /PHY1LIM
 				sbc RGN.BKPG+1
 				bcc RGN.ERR ; ERR - INVALID BANK PAGE
 *
 * IF BANKPAGE>=PHY1BASE THEN REGION:=1
 *
 				lda RGN.BKPG
-				cmp #>PHY1BASE
+				cmp #PHY1BASE
 				lda RGN.BKPG+1
-				sbc #<PHY1BASE
+				sbc /PHY1BASE
 				bcc RGN020
 
 				lda #1
@@ -412,17 +412,17 @@ RGN010				lda #>PHY1LIM
 *
 * IF BANKPAGE>VIRTUAL LIMIT THEN ERR
 *
-RGN020				lda >VRT.LIM
+RGN020			lda >VRT.LIM
 				cmp RGN.BKPG
 				lda >VRT.LIM+1
 				sbc RGN.BKPG+1
 				bcc RGN.ERR
 				lda #0
 *
-RGN040				clc ; "N" FLAG ALWAYS REFLECTS REGION VAL IN A REG!
+RGN040			clc ; "N" FLAG ALWAYS REFLECTS REGION VAL IN A REG!
 				rts ; NORMAL EXIT
 *
-RGN.ERR				sec ; INVALID BANK PAGE
+RGN.ERR			sec ; INVALID BANK PAGE
 				rts 
 * PAGE
 * REP 60
@@ -435,7 +435,7 @@ RGN.ERR				sec ; INVALID BANK PAGE
 *
 * REP 60
 *
-GET.FREE				.eq *
+GET.FREE		.eq *
 *
 * SAVE PREV SEG # IN X
 * NOTE: PREV SEG # CARRIED IN X
@@ -470,7 +470,7 @@ GET.FREE				.eq *
 *
 * OTHERWISE LINK NEW ENTRY TO PREV SEG #
 *
-GTFR010				lda ST.FLINK,X
+GTFR010			lda ST.FLINK,X
 				sta ST.FLINK,Y
 				txa 
 				sta ST.BLINK,Y
@@ -479,7 +479,7 @@ GTFR010				lda ST.FLINK,X
 *
 * IF ST.FLINK(NEW)<>NULL THEN
 * ST.BLINK(ST.FLINK(NEW)):=NEWSEG #
-GTFR020				lda ST.FLINK,Y
+GTFR020			lda ST.FLINK,Y
 				beq GTFR030
 				lda ST.FLINK,Y
 				tax 
@@ -489,19 +489,19 @@ GTFR020				lda ST.FLINK,Y
 * RETURN WITH NEW SEG #
 *
 
-GTFR030				tya
+GTFR030			tya
 				clc 
 				rts ; NORMAL EXIT
 *
-GTFR.ERR				lda #SEGTBLFULL
+GTFR.ERR		lda #SEGTBLFULL
 				jsr SYSERR
 *
 LST ON
-ZZEND				.eq *
-ZZLEN				.eq ZZEND-ZZORG
+ZZEND			.eq *
+ZZLEN			.eq ZZEND-ZZORG
 IFNE ZZLEN-LENMEMMG
 FAIL 2,"SOSORG FILE IS INCORRECT FOR MEMMGR"
-FIN
+				.fin
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: MEMMGR.C.SRC
@@ -513,6 +513,6 @@ FIN
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.memmgr.c
-LOAD /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.MEMMGR.C
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM

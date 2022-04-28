@@ -3,11 +3,12 @@ NEW
 *--------------------------------------
 				.LIST OFF
 				.OP 6502
-				.OR $FE00
+				.OR $2000
 				.TF /A3OSX.BUILD/SOS.KERNEL
 *--------------------------------------
-				.INB /A3OSX.BUILD/SOS.13/sos.s.ldr
+				.INB /A3OSX.BUILD/SOS.ORIG/SOS.S.SOSORG
+				.INB /A3OSX.BUILD/SOS.ORIG/SOS.S.DISK3
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM

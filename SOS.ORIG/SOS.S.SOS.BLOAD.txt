@@ -38,3 +38,8 @@ NOMON I
 
 
 
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.SOS.BLOAD
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
+ASM

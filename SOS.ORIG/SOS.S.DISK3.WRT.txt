@@ -12,7 +12,7 @@ NEW
 * --- WRITE ---
 * REP 40
 *
-WRITEREQ				.eq *
+WRITEREQ		.eq *
 				jsr BLK2SECT ;COMPUTE TRK/SECTOR THIS BLOCK
 				lda E.REG ;SET 2 MHZ
 				and #$7F
@@ -38,14 +38,14 @@ WRITEREQ				.eq *
 				lda #0 ;GOOD RETURN
 				jmp EXIT
 *
-WRITERR				.eq *
+WRITERR			.eq *
 				jmp EXIT ;RETURN ERROR CODE
 * PAGE
 * REP 40
 * --- STATUS ---
 * REP 40
 *
-STATUS				.eq *
+STATUS			.eq *
 				ldx #$60 ;DUMMY SLOT
 				lda Q6H,X ;SENSE WRITE PROTECT
 				lda Q7L,X
@@ -63,7 +63,7 @@ STATUS				.eq *
 * --- INIT ---
 * REP 40
 *
-INIT				.eq *
+INIT			.eq *
 				lda INITFLAG ;INIT'ED YET?
 				bmi GOODINIT ;=>YES, DONE
 *
@@ -74,7 +74,7 @@ INIT				.eq *
 				lda #0 ;CLEAR STUFF OUT
 				sta PREVUNIT ;SOSBOOT JUST USED .D1
 				ldy #4
-CLRDRVS				.eq *
+CLRDRVS			.eq *
 				lda #0
 				sta DRIVESEL-1,Y ;NOBODY SELECTED
 				sta UPTIME-1,Y ;ALL OFF
@@ -82,7 +82,7 @@ CLRDRVS				.eq *
 				sta DRVTRACK-1,Y
 				dey 
 				bne CLRDRVS
-DO 1-TEST ;ONLY IF NOT TESTING
+				.do 1-TEST ;ONLY IF NOT TESTING
 *
 * SET UP .D1 SINCE LOADER'S USING IT:
 *
@@ -93,16 +93,16 @@ DO 1-TEST ;ONLY IF NOT TESTING
 				beq INIT2 ;=>NO, MOTOR'S OFF
 				lda #T200MS ;UPTIME GOOD FOR READS
 				sta UPTIME+0
-INIT2				.eq *
+INIT2			.eq *
 				lda #1
 				sta DRIVESEL+0 ;.D1 IS THE CURRENT DRIVE
 				lda $0300+CURTRK ;RETRIEVE CURRENT TRACK
 				sta DRVTRACK+0 ;REMEMBER IT
-FIN
+				.fin
 *
 * SET UP JMP TABLE FOR CORRECT ROM:
 *
-DO REV0ROM ;ONLY IF SUPPORTING IT!
+				.do REV0ROM ;ONLY IF SUPPORTING IT!
 				lda $F1B9 ;LOOK FOR START OF RDADR
 				cmp #$A0 ;IS IT RDADR (REV1)?
 				beq INITREV1 ;=>YES
@@ -110,33 +110,33 @@ DO REV0ROM ;ONLY IF SUPPORTING IT!
 				bne INITERR ;=>NEITHER!
 				ldy #0 ;REV=0
 				beq INITVECT ;(ALWAYS TAKEN)
-INITREV1				.eq *
+INITREV1		.eq *
 				ldy #VSIZE
-INITVECT				.eq *
+INITVECT		.eq *
 				sty ROMREV ;SET ROM REVISION INDICATOR
 				ldx #VSIZE
-MOVEVECT				.eq *
+MOVEVECT		.eq *
 				lda REV0,Y ;GET A BYTE
 				sta JMPTAB,Y ;MOVE IT
 				iny 
 				dex 
 				bne MOVEVECT
-FIN
-GOODINIT				.eq *
+				.fin
+GOODINIT		.eq *
 				lda #0 ;RETCODE=GOOD, IF YOU CARE
 				clc ;SAY 'GOOD INIT'
 				bcc EXIT ;(ALWAYS TAKEN)
-DO REV0ROM
-INITERR				.eq *
+				.do REV0ROM
+INITERR			.eq *
 				sec ;SAY 'BAD INIT'
 * FALL THRU TO EXIT
-FIN
+				.fin
 * PAGE
 * REP 40
 * -- EXIT PATH --
 * REP 40
 *
-EXIT				.eq *
+EXIT			.eq *
 				pha ;SAVE RETURN CODE
 *
 * UPDATE UPTIME BY 50 MS (3 SECTOR-TIMES)
@@ -150,7 +150,7 @@ EXIT				.eq *
 *
 * RESTORE CALLER ENVIRONMENT:
 *
-EXIT2				.eq *
+EXIT2			.eq *
 				lda E.REG ;GET CURRENT STATE
 				and #$20 ; OF THE SCREEN
 				ora ESAVE ;MERGE WITH CALLER STATE
@@ -158,16 +158,16 @@ EXIT2				.eq *
 				jsr FIXIRQ ;RE-ENABLE IRQ IF OK
 				lda MOTOROFF ;START MOTOR-OFF TIMEOUT
 				pla ;RESTORE RETURN CODE
-DO TEST ;IF TEST, NO SYSERR
+				.do TEST ;IF TEST, NO SYSERR
 				rts 
 
-ELSE
+				.else
 				bne GOERR ;=>ERROR RETURN VIA SYSERR
 				clc 
 				rts ;GOOD RETURN W/CARRY CLEAR
-GOERR				.eq *
+GOERR			.eq *
 				jsr SYSERR ;RETURN VIA SYSERR
-FIN
+				.fin
 
 * CHN DISK3.SIO.SRC
 
@@ -179,6 +179,6 @@ FIN
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.disk3.wrt
-LOAD /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.DISK3.WRT
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM

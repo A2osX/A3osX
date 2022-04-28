@@ -16,27 +16,47 @@ s@^(EXTRN)@* \1@ig;
 s@================================================================================================@@ig;
 s@^FILE: \"SOS\.(.*)\.TEXT\"@FILE: SOS.S.\1@ig;
 
+# Addressing mode MSB/LSB
+s@\#\>@#@ig;
+s@\#\<@/@ig;
+
 # Equates, almost like opcodes -> .eq
 s@^([A-Z0-9.]+)\ EQU @\1				.eq @ig;
 
 # Title (ignored)
 s@^SBTL @*				.TI @ig;
 
+# DSECT/DEND
+s@^DSECT$@				.ph@ig;
+s@^DEND$@				.ep@ig;
+
+# DO/ELSE/FIN
+s@^DO @				.do @ig;
+s@^ELSE$@				.else@ig;
+s@^FIN$@				.fin@ig;
+
+# Include
+s@^INCLUDE @* INCLUDE @ig;
+
 # Define Word DW -> .da
 s@^DW @				.da @ig;
 s@^([A-Z0-9.]+)\ DW @\1				.da @ig;
 
-# Define Bytes DB/DFB -> .da
-s@^DB @				.da @ig;
-s@^DFB @				.da @ig;
-s@^([A-Z0-9.]+)\ DB @\1				.da @ig;
-s@^([A-Z0-9.]+)\ DFB @\1				.da @ig;
+# Define Bytes DB/DFB -> .hs (mostly broken)
+s@^DB @				.hs @ig;
+s@^DFB @				.hs @ig;
+s@^([A-Z0-9.]+)\ DB @\1				.hs @ig;
+s@^([A-Z0-9.]+)\ DFB @\1				.hs @ig;
 
 # Define Storage DS -> .BS
 s@^([A-Z0-9.]+)\ DS @\1				.bs @ig;
+s@^DS @				.bs @ig;
 
-# ASCII strings ASC -> .AS
+# ASCII strings ASC/CHR -> .AS
 s@^([A-Z0-9.]+)\ ASC @\1				.as @ig;
+s@^([A-Z0-9.]+)\ CHR @\1				.as @ig;
+s@^ASC @				.as @ig;
+s@^CHR @				.as @ig;
 
 # Origin ORG -> .or
 s@^ORG @				.or @ig;
@@ -269,3 +289,8 @@ s@^TYA$@				tya @ig;
 s@^TYA(\ )@				tya @ig;
 s@^([A-Z0-9.]+)\ TYA$@\1				tya@ig;
 s@^([A-Z0-9.]+)\ TYA @\1				tya @ig;
+
+# Repair tabs
+s@^([A-Z0-9.]{2,7}	)	@\1@ig;
+s@^([A-Z0-9.]{8,12})\t\t\t@\1\t@ig;
+

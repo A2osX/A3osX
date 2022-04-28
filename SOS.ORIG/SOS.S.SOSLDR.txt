@@ -10,7 +10,7 @@ NEW
 *				.TI "SOS 1.1 SOS LOADER"
 * REL
 				.or $1E00
-ZZORG				.eq *
+ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 100
 * COPYRIGHT (C) APPLE COMPUTER INC. 1980
@@ -139,6 +139,6 @@ ZZORG				.eq *
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.sosldr
-LOAD /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.SOSLDR
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM

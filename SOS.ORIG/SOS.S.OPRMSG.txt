@@ -9,9 +9,9 @@ NEW
 
 *				.TI "SOS 1.1 OPERATOR MESSAGE/REPLY"
 * REL
-INCLUDE SOSORG,6,1,254
+* INCLUDE SOSORG,6,1,254
 				.or ORGOMSG
-ZZORG				.eq *
+ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
 *
@@ -49,49 +49,49 @@ ZZORG				.eq *
 *
 * HARDWARE EQUATES
 *
-Z.REG				.eq $FFD0
-E.REG				.eq $FFDF
+Z.REG			.eq $FFD0
+E.REG			.eq $FFDF
 *
-KBPORT				.eq $C008
+KBPORT			.eq $C008
 *
-BELL				.eq $C040
+BELL			.eq $C040
 *
-VM0				.eq $C050
-VM1				.eq $C052
-VM2				.eq $C054
-VM3				.eq $C056
+VM0			.eq $C050
+VM1			.eq $C052
+VM2			.eq $C054
+VM3			.eq $C056
 *
-E.T2				.eq $FFE8
-E.ACR				.eq $FFEB
-E.PCR				.eq $FFEC
-E.IFR				.eq $FFED
-E.IER				.eq $FFEE
+E.T2			.eq $FFE8
+E.ACR			.eq $FFEB
+E.PCR			.eq $FFEC
+E.IFR			.eq $FFED
+E.IER			.eq $FFEE
 *
 * ZERO PAGE DECLARATIONS
 *
-DSECT
-ZPBASE				.eq $200
+				.ph
+ZPBASE			.eq $200
 				.or $0000 ;ZERO PAGE DECLARATIONS
-MSGPTR				.bs 2 ;MESSAGE POINTER
-MSGIDX				.bs 1
+MSGPTR			.bs 2 ;MESSAGE POINTER
+MSGIDX			.bs 1
 *
-SCRNIDX				.bs 1
-SCRNPTR				.bs 2
-DATAPTR				.bs 2
+SCRNIDX			.bs 1
+SCRNPTR			.bs 2
+DATAPTR			.bs 2
 
-DATABUF				.bs 160
+DATABUF			.bs 160
 *
-SV.ZREG				.bs 1
-SV.EREG				.bs 1
-SV.SMODE				.bs 1
-SV.EACR				.bs 1
-SV.EPCR				.bs 1
-SV.EIER				.bs 1
+SV.ZREG			.bs 1
+SV.EREG			.bs 1
+SV.SMODE		.bs 1
+SV.EACR			.bs 1
+SV.EPCR			.bs 1
+SV.EIER			.bs 1
 *
-FLAG				.bs 1
-DEND
+FLAG			.bs 1
+				.ep
 * PAGE
-OPMSGRPLY				.eq *
+OPMSGRPLY		.eq *
 *
 *
 * SAVE CURRENT VALUES AND SET UP ZERO PAGE,
@@ -101,7 +101,7 @@ OPMSGRPLY				.eq *
 				sei 
 				lda Z.REG
 				sta ZPBASE+SV.ZREG ;SAVE ZERO PAGE
-				lda #<ZPBASE
+				lda /ZPBASE
 				sta Z.REG
 				stx MSGPTR ;SAVE MESSAGE ADDRESS
 				sty MSGPTR+1
@@ -143,9 +143,9 @@ OPMSGRPLY				.eq *
 * SAVE SCREEN DATA AND CLEAR MESSAGE WINDOW
 *
 				ldx #3
-OPR010				jsr SETPTRS
+OPR010			jsr SETPTRS
 				ldy #39
-OPR020				lda (SCRNPTR),Y ;SAVE SCREEN DATA
+OPR020			lda (SCRNPTR),Y ;SAVE SCREEN DATA
 				sta (DATAPTR),Y
 				lda #$A0
 				sta (SCRNPTR),Y ;BLANK SCREEN
@@ -161,10 +161,10 @@ OPR020				lda (SCRNPTR),Y ;SAVE SCREEN DATA
 				ldx #$00
 				stx MSGIDX
 
-OPR100				jsr SETPTRS
+OPR100			jsr SETPTRS
 				ldy #$00
 				sty SCRNIDX
-OPR110				ldy MSGIDX
+OPR110			ldy MSGIDX
 				inc MSGIDX
 				lda (MSGPTR),Y ;SET UP MESSAGE
 				beq OPR110
@@ -177,18 +177,18 @@ OPR110				ldy MSGIDX
 				sta (SCRNPTR),Y
 				cpy #39
 				bcc OPR110
-OPR120				inx
+OPR120			inx
 				cpx #4
 				bcc OPR100
 *
 *
 * DISPLAY MESSAGE UNTIL ALPHA-LOCK KEY TOGGLES
 *
-OPR200				ldy #2
+OPR200			ldy #2
 				lda KBPORT
 				and #$08
 				sta FLAG
-OPR210				jsr VIDEO
+OPR210			jsr VIDEO
 				lda KBPORT
 				and #$08
 				cmp FLAG
@@ -201,9 +201,9 @@ OPR210				jsr VIDEO
 * RESTORE PREVIOUS CONTENTS OF WINDOW
 *
 				ldx #3
-OPR400				jsr SETPTRS
+OPR400			jsr SETPTRS
 				ldy #39
-OPR410				lda (DATAPTR),Y
+OPR410			lda (DATAPTR),Y
 				sta (SCRNPTR),Y
 				dey 
 				bpl OPR410
@@ -232,16 +232,16 @@ OPR410				lda (DATAPTR),Y
 				lsr A
 				bcc OPR500
 				bit VM0+1 ;RESTORE VIDEO MODE
-OPR500				lsr A
+OPR500			lsr A
 				bcc OPR510
 				bit VM1+1
-OPR510				lsr A
+OPR510			lsr A
 				bcc OPR520
 				bit VM2+1
-OPR520				bit SCRNMODE
+OPR520			bit SCRNMODE
 				bvc OPR530
 				bit VM3+1
-OPR530				lda SV.EREG ;RESTORE ENVIRONMENT
+OPR530			lda SV.EREG ;RESTORE ENVIRONMENT
 
 				sta E.REG
 				lda SV.ZREG ;RESTORE ZERO PAGE
@@ -272,7 +272,7 @@ OPR530				lda SV.EREG ;RESTORE ENVIRONMENT
 *
 * REP 60
 *
-VIDEO				.eq *
+VIDEO			.eq *
 				lda E.IFR
 				and #$28 ;GET VBL & BL FLAGS
 				beq VID030
@@ -289,15 +289,15 @@ VIDEO				.eq *
 				sec 
 				bcs VID020
 *
-VID010				lda E.REG
+VID010			lda E.REG
 				and #$DF ;SET UP FOR SCREEN OFF
 				clc 
 *
-VID020				sta E.REG
+VID020			sta E.REG
 				lda #$00
 				ror A
 				sta SCRNMODE
-VID030				rts
+VID030			rts
 * PAGE
 * REP 60
 *
@@ -315,7 +315,7 @@ VID030				rts
 *
 * REP 60
 *
-SETPTRS				.eq *
+SETPTRS			.eq *
 				txa 
 				lsr A
 				ora #$04
@@ -323,25 +323,25 @@ SETPTRS				.eq *
 				lda #$00
 				ror A
 				sta SCRNPTR
-				lda #<DATABUF
+				lda /DATABUF
 
 				sta DATAPTR+1
 				lda DBUFADR,X
 				sta DATAPTR
 				rts 
 *
-DBUFADR				.eq *
-				.da >0*40+DATABUF
-				.da >1*40+DATABUF
-				.da >2*40+DATABUF
-				.da >3*40+DATABUF
+DBUFADR			.eq *
+				.hs >0*40+DATABUF
+				.hs >1*40+DATABUF
+				.hs >2*40+DATABUF
+				.hs >3*40+DATABUF
 LST ON
 
-ZZEND				.eq *
-ZZLEN				.eq ZZEND-ZZORG
+ZZEND			.eq *
+ZZLEN			.eq ZZEND-ZZORG
 IFNE ZZLEN-LENOMSG
 FAIL 2,"SOSORG FILE IS INCORRECT FOR OPRMSG"
-FIN
+				.fin
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: OPRMSG.SRC
@@ -353,6 +353,6 @@ FIN
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.oprmsg
-LOAD /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.OPRMSG
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM

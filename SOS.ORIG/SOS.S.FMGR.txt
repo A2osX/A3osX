@@ -9,9 +9,9 @@ NEW
 
 *				.TI "SOS 1.1 FILE MANAGER"
 * REL
-INCLUDE SOSORG,6,1,254
+* INCLUDE SOSORG,6,1,254
 				.or ORGFMGR
-ZZORG				.eq *
+ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
 * COPYRIGHT (C) APPLE COMPUTER INC. 1980
@@ -38,24 +38,24 @@ ZZORG				.eq *
 * EXTRN FNFERR
 * EXTRN LVLERR
 *
-F.TPARMX				.eq $A0 ; LOC OF FILE SYSTEM CALL PARMS
-OPEN				.eq $8
-CLOSE				.eq $C
-SETLEVEL				.eq $12
-GETLEVEL				.eq $13
-F.REQCODE				.eq F.TPARMX
-F.LEVEL				.eq F.TPARMX+$1
-PATHNAME				.eq F.TPARMX+$1
-REFNUM				.eq F.TPARMX+$1
-PERIOD				.eq $2E
-LEVEL				.da $1
+F.TPARMX		.eq $A0 ; LOC OF FILE SYSTEM CALL PARMS
+OPEN			.eq $8
+CLOSE			.eq $C
+SETLEVEL		.eq $12
+GETLEVEL		.eq $13
+F.REQCODE		.eq F.TPARMX
+F.LEVEL			.eq F.TPARMX+$1
+PATHNAME		.eq F.TPARMX+$1
+REFNUM			.eq F.TPARMX+$1
+PERIOD			.eq $2E
+LEVEL			.hs 01
 * PAGE
 * REP 60
 *
 * FILE MANAGER
 *
 * REP 60
-FMGR				.eq *
+FMGR			.eq *
 *
 				lda F.REQCODE
 				cmp #OPEN
@@ -69,9 +69,9 @@ FMGR				.eq *
 				cmp #GETLEVEL
 				beq GLEVEL
 *
-FMGR010				jmp BFMGR ; EXIT
+FMGR010			jmp BFMGR ; EXIT
 *
-FMGR020				ldy #1
+FMGR020			ldy #1
 				lda (PATHNAME),Y
 				cmp #PERIOD
 				bne FMGR010
@@ -81,41 +81,41 @@ FMGR020				ldy #1
 
 				cmp #FNFERR
 				beq FMGR026
-FMGR024				rts ; EXIT
+FMGR024			rts ; EXIT
 *
-FMGR026				lda #0
+FMGR026			lda #0
 				sta SERR
 				jmp BFMGR ; EXIT
 *
-FMGR030				lda REFNUM
-FMGR031				bpl FMGR010
+FMGR030			lda REFNUM
+FMGR031			bpl FMGR010
 				jmp CFMGR ; EXIT
 *
-FMGR040				lda REFNUM
+FMGR040			lda REFNUM
 				bne FMGR031
 				jsr BFMGR ; CLOSE (0)
 				jmp CFMGR ; EXIT
 *
-SLEVEL				lda F.LEVEL
+SLEVEL			lda F.LEVEL
 				beq LVL.ERR
 				cmp #4
 				bcs LVL.ERR
 				sta LEVEL
 				rts 
-LVL.ERR				lda #LVLERR
+LVL.ERR			lda #LVLERR
 				jsr SYSERR
 *
-GLEVEL				ldy #0
+GLEVEL			ldy #0
 				lda LEVEL
 				sta (F.LEVEL),Y
 				rts 
 *
 LST ON
-ZZEND				.eq *
-ZZLEN				.eq ZZEND-ZZORG
+ZZEND			.eq *
+ZZLEN			.eq ZZEND-ZZORG
 IFNE ZZLEN-LENFMGR
 FAIL 2,"SOSORG FILE IS INCORRECT FOR FMGR"
-FIN
+				.fin
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: FMGR.SRC
@@ -127,6 +127,6 @@ FIN
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.fmgr
-LOAD /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.FMGR
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM

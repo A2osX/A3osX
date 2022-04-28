@@ -32,3 +32,8 @@ END
 
 
 
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.COMP.SOS.NOLIST
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
+ASM

@@ -30,3 +30,8 @@ END
 
 
 
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.FEB01.1982
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
+ASM

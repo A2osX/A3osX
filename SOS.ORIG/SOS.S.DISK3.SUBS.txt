@@ -29,9 +29,9 @@ NEW
 * THEN WE SAY THE DRIVE IS STOPPED.
 *
 *
-CHKDRV				.eq *
+CHKDRV			.eq *
 				ldx #3 ;CHECK SHIFTER SEVERAL TIMES
-CHKD1				.eq *
+CHKD1			.eq *
 				lda Q6L+$60 ;GET DATA
 				cmp Q6L+$60 ;HAS IT CHANGED?
 				bne CHANGED ;=>YES
@@ -49,7 +49,7 @@ CHKD1				.eq *
 				bne CHANGED ;=>YES
 				rts ;IF EVER LOCKED, IT'S STOPPED
 *
-CHANGED				.eq *
+CHANGED			.eq *
 				dex 
 				bne CHKD1 ;TRY SEVERAL TIMES
 				dex ;SET CC=BNE
@@ -62,10 +62,10 @@ CHANGED				.eq *
 * DESTROYS: Y
 * REP 40
 *
-ADDTIME				.eq *
+ADDTIME			.eq *
 				pha ;PRESERVE AC
 				ldy #4 ;TABLE INDEX/COUNT
-ADD2				.eq *
+ADD2			.eq *
 				lda DRIVESEL-1,Y ;IS IT SELECTED?
 				beq ADD3 ;=>NOPE
 				pla 
@@ -75,9 +75,9 @@ ADD2				.eq *
 				cmp #T1SEC+2 ;IS IT AT MAX TIME?
 				bcc ADD2A ;=>NO, STORE NEW TIME
 				lda #T1SEC+1 ;YES, SET TO >1 SEC
-ADD2A				.eq *
+ADD2A			.eq *
 				sta UPTIME-1,Y
-ADD3				.eq *
+ADD3			.eq *
 
 				dey 
 				bne ADD2 ;=>DO ALL 4 DRIVES
@@ -105,9 +105,9 @@ ADD3				.eq *
 * : BACK TO TRACK ZERO QUIETLY.
 * REP 40
 *
-RECAL				.eq *
+RECAL			.eq *
 				lda #2 ;TWO ITERATIONS, PLEASE
-RECAL1				.eq *
+RECAL1			.eq *
 				pha ;SAVE LOOPCOUNT
 				ldx #$60 ;SETUP SLOT FOR CORE RTNS
 				jsr RDADR ;WHERE ARE WE?
@@ -116,11 +116,11 @@ RECAL1				.eq *
 				bcc RECAL2 ;=>THAT GOT IT
 				lda #48 ;LOST? TRY 48-TRACK SEEK
 				jmp RECAL3
-RECAL2				.eq *
+RECAL2			.eq *
 				lda CSSTV+2 ;HERE'S WHERE WE ARE
 				clc ;ADD SOME SO WE GET A
 				adc #3 ; HARDER SEEK TO ZERO
-RECAL3				.eq *
+RECAL3			.eq *
 				ldy D.UNITNUM ;THIS IS NOW WHERE
 				sta DRVTRACK,Y ; WE ARE
 				jsr FIXIRQ ;ENABLE IRQ IF OK
@@ -146,7 +146,7 @@ RECAL3				.eq *
 * : MOTOR IS RUNNING, IN
 * : 1MHZ+ROM+IO MODE
 * REP 40
-SEEKDSK3				.eq *
+SEEKDSK3		.eq *
 				ldy PREVUNIT ;GET DRIVENUM
 				sty D.UNITNUM ;SET IT UP
 				jsr MYSEEK ;MOVE IT!
@@ -157,7 +157,7 @@ SEEKDSK3				.eq *
 * INPUT : AC=DESTINATION TRACK
 * DESTROYS: ALL REGISTERS
 * REP 40
-MYSEEK				.eq *
+MYSEEK			.eq *
 				sta TRKN ;TEMP HOLD OF AC
 				ldy D.UNITNUM ;GET DRIVENUM
 
@@ -207,7 +207,7 @@ MYSEEK				.eq *
 * DESTROYS: AC,Y
 * REP 40
 *
-BLK2SECT				.eq *
+BLK2SECT		.eq *
 				lda BLKTEMP+1 ;GET HI BLK HALF
 				ror A ;MOVE LO BIT TO CARRY
 				lda BLKTEMP ;GET LO HALF
@@ -237,7 +237,7 @@ BLK2SECT				.eq *
 				sta BUFTEMP+1 ; BUMP BANK NUMBER
 				inc $1400+BUFTEMP+1
 *
-NOADJ				.eq *
+NOADJ			.eq *
 				lda BUFTEMP+1 ;COPY BUFFER ADDRESS
 				sta BUF+1 ; FOR PRE & POSTNIB
 				lda BUFTEMP
@@ -247,7 +247,7 @@ NOADJ				.eq *
 				sta $1400+BUF+1
 				rts 
 *
-SECTABLE				.da $00,$04,$08,$0C,$01,$05,$09,$0D
+SECTABLE		.hs 00,04,08,0C,01,05,09,0D
 * PAGE
 * REP 40
 * NAME : MOREBLKS
@@ -258,13 +258,13 @@ SECTABLE				.da $00,$04,$08,$0C,$01,$05,$09,$0D
 * DESTROYS:NOTHING
 * REP 40
 *
-MOREBLKS				.eq *
+MOREBLKS		.eq *
 				inc BUFTEMP+1 ;BUMP BUFFER ADDRESS
 				inc BUFTEMP+1
 				inc BLKTEMP ;BUMP BLOCK NUMBER
 				bne MORE2
 				inc BLKTEMP+1
-MORE2				.eq *
+MORE2			.eq *
 				dec BLKCOUNT ;MORE BLOCKS TO GO?
 				rts ;RETURN RESULT OF DEC
 * SKP 4
@@ -275,12 +275,12 @@ MORE2				.eq *
 * DESTROYS: NOTHING
 * REP 40
 *
-FIXIRQ				.eq *
+FIXIRQ			.eq *
 				pha 
 				lda IRQMASK ;SHOULD IRQ BE ENABLED?
 				bmi FIXRET ;=>NO, LEAVE IT ALONE
 				cli ;ENABLE IRQ
-FIXRET				.eq *
+FIXRET			.eq *
 				pla 
 				rts 
 
@@ -296,6 +296,6 @@ FIXRET				.eq *
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.disk3.subs
-LOAD /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.DISK3.SUBS
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM

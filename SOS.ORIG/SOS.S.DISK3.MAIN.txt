@@ -12,14 +12,14 @@ NEW
 *
 * DISABLE NMI/RESET AND ENABLE ROM/IO SPACE
 *
-MAIN				.eq *
+MAIN			.eq *
 				lda E.REG ;SAVE CALLER'S
 				and #$FF-$20 ;DROP SCREEN BIT
 				sta ESAVE ; ENVIRONMENT
-DO 1-TEST ;NO RESETLOCK FOR TESTING
+				.do 1-TEST ;NO RESETLOCK FOR TESTING
 				lda E.REG ;GET EREG AGAIN
 				and #$FF-$10 ;DISABLE NMI/RESET
-FIN
+				.fin
 				ora #$03 ;ENABLE ROM/IO SPACE
 				sta E.REG
 *
@@ -52,45 +52,45 @@ FIN
 				beq RPTOK ;=>REPEAT'ED READ IS OK
 				cmp #1 ;IF NOT, IS IT REPEAT'ED WRITE?
 				bne BADOP ;=>CAN'T REPEAT OTHER COMMANDS
-RPTOK				.eq *
+RPTOK			.eq *
 				sta D.COMMAND ;SAME AS BEFORE
 				cmp #0 ;READ?
 				beq IOSETUP ;=>YES
 * NOW REPEAT GOES LIKE OTHERS:
 *
 *
-CMD1				.eq *
+CMD1			.eq *
 				cmp #1 ;WRITE?
 				bne CMD2 ;=>NOPE
 				jmp IOSETUP ;=>YES
-CMD2				.eq *
+CMD2			.eq *
 				cmp #2 ;STATUS?
 				bne CMD3 ;=>NOT STATUS
 				lda D.STATCODE ;IS IT 'SENSE'?
 				beq GOSTAT ;=>YES
 				lda #XCTLCODE ;ILLEGAL CODE
 				jmp EXIT
-GOSTAT				.eq *
+GOSTAT			.eq *
 				jmp DRVSETUP ;=>YES
 *
-CMD3				.eq *
+CMD3			.eq *
 				cmp #8 ;INIT?
 				bne BADOP ;=>NOPE
 				jmp INIT ;=>YES, DO INIT
 *
 
-BADOP				.eq *
+BADOP			.eq *
 				lda #XBADOP ;ILLEGAL COMMAND
 				jmp EXIT ;BACK TO YOU
 *
-BADCMD				.eq *
+BADCMD			.eq *
 				lda #XREQCODE ;INVALID COMMAND
 				jmp EXIT ;BACK TO YOU
 * PAGE
 * SETUP WHAT WE HAVE TO BEFORE
 * PERFORMING THE I/O OPERATION:
 *
-IOSETUP				.eq *
+IOSETUP			.eq *
 				lda D.BLOCK+1 ;VALIDATE BLOCKNUM
 				beq CHKBYTE ;=> IF <256, IT'S OK
 				cmp #2 ;IS IT <512?
@@ -98,11 +98,11 @@ IOSETUP				.eq *
 				lda D.BLOCK ;YES, CHECK LO HALF
 				cmp #280-256 ; FOR RANGE
 				bcc CHKBYTE ;=>IT'S OK
-BADBLOCK				.eq *
+BADBLOCK		.eq *
 				lda #XBLKNUM ;BAD BLOCK NUMBER
 				jmp EXIT ;RETURN BAD NEWS
 *
-CHKBYTE				.eq *
+CHKBYTE			.eq *
 				lda D.BYTES ;GET LO COUNT
 				bne BADCOUNT ;=>ERR, NOT INTEGRAL BLOCK(S)
 				lda D.BYTES+1 ;GET HI COUNT
@@ -120,19 +120,19 @@ CHKBYTE				.eq *
 				bne BLKG255 ;=>YES
 				bcc DRVSETUP ;=>DEFINITELY < 256
 				bcs CHKLO ;=>IF CARRY,THEN >256
-BLKG255				.eq *
+BLKG255			.eq *
 				bcs BADCOUNT ;>255+CARRY IS NOW >511
-CHKLO				.eq *
+CHKLO			.eq *
 				cmp #280-256+1 ;281..511 ?
 				bcc DRVSETUP ;=>NO, WE ARE OK
-BADCOUNT				.eq *
+BADCOUNT		.eq *
 				lda #XBYTECNT ;ILLEGAL BYTECOUNT
 				jmp EXIT ;SORRY...
 * PAGE
 *
 * SELECT THE APPROPRIATE DRIVE:
 *
-DRVSETUP				.eq *
+DRVSETUP		.eq *
 				lda D.COMMAND ;SAVE THIS COMMAND
 				sta PREVCMD ; AND DEVICE FOR
 				lda D.UNITNUM ; SUBSEQUENT
@@ -165,13 +165,13 @@ DRVSETUP				.eq *
 				lda #XNODRIVE ;NO, A MISSING DRIVE!
 				jmp EXIT
 *
-DSWITCH				.eq *
+DSWITCH			.eq *
 				lda #XDISKSW ;USER PULLED A FAST ONE
 				jmp EXIT ; BUT HE CAN'T FOOL US.
 * PAGE
 * PREPARE TO DO THE OPERATION:
 *
-DOIO				.eq *
+DOIO			.eq *
 				lda D.BUFL ;COPY USER BUFFER
 				sta BUFTEMP ; AND BLOCK NUMBER
 				lda D.BUFH ; TO OUR WORKSPACE
@@ -190,7 +190,7 @@ DOIO				.eq *
 				cmp #2 ;IF SO, THEN BYTECOUNT
 				bne DOIO2 ; IS MEANINGLESS
 				jmp STATUS
-DOIO2				.eq *
+DOIO2			.eq *
 				ldy BLKCOUNT ;BLKS=0?
 				beq READOK ;=>YES, YOU GET GOOD RETURN
 				cmp #0 ;READ COMMAND?
@@ -200,13 +200,13 @@ DOIO2				.eq *
 * REP 40
 * -- READ --
 * REP 40
-READREQ				.eq *
+READREQ			.eq *
 				lda #0 ;CLEAR COUNT OF
 				ldy #0
 				sta (D.BYTRD),Y ; BYTES READ
 				iny 
 				sta (D.BYTRD),Y
-READREQ2				.eq *
+READREQ2		.eq *
 				jsr BLK2SECT ;COMPUTE TRK/SECTOR THIS BLOCK
 *
 				jsr SECTORIO ;READ IT PLEASE
@@ -226,11 +226,11 @@ READREQ2				.eq *
 *
 				jsr MOREBLKS ;SETUP FOR NEXT BLOCK
 				bne READREQ2 ;=>MORE TO READ...
-READOK				.eq *
+READOK			.eq *
 				lda #0 ;GOOD RETURN
 				jmp EXIT ;TELL HAPPY USER
 *
-READERR				.eq *
+READERR			.eq *
 				jmp EXIT ;RETURN ERROR CODE
 * CHN DISK3.WRT.SRC
 
@@ -243,6 +243,6 @@ READERR				.eq *
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.disk3.main
-LOAD /A3OSX.BUILD/SOS.13/sos.s
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.DISK3.MAIN
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
 ASM
