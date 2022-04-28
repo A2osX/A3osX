@@ -1,0 +1,625 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: MEMMGR.B.SRC
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+* PAGE
+* REP 60
+*
+* NEXT FREE SEGMENT - INITIALIZATION
+*
+* INPUT: SEGMENT TABLE
+* OUTPUT: CFS.PTR "1ST FREE BANK/PAGE IN VIRTUAL MEMORY
+* CFS.PREV "PREVIOUS SEGMENT EXAMINED"
+* CFS.NEXT "SEGMENT FOLLOWING CFS.PREV"
+* ERROR: NONE (IF NO FREE BK/PG FOUND, THEN CFS.PTR="FFFF")
+*
+* REP 60
+*
+NXTFRSEG.I				.eq *
+*
+* CFS.PTR := VRT.LIM
+* CFS.PREV := 0
+* CFS.NEXT := ST.ENTRY
+*
+				lda >VRT.LIM
+				sta CFS.PTR
+				lda >VRT.LIM+1
+				sta CFS.PTR+1
+*
+				lda #0
+				sta CFS.PREV
+*
+				ldx ST.ENTRY
+				stx CFS.NEXT
+*
+* L0: IF CFS.NEXT=0 THEN DONE
+*
+FRSGI010				beq FRSGI.EXIT
+*
+* IF ST.LIM(CFS.NEXT)<=VRT.LIM THEN GOTO L1
+*
+				lda >VRT.LIM
+				cmp ST.LIML,X
+				lda >VRT.LIM+1
+				sbc ST.LIMH,X
+				bcs FRSGI020
+*
+* CFS.PREV:=CFS.NEXT
+* CFS.NEXT:=ST.FLINK(CFS.NEXT)
+* GOTO L0
+*
+				stx CFS.PREV
+				lda ST.FLINK,X
+				tax 
+				stx CFS.NEXT
+				jmp FRSGI010
+*
+* L1: IF ST.LIM(CFS.NEXT)<VRT.LIM THEN DONE
+*
+FRSGI020				lda ST.LIML,X
+				cmp >VRT.LIM
+				lda ST.LIMH,X
+				sbc >VRT.LIM+1
+				bcc FRSGI.EXIT
+*
+*
+				jsr NXTFRPG
+*
+FRSGI.EXIT				rts ; NORMAL EXIT
+* PAGE
+* REP 60
+*
+* NEXT FREE SEGMENT
+*
+* INPUT: SEG TABLE
+* OUTPUT: CFS.BLINK
+
+* CFS.BASE
+* CFS.LIMIT
+* CFS.PGCT
+* OWN: CFS.PREV
+* CFS.NEXT
+* CFS.PTR
+*
+* BUILDS A CANDIDATE FREE SEGMENT, WHOSE LIMIT BANK/PAGE =
+* THE CURRENT FREE PAGE (CFS.PTR).
+*
+* REP 60
+*
+NXTFRSEG				.eq *
+*
+* IF CFS.PTR="FFFF" THEN EXIT
+*
+				lda CFS.PTR+1
+				bpl FRSG010
+*
+				sec 
+				rts ; EXIT - NO MORE FREE SEGMENTS LEFT
+*
+* CFS.BLINK:=CFS.PREV
+* CFS.LIM:=CFS.PTR
+*
+FRSG010				lda CFS.PREV
+				sta CFS.BLINK
+*
+				lda CFS.PTR
+				sta CFS.LIM
+				lda CFS.PTR+1
+				sta CFS.LIM+1
+*
+* IF CFS.NEXT=0 THEN CFS.BASE:=0
+* ELSE CFS.BASE:=ST.LIM(CFS.NEXT)+1
+*
+				lda CFS.NEXT
+				bne FRSG020
+				lda #0
+				sta CFS.BASE
+				sta CFS.BASE+1
+				beq FRSG030
+*
+FRSG020				ldx CFS.NEXT
+				clc 
+				lda ST.LIML,X
+				adc #1
+				sta CFS.BASE
+				lda ST.LIMH,X
+				adc #0
+				sta CFS.BASE+1
+*
+* CFS.BASE0:=CFS.LIM AND $FF80
+*
+FRSG030				ldy CFS.LIM+1
+				sty CFS.BASE0+1
+				lda CFS.LIM
+				and #$80
+				sta CFS.BASE0
+*
+* CFS.BASE1:=CFS.BASE0-32K
+*
+				sec 
+				sbc #$80
+				sta CFS.BASE1
+				tya 
+				sbc #0
+				sta CFS.BASE1+1
+				bcs FRSG035
+				lda #0
+				sta CFS.BASE1
+				sta CFS.BASE1+1
+*
+* IF CFS.BASE>=CFS.BASE0 THEN GOTO L1
+*
+FRSG035				lda CFS.BASE
+				cmp CFS.BASE0
+				lda CFS.BASE+1
+				sbc CFS.BASE0+1
+				bcs FRSG050
+*
+
+* IF SEARCH MODE=0 THEN CFS.BASE:=CFS.BASE0
+* GOTO L1
+*
+				lda SRCHMODE
+				bne FRSG040
+				lda CFS.BASE0
+				sta CFS.BASE
+				lda CFS.BASE0+1
+				sta CFS.BASE+1
+				jmp FRSG050
+*
+* IF CFS.BASE<CFS.BASE1 AND SEARCH MODE=1
+* THEN CFS.BASE:=CFS.BASE1
+*
+FRSG040				lda CFS.BASE
+				cmp CFS.BASE1
+				lda CFS.BASE+1
+				sbc CFS.BASE1+1
+				bcs FRSG050
+*
+				lda SRCHMODE
+				cmp #1
+				bne FRSG050
+*
+				lda CFS.BASE1
+				sta CFS.BASE
+				lda CFS.BASE1+1
+				sta CFS.BASE+1
+*
+* L1: CFS.PGCT:=CFS.LIM-CFS.BASE+1
+*
+FRSG050				sec
+				lda CFS.LIM
+				sbc CFS.BASE
+				sta CFS.PGCT
+				lda CFS.LIM+1
+				sbc CFS.BASE+1
+				sta CFS.PGCT+1
+				inc CFS.PGCT
+				bne FRSG052
+				inc CFS.PGCT+1
+*
+* ADVANCE FREE PAGE POINTER TO NEXT FREE PAGE
+*
+* IF SEARCH MODE<>1 THEN L2:
+*
+FRSG052				lda SRCHMODE
+				cmp #1
+				bne FRSG060
+*
+* IF CFS.BASE < CFS.BASE0 THEN CFS.PTR:=CFS.BASE0-1
+*
+				lda CFS.BASE
+				cmp CFS.BASE0
+				lda CFS.BASE+1
+				sbc CFS.BASE0+1
+				bcs FRSG060
+*
+				ldy CFS.BASE0+1
+				ldx CFS.BASE0
+				bne FRSG055
+				dey 
+FRSG055				dex
+				stx CFS.PTR
+				sty CFS.PTR+1
+*
+				jmp FRSG070 ; AND EXIT
+* L2: CFS.PTR:=CFS.BASE-1
+*
+FRSG060				sec
+				lda CFS.BASE
+				sbc #1
+				sta CFS.PTR
+				lda CFS.BASE+1
+				sbc #0
+				sta CFS.PTR+1
+*
+* IF CFS.PTR="FFFF" OR CFS.NEXT=0 THEN EXIT
+*
+				bcc FRSG070
+				lda CFS.NEXT
+
+				beq FRSG070
+*
+* IF CFS.PTR > ST.LIM(CFS.NEXT) THEN EXIT
+*
+				ldx CFS.NEXT
+				lda ST.LIML,X
+				cmp CFS.PTR
+				lda ST.LIMH,X
+				sbc CFS.PTR+1
+				bcc FRSG070
+*
+* OTHERWISE, ADVANCE CFS PTR TO NEXT FREE PAGE BELOW NEXT
+* SEGMENT IN SEGMENT LIST
+*
+				jsr NXTFRPG
+*
+FRSG070				clc
+				rts ; EXIT - FREE SEGMENT FOUND
+* PAGE
+* REP 60
+*
+* NEXT FREE PAGE
+*
+* "WALKS" THE FREE PAGE PTR (CFS.PTR) TO THE NEXT FREE PAGE
+* IMMEDIATELY BELOW THE CURRENT FREE SEGMENT.
+*
+* REP 60
+*
+NXTFRPG				.eq *
+*
+* L0: CFS.PTR:=ST.BASE(CFS.NEXT)-1
+* IF CFS.PTR="FFFF" THEN DONE
+*
+				ldx CFS.NEXT
+				sec 
+				lda ST.BASEL,X
+				sbc #1
+				sta CFS.PTR
+				lda ST.BASEH,X
+				sbc #0
+				sta CFS.PTR+1
+				bcc NFRPG.EXIT
+*
+* CFS.PREV:=CFS.NEXT
+* CFS.NEXT:=ST.FLINK(CFS.NEXT)
+*
+				stx CFS.PREV
+				lda ST.FLINK,X
+				tax 
+				stx CFS.NEXT
+*
+* IF CFS.NEXT=0 OR ST.LIM(CFS.NEXT)<CFS.PTR
+* THEN DONE
+* ELSE GOTO L0
+*
+				beq NFRPG.EXIT
+				lda ST.LIML,X
+				cmp CFS.PTR
+				lda ST.LIMH,X
+				sbc CFS.PTR+1
+				bcs NXTFRPG
+*
+NFRPG.EXIT				rts ; NORMAL EXIT
+* PAGE
+* REP 60
+*
+* CHANGE.SEG(IN.SEGNUM,CHG.MODE; INOUT.PAGECT) SYSTEM CALL
+*
+* REP 60
+*
+CHG.SEG				.eq *
+*
+* MOVE CALLER'S PAGE COUNT TO INTERNAL BUFFER
+*
+				ldy #0
+				lda (CHG.PGCT),Y
+				sta CHG.PGCTX
+				iny 
+				lda (CHG.PGCT),Y
+				sta CHG.PGCTX+1
+*
+
+* IF SEG# OUT OF RANGE OR ST.FLINK(SEG#)=FREE THEN ERR
+*
+				ldx CHG.NUM
+				beq CHGS.ERR
+				cpx #ST.CNT
+				bcs CHGS.ERR
+				lda ST.FLINK,X
+				bpl CHGS005
+*
+CHGS.ERR				lda #BADSEGNUM
+				jsr SYSERR ; ERR EXIT
+* REP 35
+* CASE OF CHANGE MODE
+* REP 35
+CHGS005				ldy CHG.MODE
+				cpy #1
+				bcc CHGS010
+				beq CHGS020
+				cpy #3
+				bcc CHGS030
+				beq CHGS040
+*
+				lda #BADCHGMODE
+				jsr SYSERR ; ERR EXIT
+* PAGE
+* REP 35
+* CHANGE MODE = 0(BASE UP)
+* REP 35
+* CHG.NEW:=ST.BASE(SEG#)+PGCT
+*
+CHGS010				clc
+				lda ST.BASEL,X
+				adc CHG.PGCTX
+				sta CHG.NEW
+				lda ST.BASEH,X
+				adc CHG.PGCTX+1
+				sta CHG.NEW+1
+*
+				bcs CHGS014 ; OVERFLOW, PEG IT
+*
+* IF CHG.NEW <= ST.LIM(SEG#) THEN EXIT
+*
+				lda ST.LIML,X
+				cmp CHG.NEW
+				lda ST.LIMH,X
+				sbc CHG.NEW+1
+				bcs CHGS016
+*
+* OTHERWISE, CHG.NEW:=ST.LIM(SEG#)
+*
+CHGS014				lda ST.LIML,X
+				sta CHG.NEW
+				lda ST.LIMH,X
+				sta CHG.NEW+1
+*
+CHGS016				jmp CHGS.EXIT
+* REP 35
+* CHANGE MODE = 1(BASE DOWN)
+* REP 35
+* CHG.NEW:=ST.BASE(SEG#)-PGCT
+*
+CHGS020				sec
+				lda ST.BASEL,X
+				sbc CHG.PGCTX
+				sta CHG.NEW
+				lda ST.BASEH,X
+				sbc CHG.PGCTX+1
+				sta CHG.NEW+1
+				bcs CHGS050
+				bcc CHGS052 ; OVERFLOW, PEG IT
+* REP 35
+* CHANGE MODE = 2(LIMIT UP)
+* REP 35
+* CHG.NEW:=ST.LIM(SEG#)+PGCT
+*
+CHGS030				clc
+				lda ST.LIML,X
+				adc CHG.PGCTX
+				sta CHG.NEW
+				lda ST.LIMH,X
+				adc CHG.PGCTX+1
+
+				sta CHG.NEW+1
+				bcc CHGS050
+				bcs CHGS052 ; OVERFLOW, PEG IT
+* REP 35
+* CHANGE MODE = 3(LIMIT DOWN)
+* REP 35
+* CHG.NEW:=ST.LIM(SEG#)-PGCT
+*
+CHGS040				sec
+				lda ST.LIML,X
+				sbc CHG.PGCTX
+				sta CHG.NEW
+				lda ST.LIMH,X
+				sbc CHG.PGCTX+1
+				sta CHG.NEW+1
+				bcc CHGS044 ; OVERFLOW, PEG IT
+*
+* IF CHG.NEW >= ST.BASE(SEG#) THEN EXIT
+*
+				lda CHG.NEW
+				cmp ST.BASEL,X
+				lda CHG.NEW+1
+				sbc ST.BASEH,X
+				bcs CHGS046
+*
+* OTHERWISE CHG.NEW:=ST.BASE(SEG#)
+*
+CHGS044				lda ST.BASEL,X
+				sta CHG.NEW
+				lda ST.BASEH,X
+				sta CHG.NEW+1
+*
+CHGS046				jmp CHGS.EXIT
+*
+* DETERMINE NEW BANK/PAGE'S REGION,
+* IF NEW BANK/PAGE IS INVALID THEN
+* SET TO BASE OR LIMIT (CASE CHANGE MODE)
+*
+CHGS050				ldx CHG.NEW
+				ldy CHG.NEW+1
+				jsr REGION
+				bcs CHGS052
+				bne CHGS052
+				beq CHGS100
+CHGS052				lda CHG.MODE
+				cmp #1
+				bne CHGS054
+				ldx #>VRT.BASE
+				ldy #<VRT.BASE
+				jmp CHGS056
+CHGS054				ldx >VRT.LIM
+				ldy >VRT.LIM+1
+CHGS056				stx CHG.NEW
+				sty CHG.NEW+1
+* PAGE
+*
+* COMPUTE BANK/PAGE OF ADJACENT SEGMENT, IF ANY
+* CASE CHANGE MODE
+*
+CHGS100				ldx CHG.NUM
+				lda CHG.MODE
+				cmp #1
+				bne CHGS200
+* "1" IF ST.FLINK(SEG#)=0 THEN EXIT
+				lda ST.FLINK,X
+				beq CHGS.EXIT
+* X,Y:=ST.LIM(ST.FLINK(SEG#))+1
+				tay 
+				lda ST.LIML,Y
+				tax 
+				lda ST.LIMH,Y
+				tay 
+				inx 
+				bne CHGS110
+				iny 
+* IF CHG.NEW < X,Y THEN CHG.NEW:=X,Y
+CHGS110				cpy CHG.NEW+1
+				bcc CHGS.EXIT
+				beq CHGS120
+				bcs CHGS300
+CHGS120				cpx CHG.NEW
+
+				bcc CHGS.EXIT
+				bcs CHGS300
+* "2" IF ST.BLINK(SEG#)=0 THEN EXIT
+CHGS200				lda ST.BLINK,X
+				beq CHGS.EXIT
+* X,Y:= ST.BASE(ST.BLINK(SEG#))-1
+				tay 
+				lda ST.BASEL,Y
+				tax 
+				lda ST.BASEH,Y
+				tay 
+				txa 
+				bne CHGS210
+				dey 
+CHGS210				dex
+* IF CHG.NEW > X,Y THEN CHG.NEW:=X,Y
+				cpy CHG.NEW+1
+				bcc CHGS300
+				beq CHGS220
+				bcs CHGS.EXIT
+CHGS220				cpx CHG.NEW
+				bcs CHGS.EXIT
+*
+CHGS300				stx CHG.NEW
+				sty CHG.NEW+1
+* PAGE
+* REP 35
+*
+* COMPUTE DELTA PAGE COUNT AND RETURN IT TO CALLER
+* (CASE OF CHG.MODE)
+*
+* REP 35
+CHGS.EXIT				ldx CHG.NUM
+				ldy #0
+				lda CHG.MODE
+				cmp #1
+				bcc CHGS500
+				beq CHGS510
+				cmp #3
+				bcc CHGS520
+				beq CHGS530
+*
+* "0" -- PAGECOUNT:=NEW-BASE
+*
+CHGS500				sec
+				lda CHG.NEW
+				sbc ST.BASEL,X
+				sta (CHG.PGCT),Y
+				lda CHG.NEW+1
+				sbc ST.BASEH,X
+				jmp CHGS600
+*
+* "1" -- PAGECOUNT:=BASE-NEW
+*
+CHGS510				sec
+				lda ST.BASEL,X
+				sbc CHG.NEW
+				sta (CHG.PGCT),Y
+				lda ST.BASEH,X
+				sbc CHG.NEW+1
+				jmp CHGS600
+*
+* "2" -- PAGECOUNT:=NEW-LIM
+*
+CHGS520				sec
+				lda CHG.NEW
+				sbc ST.LIML,X
+				sta (CHG.PGCT),Y
+				lda CHG.NEW+1
+				sbc ST.LIMH,X
+				jmp CHGS600
+*
+* "3" -- PAGECOUNT:=LIM-NEW
+*
+CHGS530				sec
+				lda ST.LIML,X
+				sbc CHG.NEW
+				sta (CHG.PGCT),Y
+				lda ST.LIMH,X
+				sbc CHG.NEW+1
+*
+
+CHGS600				iny
+				sta (CHG.PGCT),Y
+*
+* IF NEW PAGE COUNT < REQUESTED PAGECOUNT THEN ERR
+*
+				tax 
+				dey 
+				lda (CHG.PGCT),Y
+				cmp CHG.PGCTX
+				txa 
+				sbc CHG.PGCTX+1
+				bcs CHGS610
+				lda #SEGRQDN
+				jsr SYSERR ; ERR EXIT
+*
+* OTHERWISE, ENTER CHG.NEW IN SEGMENT TABLE AND EXIT
+*
+CHGS610				ldx CHG.NUM
+				lda CHG.MODE
+				cmp #2
+				lda CHG.NEW
+				ldy CHG.NEW+1
+				bcs CHGS620
+*
+				sta ST.BASEL,X
+				tya 
+				sta ST.BASEH,X
+				clc 
+				rts ; NORMAL EXIT
+*
+*
+CHGS620				sta ST.LIML,X
+				tya 
+				sta ST.LIMH,X
+				clc 
+				rts ; NORMAL EXIT
+
+* CHN MEMMGR.C.SRC
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: MEMMGR.B.SRC
+*************************************************************************
+
+
+
+
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.13/sos.s.memmgr.b
+LOAD /A3OSX.BUILD/SOS.13/sos.s
+ASM

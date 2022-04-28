@@ -1,0 +1,654 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: SOSLDR.D.SRC
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+* PAGE
+* REP 100
+*
+* SOS LOADER -
+*
+* (MAIN PROGRAM)
+* REP 100
+SOSLDR				.eq * ; +---------------+
+				lda #0 ; ZERO SOS/USER X, Z AND STACK PAGES ! SEE FIGURE 1. !
+				tax ; +---------------+
+SLDR010				sta CZPAGE,X
+				sta CXPAGE,X
+				sta CSPAGE,X
+				sta SZPAGE,X
+				sta SXPAGE,X
+				sta SSPAGE,X
+				dex 
+				bne SLDR010
+* ; SETUP SOS CALL ENVIRONMENT (WRITE PROTECT=OFF)
+				lda #$30 ; E:=( 0.0.1.1:0.0.0.0 )
+				sta E.REG ; ( 1.I.S.R:W.P.R.R )
+*
+				ldx #$FB ; CONSOLE 1.0 MODIFIES STACK DURING D.INIT CALL
+				txs 
+				lda #<CZPAGE ; ZREG:=CALLER'S Z PAGE
+				sta Z.REG
+* ; +--------------------------------+
+				jsr SOSLDR1 ; ! PROCESS KRNL/INTERP/DRVR FILES !
+* ; +--------------------------------+
+				lda E.REG
+				and #$10 ; SETUP SOS CALL ENVIRONMENT (WRITE PROTECT=ON)
+				ora #$28 ; E:=( 0.0.1.X:1.0.0.0 )
+				sta E.REG ; ( 1.I.S.R:W.P.R.R )
+*
+				ldx #$FF ; STACK.REG:=$FF
+				txs 
+				lda #<CZPAGE ; ZREG:=CALLER'S Z PAGE
+				sta Z.REG
+* +---------------+
+				lda SYSBANK ; BREG:=SYSBANK ! SEE FIGURE 4. !
+				sta B.REG ; +---------------+
+				jmp (I.BASE.P) ; SOS LOAD COMPLETE - JMP TO INTERPRETER
+*
+*THE END.
+* REP 100
+* PAGE
+* REP 100
+*
+* MOVE ( IN: SRC.P
+* IN: DST.P
+* IN: A="BANK"
+* IN: CNT )
+*
+* LOCAL: END
+* (MOVES SRC.P..SRC.P+CNT-1 TO DST.P..DST.P+CNT-1) "CNT PARM IS DESTROYED"
+* REP 100
+MOVE				.eq *
+				tax 
+				lda B.REG ; SAVE BANK REGISTER
+				pha 
+				stx B.REG ; BREG:=A
+				lda CNT+1 ; IF CNT <> 0
+				ora CNT ; THEN
+				beq MOVE.EXIT
+				lda CNT ; CNT:=CNT-1
+				bne MOVE010
+				dec CNT+1
+MOVE010				dec CNT
+				clc ; SRC.P:=SRC.P+PAGE.CNT
+				lda SRC.P+1
+				adc CNT+1
+
+				sta SRC.P+1
+				lda DST.P+1 ; DST.P:=DST.P+PAGE.CNT
+				adc CNT+1
+				sta DST.P+1
+				inc CNT+1 ; PAGE.CNT:=PAGE.CNT+1
+				ldy CNT ; Y:=BYTE.CNT
+				beq MOVE020 ; IF Y=0 THEN M2
+*
+MOVE.PAGE				lda (SRC.P),Y ;M1: DO
+				sta (DST.P),Y ; (DST.P),Y:=(SRC.P),Y
+				dey ; Y:=Y-1
+				bne MOVE.PAGE ; UNTIL Y=0
+MOVE020				lda (SRC.P),Y ;M2: (DST.P),Y:=(SRC.P),Y
+				sta (DST.P),Y
+				dey ; Y:=Y-1
+				dec SRC.P+1 ; SRC.P:=SRC.P-256
+				dec DST.P+1 ; DST.P:=DST.P-256
+				dec CNT+1 ; PAGE.CNT:=PAGE.CNT-1
+				bne MOVE.PAGE ; IF PAGE.CNT <> 0 THEN M1
+*
+				inc SRC.P+1 ; RESTORE SRC.P
+				inc DST.P+1 ; " DST.P
+*
+MOVE.EXIT				pla ; RESTORE BANK REGISTER
+				sta B.REG
+				rts 
+* PAGE
+* REP 100
+*
+* LINK ( IN: DST.P
+* IN: DSTBANK
+* IN: PREVBANK
+* IN: FIRST.ADIB
+* I/O: SDT.TBL
+* I/O: BLKDLST
+* OUT: LINKED DRIVER MODULE )
+*
+* OWN: LINK.P
+* (LINKS FIRST DIB TO PREVIOUS DRIVER'S LAST "ACTIVE" DIB, AND ADDS SDT ENTRY)
+* REP 100
+LINK				.eq *
+				clc ; FIRST.ADIB:=0:DST.P+FIRST.ADIB
+				lda DST.P
+				adc FIRST.ADIB
+				sta FIRST.ADIB
+				lda DST.P+1
+				adc FIRST.ADIB+1
+				sta FIRST.ADIB+1
+				lda #0
+				sta CXPAGE+FIRST.ADIB+1
+				lda PREVBANK ; BREG:=PREVBANK
+				sta B.REG
+				ldy #0 ; (LINK.P):=FIRST.ADIB
+				lda FIRST.ADIB
+				sta (LINK.P),Y
+				iny 
+				lda FIRST.ADIB+1
+				sta (LINK.P),Y
+				lda DSTBANK ; BREG:=DSTBANK
+				sta B.REG
+				lda FIRST.ADIB ; LINK.P:=FIRST.ADIB
+				sta LINK.P
+				lda FIRST.ADIB+1
+				sta LINK.P+1
+WALKLINKS				jsr ALLOC.DEV ; ALLOC.DEV(LINK.P BREG.IN, SDT.TBL BLKDLST.IO)
+LINK010				ldy #0 ; WHILE (LINK.P) <> 0 AND (LINK.P) <> LINK.P
+				lda (LINK.P),Y
+				iny 
+				ora (LINK.P),Y
+				beq LINK100
+				lda (LINK.P),Y
+				cmp LINK.P+1
+				bne LINK030
+				dey 
+				lda (LINK.P),Y
+				cmp LINK.P
+				beq LINK100
+LINK030				ldy #0 ; DO LINK.P:=(LINK.P)
+				lda (LINK.P),Y
+				tax 
+				iny 
+
+				lda (LINK.P),Y
+				stx LINK.P
+				sta LINK.P+1
+				jsr ALLOC.DEV ; " ALLOC.DEV(LINK.P BREG.IN, SDT.TBL BLKDLST.IO)
+				jmp LINK010
+*
+LINK100				ldy #0 ; (LINK.P):=0
+				tya 
+				sta (LINK.P),Y
+				iny 
+				sta (LINK.P),Y
+				dey ; BREG:=0
+				sty B.REG
+				rts 
+*
+*
+*
+*
+* LINK.INIT ( IN: A=# DRIVES
+* IN: DIB1..4
+* I/O: SDT.TBL
+* I/O: BLKDLST )
+*
+LINK.INIT				.eq *
+				jsr SET.DRIVES ; SET.DRIVES(A=#DRIVES.IN, DIB1..4.IN)
+				lda #0
+				sta MAX.DNUM ; MAXDNUM:=0
+				sta BLKDLST ; BLKDLST:=0
+				sta CXPAGE+LINK.P+1 ; LINK.P:=0:DIB1
+				lda #>DIB1
+				sta LINK.P
+				lda #<DIB1
+				sta LINK.P+1
+				jmp WALKLINKS
+* PAGE
+* REP 100
+*
+* ALLOC.DEV ( IN: LINK.P
+* IN: B.REG
+* I/O: SDT.TBL (SYSTEM DEVICE TABLE)
+* IN: SDT.SIZE = CONSTANT
+* IN: DIB.ENTRY = CONSTANT DEV DIB ADR BANK UNIT
+* IN: DIB.UNIT = CONSTANT !-----!-----!-----!-----!
+* IN: DIB.DTYPE = CONSTANT 1 ! ! ! ! !
+* I/O: MAX.DNUM 2 ! ! ! ! !
+* OUT: SDT.BANK . ! ! ! ! !
+* OUT: SDT.DIB . ! ! ! ! !
+* OUT: SDT.ADR . !-----!-----!-----!-----!
+* OUT: SDT.UNIT MAX.DNUM
+* I/O: BLKDLST
+* IN: BLKD.SIZE = CONSTANT
+* (ADDS A NEW ENTRY TO THE DEVICE MANAGER'S SYSTEM DEVICE TABLE (SDT))
+* REP 100
+ALLOC.DEV				.eq *
+				inc MAX.DNUM ; MAX.DNUM:=MAX.DNUM+1
+				ldx MAX.DNUM ; IF MAX.DNUM >= SDT.SIZE
+				cpx #>SDT.SIZE ; THEN
+				bcc ADEV010
+				ldx #ERR8X ; ERROR("TOO MANY DEVICES")
+				ldy #ERR8L
+				jsr ERROR
+ADEV010				lda B.REG ; SDT.BANK,X:=BREG
+				sta SDT.BANK,X
+				clc ; SDT.DIB,X:=LINK.P+4
+				lda LINK.P
+				adc #4
+				sta SDT.DIBL,X
+				lda LINK.P+1
+				adc #0
+				sta SDT.DIBH,X
+				sec ; SDT.ADR,X:=(LINK.P),DIB.ENTRY-1
+				ldy #DIB.ENTRY
+				lda (LINK.P),Y
+				sbc #1
+				sta SDT.ADRL,X
+				iny 
+				lda (LINK.P),Y
+				sbc #0
+				sta SDT.ADRH,X
+				ldy #DIB.UNIT ; SDT.UNIT,X:=(LINK.P),DIB.UNIT
+				lda (LINK.P),Y
+
+				sta SDT.UNIT,X
+				ldy #DIB.DTYPE ; IF (LINK.P),DIB.DTYPE = "BLOCK DEVICE"
+				lda (LINK.P),Y
+				bpl ADEV.EXIT
+				txa ; THEN
+				inc BLKDLST ; BLKDLST:=BLKDLST+1
+				ldx BLKDLST ; IF BLKDLST >= BLKD.SIZE
+				cpx #>BLKD.SIZE ; THEN
+				bcc ADEV020
+				ldx #ERR9X ; ERROR("TOO MANY BLOCK DEVICES")
+				ldy #ERR9L
+				jsr ERROR
+ADEV020				sta BLKDLST,X ; BLKDLST,X:=MAX.DNUM
+ADEV.EXIT				rts ; RETURN
+* PAGE
+* REP 100
+*
+* SOSLDR1 ()
+*
+* (PROCESSES KERNEL/INTERPRETER/DRIVER FILES)
+* REP 100
+SOSLDR1				.eq *
+				ldx #$1F ; COPY ROM'S DISK CORE ROUTINE ZPAGE VARS TO SOS ZPAGE
+LDR010				lda $380,X
+				sta SZPAGE,X
+				dex 
+				bpl LDR010
+* REP 100
+* PROCESS KERNEL FILE
+* REP 100
+*
+* MOVE AND INITIALIZE SOS GLOBALS
+*
+				lda #>LDR.ADR ; WORK.P:=0:LDR.ADR
+				sta WORK.P
+				lda #<LDR.ADR
+				sta WORK.P+1
+				jsr ADVANCE ; ADVANCE(WORK.P.IO, SRC.P DST.P CNT.OUT)
+*
+				lda B.REG ; MOVE(SRC.P DST.P A=BREG CNT.IN)
+				jsr MOVE
+*
+				lda B.REG ; SYSBANK:=BREG
+				and #$0F
+				sta SYSBANK
+				asl A ; MEMSIZ:=SYSBANK*2+4 "16K CHUNKS"
+				clc 
+				adc #4
+				sta MEMSIZE ; AND, MEMSIZE (SIZE IN 16K BYTE "CHUNKS")
+*
+* MOVE KERNAL CODE
+*
+				jsr ADVANCE ; ADVANCE(WORK.P.IO, SRC.P DST.P CNT.OUT)
+*
+				lda DST.P ; K.BASE:=DST.P
+				sta K.BASE
+				lda DST.P+1
+				sta K.BASE+1
+				lda B.REG ; MOVE(SRC.P DST.P A=BREG CNT.IN)
+				jsr MOVE
+*
+* MOVE LOADER TO BANK 0 AND SWITCH FROM SYSTEM BANK TO BANK 0
+*
+				lda #>$2000 ; MOVE(SRC.P=0:2000 DST.P=8F:2000 A=BREG CNT=LDR.END-$2000)
+				sta SRC.P
+				sta DST.P
+				lda #<$2000
+				sta SRC.P+1
+				sta DST.P+1
+				lda #$8F
+				sta CXPAGE+DST.P+1
+				lda #>LDREND-$2000
+				sta CNT
+				lda #<LDREND-$2000
+				sta CNT+1
+				lda B.REG
+				jsr MOVE
+				lda #0 ; BREG:=0
+				sta B.REG
+*
+* INITIALIZE SDT TABLE, KERNEL AND PRINT WELCOME MESSAGE
+
+*
+				lda K.DRIVES ; LINK.INIT(A=K.DRIVES DIB1..4.IN, SDT.TBL BLKDLST.IO)
+				jsr LINK.INIT
+				jsr INIT.KRNL ; INIT.KRNL()
+				jsr WELCOME ; WELCOME()
+*
+				lda E.REG ; ENABLE ROM BANK
+				ora #$03
+				sta E.REG
+				lda ROM.ADR ; IF MONITOR ROM <> NEW
+				cmp #ROM.ID ; THEN
+				beq LDR020
+				ldx #ERR7X ; ERROR("ROM ERROR: PLEASE NOTIFY YOUR DEALER")
+				ldy #ERR7L
+				jsr ERROR
+LDR020				lda E.REG ; DISABLE ROM BANK
+				and #$F6
+				sta E.REG
+* REP 100
+* PROCESS INTERPRETER FILE
+* REP 100
+*
+* OPEN SOS INTERPRETER FILE (DEFAULT='SOS.INTERP')
+*
+				ldy I.PATH ; OPEN(PATHNAME:=I.PATH
+LDR030				lda I.PATH,Y ; REFNUM=OPEN.REF
+				sta PATH,Y ; SYSBUF.P:=80:LDREND-2000 )
+				dey 
+				bpl LDR030
+*
+				lda #>LDREND-$2000
+				sta SYSBUF.P
+				lda #<LDREND-$2000
+				sta SYSBUF.P+1
+				lda #$80
+				sta CXPAGE+SYSBUF.P+1
+*
+*
+				brk 
+				.da OPEN
+				.da OPEN.PARMS
+				beq LDR040
+				ldx #ERR1X ; ERROR("INTERPRETER FILE NOT FOUND")
+				ldy #ERR1L
+				jsr ERROR
+LDR040				lda OPEN.REF
+				sta READ.REF
+				sta CLOSE.REF
+*
+* READ IN ENTIRE INTERPRETER FILE
+*
+				lda #$80 ; READ(REFNUM=READ.REF
+				sta CXPAGE+RDBUF.P+1 ; RDBUF.P:=80:FILE
+				lda #>FILE ; BYTES=$FFFF-FILE+1
+				sta RDBUF.P ; BYTESRD=I.BYTESRD )
+				lda #<FILE
+				sta RDBUF.P+1
+*
+				brk 
+				.da READ
+				.da READ.PARMS
+				beq LDR050
+				ldx #ERR0X ; ERROR("I/O ERROR")
+				ldy #ERR0L
+				jsr ERROR
+* +---------------+
+* CLOSE INTERPRETER FILE AND CHECK LABEL ! SEE FIGURE 2. !
+* +---------------+
+LDR050				brk ; CLOSE(REFNUM=CLOSE.REF)
+				.da CLOSE
+				.da CLOSE.PARMS
+				ldy #7 ; CHECK LABEL
+LDR051				lda (RDBUF.P),Y
+				cmp I.LABEL,Y
+				bne LDR052
+				dey 
+				bpl LDR051
+				bmi LDR053
+LDR052				ldx #ERR2X ; ERROR("INVALID INTERPRETER FILE")
+				ldy #ERR2L
+				jsr ERROR
+
+*
+* MOVE INTERPRETER CODE
+*
+LDR053				lda #>I.HDR.CNT-2 ; WORK.P:=80:I.HDR.CNT-2
+				sta WORK.P
+				lda #<I.HDR.CNT-2
+				sta WORK.P+1
+				lda #$80
+				sta CXPAGE+WORK.P+1
+*
+				jsr ADVANCE ; ADVANCE(WORK.P.IO, SRC.P DST.P CNT.OUT)
+*
+				lda DST.P ; I.BASE.P:=0:DST.P
+				sta I.BASE.P
+				lda DST.P+1
+				sta I.BASE.P+1
+				lda #0
+				sta CXPAGE+I.BASE.P+1
+*
+				clc ; IF DST.P+CNT > K.BASE THEN ERROR
+				lda CNT
+				adc DST.P
+				tax 
+				lda CNT+1
+				adc DST.P+1
+				cpx K.BASE
+				sbc K.BASE+1
+				beq LDR070
+				bcc LDR070
+				ldx #ERR3X ; ERROR("INCOMPATIBLE INTERPRETER")
+				ldy #ERR3L
+				jsr ERROR
+*
+LDR070				lda SYSBANK ; MOVE(SRC.P=RDBUF.P DST.P A=SYSBANK CNT.IN)
+				jsr MOVE
+* REP 100
+* PROCESS DRIVER FILE
+* REP 100
+*
+* OPEN SOS DRIVER FILE (DEFAULT='SOS.DRIVER')
+*
+				ldy D.PATH ; OPEN(PATHNAME:=D.PATH
+LDR080				lda D.PATH,Y ; REFNUM=OPEN.REF
+				sta PATH,Y ; SYSBUF.P:=80:LDREND-2000 )
+				dey 
+				bpl LDR080
+*
+				brk 
+				.da OPEN
+				.da OPEN.PARMS
+				beq LDR090
+				ldx #ERR4X ; ERROR("DRIVER FILE NOT FOUND")
+				ldy #ERR4L
+				jsr ERROR
+LDR090				lda OPEN.REF
+				sta READ.REF
+				sta CLOSE.REF
+*
+* READ IN ENTIRE DRIVER FILE INTO BANK 0
+*
+				brk ; READ(REFNUM=READ.REF
+				.da READ ; RDBUF.P:=80:FILE
+				.da READ.PARMS ; BYTES=$FFFF-FILE+1
+* ; BYTESRD=D.BYTESRD )
+				beq LDR100
+				ldx #ERR0X ; ERROR("I/O ERROR")
+				ldy #ERR0L
+				jsr ERROR
+* +---------------+
+* CLOSE THE DRIVER FILE AND CHECK LABEL ! SEE FIGURE 3. !
+* +---------------+
+LDR100				brk ; CLOSE(REFNUM=CLOSE.REF)
+				.da CLOSE
+				.da CLOSE.PARMS
+				ldy #$7 ; CHECK LABEL
+LDR101				lda (RDBUF.P),Y
+				cmp D.LABEL,Y
+				bne LDR102
+				dey 
+				bpl LDR101
+				bmi LDR103
+
+LDR102				ldx #ERR5X ; ERROR("INVALID DRIVER FILE")
+				ldy #ERR5L
+				jsr ERROR
+*
+* MOVE CHARACTER SET TABLE
+*
+LDR103				lda #>D.CHRSET ; MOVE(SRC.P=D.CHRSET DST.P=$C00 A=0 CNT=$400)
+				sta SRC.P
+				lda #<D.CHRSET
+				sta SRC.P+1
+				lda #>$C00
+				sta DST.P
+				lda #<$C00
+				sta DST.P+1
+				lda #>$400
+				sta CNT
+				lda #<$400
+				sta CNT+1
+				lda #0
+				jsr MOVE
+*
+* MOVE KEYBOARD TABLE
+*
+				lda #>D.KYBD ; MOVE(SRC.P=D.KYBD DST.P=$1700 A=0 CNT=$100.IN)
+				sta SRC.P
+				lda #<D.KYBD
+				sta SRC.P+1
+				lda #>$1700
+				sta DST.P
+				lda #<$1700
+				sta DST.P+1
+				lda #>$100
+				sta CNT
+				lda #<$100
+				sta CNT+1
+				lda #0
+				jsr MOVE
+*
+* RE-INITIALIZE SDT TABLE
+*
+				ldy #>D.DRIVES-D.FILE ; LINK.INIT(A=D.DRIVES DIB1..4.IN, SDT.TBL BLKDLST.IO)
+				lda (RDBUF.P),Y
+				jsr LINK.INIT
+*
+				lda #0 ; DST.P:=0:I.BASE.P/256*256
+				sta CXPAGE+DST.P+1
+				sta DST.P
+				lda I.BASE.P+1
+				sta DST.P+1
+				cmp #$A0 ; IF DST.P>=$A000 THEN DST.P:=$A000
+				bcc LDR105
+				lda #$A0
+				sta DST.P+1
+LDR105				lda SYSBANK ; DSTBANK:=SYSBANK
+				sta DSTBANK
+				jsr REVERSE ; REVERSE(D.HDR.CNT.IN, WORK.P.OUT)
+*
+* RELOCATE AND MOVE DRIVERS
+*
+NEXTDRIVER				jsr DADVANCE ; "NO DRIVERS LEFT":=DADVANCE(WORK.P.IO SRC.P CNT REL.P.OUT)
+				bcs LDR140
+				jsr FLAGS ; "INACTIVE":=FLAGS(SRC.P.IN, PG.ALIGN FIRST.ADIB.OUT)
+				bvs NEXTDRIVER
+				jsr GETMEM ; GETMEM(PG.ALIGN CNT.IN, DST.P DSTBANK DSEGLIST.IO, PREVBANK.OUT)
+				jsr RELOC ; RELOC(SRC.P REL.P DST.P.IN)
+*
+				lda DSTBANK ; IF DSTBANK < 0 OR DST.P < SRC.P THEN ERROR
+				bmi LDR120
+				lda CXPAGE+SRC.P+1 ; (CONVERT SRC.P TO BANK SWITCHED ADDRESS)
+				and #$7F
+				sta TEMP.BANK
+				lda SRC.P+1
+				bpl LDR110
+				inc TEMP.BANK
+LDR110				and #$7F
+				clc 
+				adc #<$2000
+				sta TEMP.ADRH
+				lda DST.P ; (NOW COMPARE)
+				cmp SRC.P
+				lda DST.P+1
+
+				sbc TEMP.ADRH
+				lda DSTBANK
+				sbc TEMP.BANK
+				bcs LDR130
+LDR120				ldx #ERR6X ; ERROR("DRIVER FILE TOO LARGE")
+				ldy #ERR6L
+				jsr ERROR
+*
+LDR130				lda DSTBANK ; MOVE(SRC.P DST.P A=DSTBANK CNT.IN)
+				jsr MOVE
+				jsr LINK ; LINK(DST.P DSTBANK PREVBANK FIRST.ADIB.IN, SDT.TBL BLKDLST.IO)
+				jmp NEXTDRIVER
+* REP 100
+* SETUP USER ENVIRONMENT
+* REP 100
+*
+* RE-INITIALIZE KERNEL/DRIVERS, ALLOCATE SYSTEM SEGMENTS
+*
+LDR140				jsr INIT.KRNL ; INIT.KRNL()
+				jsr ALLOC.SEG ; ALLOC.SEG(K.BASE I.BASE.P SYSBANK.IN)
+				jsr ALLOC.DSEG ; ALLOC.DSEG(DSEGLIST.IN)
+*
+* SET PREFIX TO THE BOOT VOLUME
+*
+				lda #0 ; TURN VIDEO OFF - PREVENTS CHAR "GROWTH" DURING DOWNLOAD
+				sta SCRNMODE
+				brk ; SET.PREFIX(PREFIXPATH=".D1")
+				.da SETPREFIX
+				.da PREFX.PARMS
+*
+* LAUNCH CHARACTER SET DOWNLOAD (CONSOLE) AND CLEAR SCREEN
+*
+				cli ; BEGIN CHARACTER SET DOWNLOAD (CONSOLE)
+*
+				lda #0 ; CLEAR TEXT SCREENS
+				sta CXPAGE+SRC.P+1
+				sta CXPAGE+DST.P+1
+				lda #$04
+				sta SRC.P+1
+				sta DST.P+1
+				lda #$00
+				sta SRC.P
+				lda #$80
+				sta DST.P
+				lda #$A0
+				ldx #8
+CLEAR0				ldy #$77
+CLEAR1				sta (SRC.P),Y
+				sta (DST.P),Y
+				dey 
+				bpl CLEAR1
+				inc SRC.P+1 ; NEXT PAGE
+				inc DST.P+1 ; NEXT PAGE
+				dex 
+				bne CLEAR0
+*
+WAIT				inc SRC.P ; WAIT FOR DOWNLOAD TO COMPLETE
+				bne WAIT
+				inx 
+				bne WAIT
+*
+				lda #$80 ; TURN VIDEO ON
+				sta SCRNMODE
+				rts 
+* REP 100
+
+* CHN SOSLDR.E.SRC
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: SOSLDR.D.SRC
+*************************************************************************
+
+
+
+
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.13/sos.s.sosldr.d
+LOAD /A3OSX.BUILD/SOS.13/sos.s
+ASM

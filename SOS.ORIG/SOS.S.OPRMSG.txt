@@ -1,0 +1,358 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: OPRMSG.SRC
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+*				.TI "SOS 1.1 OPERATOR MESSAGE/REPLY"
+* REL
+INCLUDE SOSORG,6,1,254
+				.or ORGOMSG
+ZZORG				.eq *
+* FIXME - MSB OFF
+* REP 60
+*
+* COPYRIGHT (C) APPLE COMPUTER INC. 1981
+* ALL RIGHTS RESERVED
+*
+* REP 60
+*
+* THIS MODULE CONTAINS THE BLOCK FILE MANAGERS'S OPERATOR
+* INTERFACE. IT DISPLAYS A MESSAGE IN A FOUR LINE BY
+* FOURTY COLUMN WINDOW, THEN WAITS FOR THE USER TO TOGGLE
+* THE ALPHA-LOCK KEY BEFORE RETURNING.
+*
+* THE VERTICAL BLANKING FLAGS AND COMPOSITE BLANKING
+* TIMER ARE USED TO MAINTAIN THE DISPLAY. MEMORY PAGE
+* $02 IS USED FOR TEMPORARY STORAGE. ON EXIT, ALL
+* RESOURCES ARE RESTORED TO THEIR PREVIOUS STATES.
+*
+* ENTRY POINT: OPMSGRPLY
+*
+* PARAMETERS: X -- MESSAGE ADDRESS (LOW BYTE)
+* Y -- MESSAGE ADDRESS (HIGH BYTE)
+* (THE MESSAGE MUST RESIDE IN THE CURRENT BANK)
+*
+* RESULT: A -- RESPONSE KEYSTROKE
+* X, Y -- UNDEFINED
+*
+* REP 60
+*
+*
+* ENTRY OPMSGRPLY
+*
+* EXTRN SCRNMODE
+* PAGE
+*
+* HARDWARE EQUATES
+*
+Z.REG				.eq $FFD0
+E.REG				.eq $FFDF
+*
+KBPORT				.eq $C008
+*
+BELL				.eq $C040
+*
+VM0				.eq $C050
+VM1				.eq $C052
+VM2				.eq $C054
+VM3				.eq $C056
+*
+E.T2				.eq $FFE8
+E.ACR				.eq $FFEB
+E.PCR				.eq $FFEC
+E.IFR				.eq $FFED
+E.IER				.eq $FFEE
+*
+* ZERO PAGE DECLARATIONS
+*
+DSECT
+ZPBASE				.eq $200
+				.or $0000 ;ZERO PAGE DECLARATIONS
+MSGPTR				.bs 2 ;MESSAGE POINTER
+MSGIDX				.bs 1
+*
+SCRNIDX				.bs 1
+SCRNPTR				.bs 2
+DATAPTR				.bs 2
+
+DATABUF				.bs 160
+*
+SV.ZREG				.bs 1
+SV.EREG				.bs 1
+SV.SMODE				.bs 1
+SV.EACR				.bs 1
+SV.EPCR				.bs 1
+SV.EIER				.bs 1
+*
+FLAG				.bs 1
+DEND
+* PAGE
+OPMSGRPLY				.eq *
+*
+*
+* SAVE CURRENT VALUES AND SET UP ZERO PAGE,
+* ENVIRONMENT, SCREEN MODE, AND E.6522 REGISTERS.
+*
+				php 
+				sei 
+				lda Z.REG
+				sta ZPBASE+SV.ZREG ;SAVE ZERO PAGE
+				lda #<ZPBASE
+				sta Z.REG
+				stx MSGPTR ;SAVE MESSAGE ADDRESS
+				sty MSGPTR+1
+				lda E.REG
+				sta SV.EREG ;SAVE ENVIRONMENT
+				and #$5F
+				ora #$40
+				sta E.REG ;SCREEN OFF, I/O SPACE ON
+				lda SCRNMODE
+				sta SV.SMODE ;SAVE SCREEN MODE
+				lda #$00
+				sta SCRNMODE
+				bit VM0 ;SET 40 COLUMN
+				bit VM1 ; BLACK & WHITE TEXT
+				bit VM2
+				bit VM3
+				ldx E.ACR
+				txa 
+				and #$20
+				sta SV.EACR ;SAVE AUXILIARY CONTROL REG
+				txa 
+				ora #$20
+				sta E.ACR ;SET UP BL TIMER
+				ldx E.PCR
+				txa 
+				and #$F0
+				sta SV.EPCR ;SAVE PERIPHERAL CONTROL REG
+				txa 
+				and #$0F
+				ora #$60
+				sta E.PCR ;SET UP VBL FLAGS
+				lda E.IER
+				and #$38
+				sta E.IER ;MASK VBL & BL INTERRUPTS
+				sta SV.EIER ;SAVE INTERRUPT MASKS
+				plp 
+*
+*
+* SAVE SCREEN DATA AND CLEAR MESSAGE WINDOW
+*
+				ldx #3
+OPR010				jsr SETPTRS
+				ldy #39
+OPR020				lda (SCRNPTR),Y ;SAVE SCREEN DATA
+				sta (DATAPTR),Y
+				lda #$A0
+				sta (SCRNPTR),Y ;BLANK SCREEN
+				dey 
+				bpl OPR020
+				dex 
+				bpl OPR010
+*
+*
+* MOVE MESSAGE TO WINDOW
+*
+				bit BELL
+				ldx #$00
+				stx MSGIDX
+
+OPR100				jsr SETPTRS
+				ldy #$00
+				sty SCRNIDX
+OPR110				ldy MSGIDX
+				inc MSGIDX
+				lda (MSGPTR),Y ;SET UP MESSAGE
+				beq OPR110
+				bmi OPR200
+				cmp #$0D
+				beq OPR120
+				ldy SCRNIDX
+				inc SCRNIDX
+				ora #$80
+				sta (SCRNPTR),Y
+				cpy #39
+				bcc OPR110
+OPR120				inx
+				cpx #4
+				bcc OPR100
+*
+*
+* DISPLAY MESSAGE UNTIL ALPHA-LOCK KEY TOGGLES
+*
+OPR200				ldy #2
+				lda KBPORT
+				and #$08
+				sta FLAG
+OPR210				jsr VIDEO
+				lda KBPORT
+				and #$08
+				cmp FLAG
+				beq OPR210
+				sta FLAG
+				dey 
+				bne OPR210
+*
+*
+* RESTORE PREVIOUS CONTENTS OF WINDOW
+*
+				ldx #3
+OPR400				jsr SETPTRS
+				ldy #39
+OPR410				lda (DATAPTR),Y
+				sta (SCRNPTR),Y
+				dey 
+				bpl OPR410
+				dex 
+				bpl OPR400
+*
+*
+* RESTORE E.6522, SCREEN MODE, ENVIRONMENT, & ZERO PAGE
+* THEN RETURN TO CALLER
+*
+				php 
+				sei 
+				lda E.ACR
+				and #$DF
+				ora SV.EACR ;RESTORE AUXILIARY CONTROL REG
+				sta E.ACR
+				lda E.PCR
+				and #$0F
+				ora SV.EPCR ;RESTORE PERIPHERAL CONTROL REG
+				sta E.PCR
+				lda SV.EIER ;RESTORE INTERRUPT ENABLE REG
+				ora #$80
+				sta E.IER
+				lda SV.SMODE ;RESTORE SCREEN MODE
+				sta SCRNMODE
+				lsr A
+				bcc OPR500
+				bit VM0+1 ;RESTORE VIDEO MODE
+OPR500				lsr A
+				bcc OPR510
+				bit VM1+1
+OPR510				lsr A
+				bcc OPR520
+				bit VM2+1
+OPR520				bit SCRNMODE
+				bvc OPR530
+				bit VM3+1
+OPR530				lda SV.EREG ;RESTORE ENVIRONMENT
+
+				sta E.REG
+				lda SV.ZREG ;RESTORE ZERO PAGE
+				sta Z.REG
+				plp 
+				rts 
+* PAGE
+* REP 60
+*
+* SUBROUTINE VIDEO
+*
+* THIS SUBROUTINE POLLS THE VERTICAL-BLANKING AND
+* COMPOSITE-BLANKING-TIMER FLAGS AND TURNS THE SCREEN
+* OFF AND ON SO THAT ONLY THE MESSAGE WINDOW WILL BE
+* DISPLAYED.
+*
+* THE E.6522 MUST BE INITIALIZED SO THAT E.CB2 FLAGS THE
+* POSITIVE EDGE OF VBL AND E.T2 COUNTS BL PULSES. THE
+* INTERRUPTS MUST BE MASKED AND THE PROPER COUNT MUST
+* ALREADY BE STORED IN THE LOW ORDER BYTE OF E.T2.
+*
+* ENTRY: VIDEO
+*
+* PARAMETERS: INTERRUPT SYSTEM DISABLED
+*
+* EXIT: A -- UNDEFINED
+* X, Y -- PRESERVED
+*
+* REP 60
+*
+VIDEO				.eq *
+				lda E.IFR
+				and #$28 ;GET VBL & BL FLAGS
+				beq VID030
+				sta E.IFR ;CLEAR FLAGS
+				and #$20 ;WHICH FLAG?
+				bne VID010 ; BL
+*
+				lda #$1F
+				sta E.T2 ;SET UP BL TIMER
+				lda #$00
+				sta E.T2+1
+				lda E.REG
+				ora #$20 ;SET UP FOR SCREEN ON
+				sec 
+				bcs VID020
+*
+VID010				lda E.REG
+				and #$DF ;SET UP FOR SCREEN OFF
+				clc 
+*
+VID020				sta E.REG
+				lda #$00
+				ror A
+				sta SCRNMODE
+VID030				rts
+* PAGE
+* REP 60
+*
+* SUBROUTINE SETPTRS
+*
+* THIS SUBROUTINE SETS UP THE POINTERS TO THE MESSAGE
+* WINDOW AND DATA SAVE AREA.
+*
+* ENTRY: SETPTRS
+*
+* PARAMETERS: X -- LINE NUMBER [0..3]
+*
+* EXIT: A -- UNDEFINED
+* X, Y -- PRESERVED
+*
+* REP 60
+*
+SETPTRS				.eq *
+				txa 
+				lsr A
+				ora #$04
+				sta SCRNPTR+1
+				lda #$00
+				ror A
+				sta SCRNPTR
+				lda #<DATABUF
+
+				sta DATAPTR+1
+				lda DBUFADR,X
+				sta DATAPTR
+				rts 
+*
+DBUFADR				.eq *
+				.da >0*40+DATABUF
+				.da >1*40+DATABUF
+				.da >2*40+DATABUF
+				.da >3*40+DATABUF
+LST ON
+
+ZZEND				.eq *
+ZZLEN				.eq ZZEND-ZZORG
+IFNE ZZLEN-LENOMSG
+FAIL 2,"SOSORG FILE IS INCORRECT FOR OPRMSG"
+FIN
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: OPRMSG.SRC
+*************************************************************************
+
+
+
+
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.13/sos.s.oprmsg
+LOAD /A3OSX.BUILD/SOS.13/sos.s
+ASM

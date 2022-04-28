@@ -1,0 +1,604 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: SOSLDR.F.SRC
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+* PAGE
+* REP 100
+*
+* GETMEM ( IN: PG.ALIGN
+* IN: CNT
+* I/O: DST.P
+* I/O: DSTBANK
+* I/O: DSEGLIST
+* OUT: PREVBANK )
+*
+* LOCAL: PREVDST
+* (COMPUTES # OF PAGES TO ADD TO DRIVER SEGMENT AND WHETHER TO BEGIN A NEW SEGMENT)
+* REP 100
+GETMEM				.eq *
+				lda DSTBANK ; PREVBANK:=DSTBANK
+				sta PREVBANK
+				lda DST.P ; PREVDST:=DST.P
+				sta PREVDST
+				lda DST.P+1
+				sta PREVDST+1
+				jsr NEWDST ; NEWDST(PG.ALIGN.IN, PREVDST.IN, CNT.IN, DST.P.OUT)
+*
+				lda DST.P+1 ; IF DST.P >= $2000
+				cmp #$20
+				bcc GETM010
+				sec ; THEN
+				lda PREVDST+1 ; A=PAGES:=PREVDST-DST.P
+				sbc DST.P+1
+				clc 
+				jsr BUILD.DSEG ; BUILD.DSEG(C="NEXT BANK".IN, A=PAGES.IN, DSEGLIST.IO)
+				jmp GETM.EXIT
+* ELSE
+GETM010				dec DSTBANK ; DSTBANK:=DSTBANK-1
+				lda #>$A000 ; PREVDST:=$A000
+				sta PREVDST
+				lda #<$A000
+				sta PREVDST+1
+				jsr NEWDST ; NEWDST(PG.ALIGN.IN, PREVDST.IN, CNT.IN, DST.P.OUT)
+				sec ; A="PAGES":=PREVDST-DST.P
+				lda PREVDST+1
+				sbc DST.P+1
+				sec 
+				jsr BUILD.DSEG ; BUILD.DSEG(C="NEXTBANK".IN, A="PAGES".IN, DSEGLIST.IO)
+*
+GETM.EXIT				rts ; RETURN
+* PAGE
+* REP 100
+*
+* NEWDST ( IN: PG.ALIGN
+* IN: PREVDST
+* IN: CNT
+* I/O: DST.P )
+* (COMPUTES DESTINATION BASE ADDRESS, ALIGNING ON PAGE BOUNDARY IF REQUESTED)
+* REP 100
+NEWDST				.eq *
+				sec ; IF (PREVDST-$2000) < CNT
+				lda PREVDST
+				sbc #>$2000
+				tax 
+				lda PREVDST+1
+				sbc #<$2000
+				cpx CNT
+				sbc CNT+1
+				bcs NEWD010
+				lda #0 ; THEN
+				sta DST.P ; DST.P:=0
+				sta DST.P+1
+				beq NEWD.EXIT
+NEWD010				sec ; ELSE
+				lda PREVDST ; DST.P:=PREVDST-CNT
+				sbc CNT
+
+				sta DST.P
+				lda PREVDST+1
+				sbc CNT+1
+				sta DST.P+1
+				lda PG.ALIGN ; IF PG.ALIGN <> 0
+				ora PG.ALIGN+1 ; THEN
+				beq NEWD.EXIT
+				sec ; DST.P:=(DST.P/256*256)-PG.ALIGN
+				lda #0
+				sbc PG.ALIGN
+				sta DST.P
+				lda DST.P+1
+				sbc PG.ALIGN+1
+				sta DST.P+1
+NEWD.EXIT				rts ; RETURN
+* PAGE
+* REP 100
+*
+* BUILD.DSEG ( IN: C="NEXTBANK"
+* IN: A="PAGES"
+* I/O: DSEGLIST )
+* (COMPUTES # OF PAGES TO ADD TO DRIVER SEGMENT AND WHETHER TO BEGIN A NEW SEGMENT)
+* REP 100
+BUILD.DSEG				.eq *
+				pha 
+				bcs BLDS010 ; IF ("NEXTBANK"=TRUE OR DSEGX=$FF)
+				lda DSEGX ; THEN
+				bpl BLDS020
+BLDS010				inc DSEGX ; DSEGX:=DSEGX+1
+BLDS020				ldx DSEGX
+				clc ; DSEGLIST(DSEGX):=DSEGLIST(DSEGX)+"PAGES"
+				pla 
+				adc DSEGLIST,X
+				sta DSEGLIST,X
+				rts ; RETURN
+*
+*
+*
+DSEGX				.da $FF ; DRIVER SEGMENT LIST TABLE
+DSEGLIST				.da $0 ; # PAGES FOR 1ST DRIVER SEGMENT (BANK N )
+				.da $0 ; " 2ND " (BANK N-1)
+				.da $0 ; " 3RD " (BANK N-2)
+				.da $0 ; " 4TH " (BANK N-3)
+* PAGE
+* REP 100
+*
+* RELOC ( IN: SRC.P
+* IN: REL.P
+* IN: DST.P
+* OUT: RELOCATED DRIVER MODULE )
+*
+* LOCAL: REL.END, CODE.P
+* (RELOCATES DRIVER MODULE'S CODE FIELD USING RELOCATION FIELD)
+* REP 100
+RELOC				.eq *
+				sec ; REL.END:=REL.P-(REL.P)
+				ldy #0
+				lda REL.P
+				sbc (REL.P),Y
+				sta REL.END
+				iny 
+				lda REL.P+1
+				sbc (REL.P),Y
+				sta REL.END+1
+REL.LOOP				sec ; REL.P:=REL.P-2
+				lda REL.P
+				sbc #2
+				sta REL.P
+				lda REL.P+1
+				sbc #0
+				sta REL.P+1
+				lda REL.P ; IF REL.P < REL.END THEN EXIT
+				cmp REL.END
+				lda REL.P+1
+				sbc REL.END+1
+				bcc REL.EXIT
+				ldy #0 ; CODE.P:=X:SRC.P+(REL.P)
+				clc 
+				lda SRC.P
+				adc (REL.P),Y
+				sta CODE.P
+
+				iny 
+				lda SRC.P+1
+				adc (REL.P),Y
+				sta CODE.P+1
+				lda CXPAGE+SRC.P+1
+				sta CXPAGE+CODE.P+1
+				ldy #0 ; (CODE.P):=(CODE.P)+DST.P
+				clc 
+				lda (CODE.P),Y
+				adc DST.P
+				sta (CODE.P),Y
+				iny 
+				lda (CODE.P),Y
+				adc DST.P+1
+				sta (CODE.P),Y
+				jmp REL.LOOP ; GOTO REL.LOOP
+*
+REL.EXIT				rts ; RETURN
+* PAGE
+* REP 100
+*
+* ALLOC.SEG ( IN: K.BASE
+* IN: I.BASE.P
+* IN: SYSBANK )
+* I.BASE.P
+* D.BASE.PG
+* (ALLOCATES SEGMENTS FOR KERNEL, INTERPRETER AND SYSTEM WORK AREA)
+* REP 100
+ALLOC.SEG				.eq *
+				brk ; REQ.SEG(BASE=(F,0), LIMIT=(F,1D), SEGID=0, SEGNUM)
+				.da REQSEG
+				.da SEGMENT
+*
+				lda #$10 ; SET BASE/LIMIT BANKS
+				sta SEGBASE
+				sta SEGLIM
+				lda #0 ; AND INIT BASE PAGE
+				sta SEGBASE+1
+*
+				ldx K.BASE+1 ; KERNEL SEGMENT, ID=1
+				jsr RSEG
+*
+				ldx I.BASE.P+1 ; INTERPRETER SEGMENT, ID=2
+				jsr RSEG
+				rts 
+* PAGE
+* REP 100
+*
+* RSEG ( IN: X=BASE.PAGE OF SEGMENT )
+*
+* REP 100
+RSEG				.eq *
+				inc SEGID ; SEGID:=SEGID+1
+				ldy SEGBASE+1 ; LIMIT.PAGE:=BASE.PAGE-1
+				dey 
+				sty SEGLIM+1
+				stx SEGBASE+1 ; BASE.PAGE:=X
+*
+				cpx #$A0 ; IF BASE>=$A0 OR LIMIT<$A0 THEN
+				bcs RSEG010 ; THEN
+				lda SEGLIM+1 ; REQUEST ONLY ONE SEGMENT
+				cmp #$A0
+				bcc RSEG010
+*
+				txa ; ELSE
+				pha ; REQUEST TWO SEGMENTS
+				ldx #$A0
+				stx SEGBASE+1
+*
+				brk ; REQ.SEG(BASE, LIMIT, SEGID, SEGNUM)
+				.da REQSEG
+				.da SEGMENT
+*
+				pla 
+				sta SEGBASE+1
+				lda #$9F
+				sta SEGLIM+1
+				lda SYSBANK
+				sta SEGBASE
+				sta SEGLIM
+*
+
+*
+RSEG010				brk ; REQ.SEG(BASE, LIMIT, SEGID, SEGNUM)
+				.da REQSEG
+				.da SEGMENT
+*
+				rts ; RETURN
+* PAGE
+* REP 100
+*
+* ALLOC.DSEG ( IN: DSEGLIST )
+*
+* (ALLOCATES SEGMENTS FOR DRIVER MODULES"
+* REP 100
+ALLOC.DSEG				.eq *
+				inc DSEGX ; DSEGX:=DSEGX+1
+				bne ALDS010 ; IF DSEGX=0
+				ldx #ERR5X ; THEN ERROR("INVALID DRIVER FILE")
+				ldy #ERR5L
+				jsr ERROR
+*
+ALDS010				ldy #$FF ; Y:=-1
+ALDS020				iny ; WHILE (Y:=Y+1) < DSEGX
+				cpy DSEGX ; DO
+				bcs ALDS.EXIT
+				lda DSEGLIST,Y ; PAGECT:=DSEGLIST(Y)
+				sta SEGPGCNT
+				brk ; FINDSEG (SRCHMODE=0.IN, SEGID=3.IN
+				.da FINDSEG ; PAGECT=DSEGLIST(Y)
+				.da SEGMENT1 ; BASE.OUT, LIMIT.OUT)
+				jmp ALDS020
+*
+ALDS.EXIT				rts ; RETURN
+* PAGE
+* REP 100
+*
+* ERROR (IN: X=MESSAGE INDEX
+* IN: Y=MESSAGE LENGTH
+* (DISPLAYS ERROR MESSAGE, SOUNDS BELL AND LOOPS UNTIL CONTROL/RESET PRESSED)
+* REP 100
+ERROR				.eq *
+				sty ETEMP ; CENTER MSG (Y:=LEN/2+LEN)
+				sec 
+				lda #40
+				sbc ETEMP
+				lsr A
+				clc 
+				adc ETEMP
+				tay 
+*
+PRNT010				lda ERR,X ; MOVE MESSAGE TO SCREEN MEMORY
+				sta EMSGADR-1,Y
+				dex 
+				dey 
+				dec ETEMP
+				bne PRNT010
+*
+				lda #$73 ; E:=( 0.1.1.1:0.0.1.1 )
+				sta E.REG ; ( 1.I.S.R:W.P.R.S )
+				lda $C040 ; SOUND BELL
+				jmp * ; LOOP UNTIL REBOOT (CTRL/RESET)
+* PAGE
+* REP 100
+*
+* ERROR MESSAGES
+*
+* REP 100
+EMSGADR				.eq $7A8
+*
+ERR				.eq *
+ERR0				.as "I/O ERROR"
+ERR0L				.eq *-ERR0
+ERR0X				.eq *-ERR-1
+ERR1				.as "INTERPRETER FILE NOT FOUND"
+ERR1L				.eq *-ERR1
+ERR1X				.eq *-ERR-1
+ERR2				.as "INVALID INTERPRETER FILE"
+ERR2L				.eq *-ERR2
+ERR2X				.eq *-ERR-1
+ERR3				.as "INCOMPATIBLE INTERPRETER"
+ERR3L				.eq *-ERR3
+ERR3X				.eq *-ERR-1
+
+ERR4				.as "DRIVER FILE NOT FOUND"
+ERR4L				.eq *-ERR4
+ERR4X				.eq *-ERR-1
+ERR5				.as "INVALID DRIVER FILE"
+ERR5L				.eq *-ERR5
+ERR5X				.eq *-ERR-1
+ERR6				.as "DRIVER FILE TOO LARGE"
+ERR6L				.eq *-ERR6
+ERR6X				.eq *-ERR-1
+ERR7				.as "ROM ERROR: PLEASE NOTIFY YOUR DEALER"
+ERR7L				.eq *-ERR7
+ERR7X				.eq *-ERR-1
+ERR8				.as "TOO MANY DEVICES"
+ERR8L				.eq *-ERR8
+ERR8X				.eq *-ERR-1
+ERR9				.as "TOO MANY BLOCK DEVICES"
+ERR9L				.eq *-ERR9
+ERR9X				.eq *-ERR-1
+ERR10				.as "EMPTY DRIVER FILE"
+ERR10L				.eq *-ERR10
+ERR10X				.eq *-ERR-1
+* PAGE
+* REP 100
+*
+* WELCOME ()
+*
+* (PRINTS WELCOME MESSAGE - "APPLE ///", VERSION, DATE/TIME, COPYRIGHT)
+* REP 100
+WELCOME				.eq *
+*
+* PRINT "APPLE III" MESSAGE
+*
+				ldy #AMSGL
+WAM010				lda AMSG-1,Y
+				sta AMSGADR-1,Y
+				dey 
+				bne WAM010
+*
+* PRINT SOS VERSION MESSAGE
+*
+				clc 
+				lda #40
+				adc #>SOSVERL
+				lsr A
+				tax 
+				ldy #>SOSVERL
+WSM010				lda SOSVER-1,Y
+				ora #$80
+				sta SMSGADR-1,X
+				dex 
+				dey 
+				bne WSM010
+*
+* PRINT DATE AND TIME MESSAGE
+*
+				brk ; GET.TIME(TIME.OUT)
+				.da GETTIME
+				.da DTPARMS
+*
+				lda DATETIME+8 ;SET UP WEEKDAY
+				and #$0F
+				beq WDM040 ;NO CLOCK
+				sta WTEMP
+				asl A
+				adc WTEMP
+				tax 
+				ldy #3
+WDM010				lda DAYNAME-1,X
+				sta DMSG-1,Y
+				dex 
+				dey 
+				bne WDM010
+*
+				lda DATETIME+7 ;SET UP DATE
+				ldx DATETIME+6
+				sta DMSG+6
+				stx DMSG+5
+*
+				lda DATETIME+5 ;SET UP MONTH
+				and #$0F
+				ldx DATETIME+4
+
+				cpx #$31
+				bcc WDM020
+				adc #9
+WDM020				sta WTEMP
+				asl A
+				adc WTEMP
+				tax 
+				ldy #3
+WDM030				lda MONNAME-1,X
+				sta DMSG+7,Y
+				dex 
+				dey 
+				bne WDM030
+*
+				lda DATETIME+3 ;SET UP YEAR
+				ldx DATETIME+2
+				sta DMSG+13
+				stx DMSG+12
+*
+				lda DATETIME+10 ;SET UP HOUR
+				ldx DATETIME+09
+				sta DMSG+17
+				stx DMSG+16
+*
+				lda DATETIME+12 ;SET UP MINUTE
+				ldx DATETIME+11
+				sta DMSG+20
+				stx DMSG+19
+*
+				ldy #DMSGL ;PRINT DATE & TIME
+WDM050				lda DMSG-1,Y
+				ora #$80
+				sta DMSGADR-1,Y
+				dey 
+				bne WDM050
+*
+* PRINT COPYRIGHT MESSAGE
+*
+WDM040				ldy #CMSGL
+WCM010				lda CMSG-1,Y
+				sta CMSGADR-1,Y
+				dey 
+				bne WCM010
+				rts 
+* PAGE
+* REP 100
+*
+* WELCOME () - DATA DECLARATIONS
+*
+* REP 100
+* FIXME - MSB ON
+AMSG				.as "APPLE ///"
+AMSGL				.eq *-AMSG
+AMSGADR				.eq 40-AMSGL/2+$4A8
+* FIXME - MSB OFF
+SMSGADR				.eq $5A8
+DMSG				.as "DAY, DD-MON-YY HH:MM"
+DMSGL				.eq *-DMSG
+DMSGADR				.eq 40-DMSGL/2+$6A8
+DAYNAME				.as "SUNMONTUEWEDTHUFRISAT"
+MONNAME				.as "JANFEBMARAPRMAYJUN"
+ASC "JULAUGSEPOCTNOVDEC"
+* FIXME - MSB ON
+CMSG				.as "(C)1980,1981,1982 BY APPLE COMPUTER INC."
+CMSGL				.eq *-CMSG
+CMSGADR				.eq 40-CMSGL/2+$7D0
+* FIXME - MSB OFF
+* PAGE
+* REP 100
+*
+* SOS SYSTEM CALLS (1)
+*
+* REP 100
+* OPEN (PATHNAME.IN, REFNUM.OUT, OPENLIST.IN, OPENCNT.IN) ** (ACCESS.IN, PAGES.IN, SYSBUF.IN)
+* REP 100
+OPEN				.eq $C8
+*
+OPEN.PARMS				.da $4
+				.da PATH
+OPEN.REF				.da $0
+				.da OPEN.LIST
+
+				.da $4
+OPEN.LIST				.da $0,$4 ; PAGES:=4
+				.da SYSBUF.P
+PATH				.bs $40 ; PATHNAME BUFFER
+I.LABEL				.as "SOS NTRP" ; FILE LABELS
+D.LABEL				.as "SOS DRVR"
+* REP 100
+* READ (REFNUM.IN, BUFFER.IN, BYTES.IN, BYTESREAD.OUT)
+* REP 100
+READ				.eq $CA
+*
+READ.PARMS				.da $4
+READ.REF				.da $0
+READ.BUF				.da RDBUF.P
+READ.BYT				.da $FFFF-FILE+1
+READ.BYTRD				.da $0
+* REP 100
+* CLOSE (REFNUM.IN)
+* REP 100
+CLOSE				.eq $CC
+*
+CLOSE.PARMS				.da $1
+CLOSE.REF				.da $0
+* REP 100
+* FIND.SEG (SRCHMODE.IN, PAGES.IN, SEGID.IN, BASE.OUT, LIMIT.OUT, SEGNUM.OUT)
+* REP 100
+FINDSEG				.eq $41
+*
+SEGMENT1				.da $6 ; FIND.SEG(SRCHMODE, SEGID, PAGECT, BASE, LIMIT, SEGNUM)
+SEGSRCH				.da $0,$3
+SEGPGCNT				.da $0000
+				.da $0
+				.da $0
+				.da $0
+* PAGE
+* REP 100
+*
+* SOS SYSTEM CALLS (2)
+*
+* REP 100
+* REP 100
+* REQUEST.SEG (BASE.IN, LIMIT.IN, SEGID.IN, SEGNUM.OUT)
+* REP 100
+REQSEG				.eq $40
+*
+SEGMENT				.da $4 ; REQUEST SEG PARM LIST
+SEGBASE				.da $F,$0
+SEGLIM				.da $F,$1D
+SEGID				.da $0,$0
+* REP 100
+* SET.PREFIX (PREFIXPATH.IN)
+* REP 100
+SETPREFIX				.eq $C6
+PREFX.PARMS				.da $1
+				.da PREFX.PATH
+PREFX.PATH				.da $3
+ASC '.D1'
+* REP 100
+* GETTIME (TIME.OUT)
+* REP 100
+GETTIME				.eq $63
+*
+DTPARMS				.da 1
+				.da DATETIME
+DATETIME				.as "YYYYMMDDWHHMMSSMMM"
+* PAGE
+* REP 100
+*
+* END OF SOSLDR CODE
+*
+* REP 100
+SLOP				.eq >$F8-*
+DS SLOP ; +-----------------------------------+
+INITMODULE				.bs $200 ; ! KERNEL'S INIT MODULE RESIDES HERE !
+LDREND				.eq * ; +-----------------------------------+
+FILE				.eq *-$2000+$400
+* REP 100
+* SOS INTERPRETER FILE
+* REP 100
+I.FILE				.eq FILE
+I.HDR.CNT				.eq I.FILE+$8
+
+* REP 100
+* SOS DRIVER FILE
+* REP 100
+D.FILE				.eq FILE
+D.HDR.CNT				.eq D.FILE+$8
+D.DRIVES				.eq D.HDR.CNT+$2
+D.CHRSET				.eq D.DRIVES+$2+$10
+D.KYBD				.eq D.CHRSET+$10+$400
+* REP 100
+
+LST ON
+ZZEND				.eq *
+ZZLEN				.eq ZZEND-ZZORG
+*
+NE ZZLEN-LENLODR
+FAIL 2,"SOSORG FILE IS INCORRECT FOR SOS LOADER"
+FIN
+*
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: SOSLDR.F.SRC
+*************************************************************************
+
+
+
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.13/sos.s.sosldr.f
+LOAD /A3OSX.BUILD/SOS.13/sos.s
+ASM

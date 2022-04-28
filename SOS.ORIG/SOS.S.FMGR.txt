@@ -1,0 +1,132 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: FMGR.SRC
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+*				.TI "SOS 1.1 FILE MANAGER"
+* REL
+INCLUDE SOSORG,6,1,254
+				.or ORGFMGR
+ZZORG				.eq *
+* FIXME - MSB OFF
+* REP 60
+* COPYRIGHT (C) APPLE COMPUTER INC. 1980
+* ALL RIGHTS RESERVED
+* REP 60
+*
+* FILE MANAGER (VERSION = 1.1O )
+* (DATE = 8/04/81)
+*
+* THIS MODULE IS ENTERED FROM THE SYSTEM CALL MANAGER, AND
+* IS RESPONSIBLE FOR SWITCHING TO EITHER THE BLOCK FILE
+* MANAGER, OR THE CHARACTER FILE MANAGER.
+*
+* REP 60
+*
+* ENTRY FMGR
+* ENTRY LEVEL
+*
+* EXTRN BFMGR
+* EXTRN CFMGR
+* EXTRN SYSERR
+* EXTRN SERR
+* EXTRN BADPATH
+* EXTRN FNFERR
+* EXTRN LVLERR
+*
+F.TPARMX				.eq $A0 ; LOC OF FILE SYSTEM CALL PARMS
+OPEN				.eq $8
+CLOSE				.eq $C
+SETLEVEL				.eq $12
+GETLEVEL				.eq $13
+F.REQCODE				.eq F.TPARMX
+F.LEVEL				.eq F.TPARMX+$1
+PATHNAME				.eq F.TPARMX+$1
+REFNUM				.eq F.TPARMX+$1
+PERIOD				.eq $2E
+LEVEL				.da $1
+* PAGE
+* REP 60
+*
+* FILE MANAGER
+*
+* REP 60
+FMGR				.eq *
+*
+				lda F.REQCODE
+				cmp #OPEN
+				bcc FMGR010
+				beq FMGR020
+				cmp #CLOSE
+				bcc FMGR030
+				beq FMGR040
+				cmp #SETLEVEL
+				beq SLEVEL
+				cmp #GETLEVEL
+				beq GLEVEL
+*
+FMGR010				jmp BFMGR ; EXIT
+*
+FMGR020				ldy #1
+				lda (PATHNAME),Y
+				cmp #PERIOD
+				bne FMGR010
+				jsr CFMGR
+				bcc FMGR024
+				lda SERR
+
+				cmp #FNFERR
+				beq FMGR026
+FMGR024				rts ; EXIT
+*
+FMGR026				lda #0
+				sta SERR
+				jmp BFMGR ; EXIT
+*
+FMGR030				lda REFNUM
+FMGR031				bpl FMGR010
+				jmp CFMGR ; EXIT
+*
+FMGR040				lda REFNUM
+				bne FMGR031
+				jsr BFMGR ; CLOSE (0)
+				jmp CFMGR ; EXIT
+*
+SLEVEL				lda F.LEVEL
+				beq LVL.ERR
+				cmp #4
+				bcs LVL.ERR
+				sta LEVEL
+				rts 
+LVL.ERR				lda #LVLERR
+				jsr SYSERR
+*
+GLEVEL				ldy #0
+				lda LEVEL
+				sta (F.LEVEL),Y
+				rts 
+*
+LST ON
+ZZEND				.eq *
+ZZLEN				.eq ZZEND-ZZORG
+IFNE ZZLEN-LENFMGR
+FAIL 2,"SOSORG FILE IS INCORRECT FOR FMGR"
+FIN
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: FMGR.SRC
+*************************************************************************
+
+
+
+
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS.13/sos.s.fmgr
+LOAD /A3OSX.BUILD/SOS.13/sos.s
+ASM
