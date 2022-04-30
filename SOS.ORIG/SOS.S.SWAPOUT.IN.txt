@@ -383,24 +383,24 @@ URDERR			.bs 1 ; ERROR COUNT FOR USRREQ
 *
 *
 UMB			.eq *
-				.hs 49,6E,73,65,72,74,20
-				.hs 76,6F,6C,75,6D,65
-				.hs 3A,20 ; "INSERT VOLUME: "
+				.da 49,6E,73,65,72,74,20
+				.da 76,6F,6C,75,6D,65
+				.da 3A,20 ; "INSERT VOLUME: "
 MVOL			.bs 15
-				.hs 0D ; CR LINE TERMINATOR
-				.hs 20,20,20,20,69,6E,20
-				.hs 64,65,76,69,63,65
-				.hs 3A,20 ; " IN DEVICE: "
+				.da 0D ; CR LINE TERMINATOR
+				.da 20,20,20,20,69,6E,20
+				.da 64,65,76,69,63,65
+				.da 3A,20 ; " IN DEVICE: "
 MDEV			.bs 15
-				.hs 0D ; CR LINE TERMINATOR
-				.hs 74,68,65,6E,20,70,72
-				.hs 65,73,73,20,74,68,65,20
-				.hs 41,4C,50,48,41,20,4C
-				.hs 4F,43,4B,20,6B,65,79
-				.hs 20,74,77,69,63,65
+				.da 0D ; CR LINE TERMINATOR
+				.da 74,68,65,6E,20,70,72
+				.da 65,73,73,20,74,68,65,20
+				.da 41,4C,50,48,41,20,4C
+				.da 4F,43,4B,20,6B,65,79
+				.da 20,74,77,69,63,65
 * "THEN PRESS THE ALPHA LOCK KEY TWICE"
 * FOLLOWED WITH $FF MESSAGE TERMINATOR (HIGH BIT SIGNIFICANT)
-				.hs FF ; MESSAGE TERMINATOR (HIGH BIT)
+				.da FF ; MESSAGE TERMINATOR (HIGH BIT)
 *
 ZZLEN			.eq *-ZZORG
 ZZEND			.eq *

@@ -47,8 +47,8 @@ PHANTM2			lda ROOTSTUF-D.FILID,Y
 				lda #BADPATH ; (CARRY IS SET)
 				rts 
 *
-ROOTSTUF		.hs 0,2,0,4
-				.hs 0,0,8,0
+ROOTSTUF		.da 0,2,0,4
+				.da 0,0,8,0
 *
 LOOKFIL0		lda #0 ; RESET FREE ENTRY INDICATOR
 				sta NOFREE

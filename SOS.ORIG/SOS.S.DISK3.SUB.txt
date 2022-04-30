@@ -247,7 +247,7 @@ NOADJ			.eq *
 				sta $1400+BUF+1
 				rts 
 *
-SECTABLE		.hs 00,04,08,0C,01,05,09,0D
+SECTABLE		.da 00,04,08,0C,01,05,09,0D
 * PAGE
 * REP 40
 * NAME : MOREBLKS

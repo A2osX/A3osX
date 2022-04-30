@@ -165,12 +165,12 @@ D.BYTRD			.bs 2 ;BYTES READ (READ)
 DIB1			.eq * ;DIB FOR .D1
 				.da DIB2 ;FLINK
 				.da MAIN ;ENTRY POINT
-				.hs 03 ;NAME LENGTH
+				.da 03 ;NAME LENGTH
 				.as '.D1 '
-				.hs 80 ;DEVNUM: ACTIVE
-				.hs 00 ;SLOT
-				.hs 00 ;UNIT NUMBER
-				.hs E1,01,00 ;TYPE,SUB,FILLER
+				.da 80 ;DEVNUM: ACTIVE
+				.da 00 ;SLOT
+				.da 00 ;UNIT NUMBER
+				.da E1,01,00 ;TYPE,SUB,FILLER
 				.da 280 ;BLOCKCOUNT
 				.da 1 ;MANUFACTURER=APPLE
 				.da $1100 ;VERSION=1.1
@@ -178,12 +178,12 @@ DIB1			.eq * ;DIB FOR .D1
 DIB2			.eq * ;DIB FOR .D2
 				.da DIB3 ;FLINK
 				.da MAIN ;ENTRY POINT
-				.hs 03 ;NAME LENGTH
+				.da 03 ;NAME LENGTH
 				.as '.D2 '
-				.hs 80 ;DEVNUM: ACTIVE
-				.hs 00 ;SLOT
-				.hs 01 ;UNIT NUMBER
-				.hs E1,01,00 ;TYPE,SUB,FILLER
+				.da 80 ;DEVNUM: ACTIVE
+				.da 00 ;SLOT
+				.da 01 ;UNIT NUMBER
+				.da E1,01,00 ;TYPE,SUB,FILLER
 				.da 280 ;BLOCKCOUNT
 				.da 1 ;MANUFACTURER=APPLE
 				.da $1100 ;VERSION=1.1
@@ -191,12 +191,12 @@ DIB2			.eq * ;DIB FOR .D2
 DIB3			.eq * ;DIB FOR .D3
 				.da DIB4 ;FLINK
 				.da MAIN ;ENTRY POINT
-				.hs 03 ;NAME LENGTH
+				.da 03 ;NAME LENGTH
 				.as '.D3 '
-				.hs 80 ;DEVNUM: ACTIVE
-				.hs 00 ;SLOT
-				.hs 02 ;UNIT NUMBER
-				.hs E1,01,00 ;TYPE,SUB,FILLER
+				.da 80 ;DEVNUM: ACTIVE
+				.da 00 ;SLOT
+				.da 02 ;UNIT NUMBER
+				.da E1,01,00 ;TYPE,SUB,FILLER
 				.da 280 ;BLOCKCOUNT
 				.da 1 ;MANUFACTURER=APPLE
 				.da $1100 ;VERSION=1.1
@@ -204,12 +204,12 @@ DIB3			.eq * ;DIB FOR .D3
 DIB4			.eq * ;DIB FOR .D4
 				.da 0 ;NO FLINK
 				.da MAIN ;ENTRY POINT
-				.hs 03 ;NAME LENGTH
+				.da 03 ;NAME LENGTH
 				.as '.D4 '
-				.hs 80 ;DEVNUM: ACTIVE
-				.hs 00 ;SLOT
-				.hs 03 ;UNIT NUMBER
-				.hs E1,01,00 ;TYPE,SUB,FILLER
+				.da 80 ;DEVNUM: ACTIVE
+				.da 00 ;SLOT
+				.da 03 ;UNIT NUMBER
+				.da E1,01,00 ;TYPE,SUB,FILLER
 				.da 280 ;BLOCKCOUNT
 				.da 1 ;MANUFACTURER=APPLE
 				.da $1100 ;VERSION=1.1

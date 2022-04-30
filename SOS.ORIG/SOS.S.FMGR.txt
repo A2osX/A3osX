@@ -48,7 +48,7 @@ F.LEVEL			.eq F.TPARMX+$1
 PATHNAME		.eq F.TPARMX+$1
 REFNUM			.eq F.TPARMX+$1
 PERIOD			.eq $2E
-LEVEL			.hs 01
+LEVEL			.da 01
 * PAGE
 * REP 60
 *

@@ -10,7 +10,7 @@ AUTO 3,1
 *				.TI "SOS 1.1 OPERATOR MESSAGE/REPLY"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.ph ORGOMSG FIXME: check if we need this
+*				.ph ORGOMSG FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -331,10 +331,10 @@ SETPTRS			.eq *
 				rts 
 *
 DBUFADR			.eq *
-				.hs >0*40+DATABUF
-				.hs >1*40+DATABUF
-				.hs >2*40+DATABUF
-				.hs >3*40+DATABUF
+				.da >0*40+DATABUF
+				.da >1*40+DATABUF
+				.da >2*40+DATABUF
+				.da >3*40+DATABUF
 * LST ON
 
 ZZEND			.eq *

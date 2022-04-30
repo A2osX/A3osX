@@ -186,9 +186,9 @@ CRESET			.eq $12
 STATUS			.eq $14
 *
 *WKMON DFB 8,11,11,7,9,12
-WKMON			.hs 08,0b,0b,07,09,0c
+WKMON			.da 08,0b,0b,07,09,0c
 *DFB 7,10,13,8,11,13
-				.hs 07,0a,0d,08,0b,0d
+				.da 07,0a,0d,08,0b,0d
 *
 *
 SET.TIME		.eq *
@@ -420,8 +420,8 @@ GTIM080			rts
 *
 * TEMPORARY STORAGE
 *
-OFFSET			.hs 00
-ERRCNT			.hs 00
+OFFSET			.da 00
+ERRCNT			.da 00
 CLKREGS			.bs 5
 MIN			.eq CLKREGS+0
 HOUR			.eq CLKREGS+1
@@ -543,7 +543,7 @@ BCDBIN			.eq *
 				adc TENS,Y ;ADD IN TENS
 				rts 
 *
-TENS			.hs 00,10,20,30,40,50,60,70,80,90
+TENS			.da 00,10,20,30,40,50,60,70,80,90
 * PAGE
 * REP 60
 *
@@ -664,9 +664,9 @@ ADS010			lda E.REG
 				rts 
 *
 JOYSIRTBL		.eq *
-				.hs 0C,00,00,00,00 ;ENSIO
-				.hs 0D,00,00,00,00 ;ENSEL
-				.hs 0E,00,00,00,00 ;6522 D.T2
+				.da 0C,00,00,00,00 ;ENSIO
+				.da 0D,00,00,00,00 ;ENSEL
+				.da 0E,00,00,00,00 ;6522 D.T2
 JOYSIRSIZ		.eq *-JOYSIRTBL
 * REP 60
 *

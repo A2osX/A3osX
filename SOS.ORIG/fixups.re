@@ -41,10 +41,10 @@ s@^DW @				.da @ig;
 s@^([A-Z0-9.]+)\ DW @\1				.da @ig;
 
 # Define Bytes DB/DFB -> .hs (mostly broken)
-s@^DB @				.hs @ig;
-s@^DFB @				.hs @ig;
-s@^([A-Z0-9.]+)\ DB @\1				.hs @ig;
-s@^([A-Z0-9.]+)\ DFB @\1				.hs @ig;
+s@^DB @				.da @ig;
+s@^DFB @				.da @ig;
+s@^([A-Z0-9.]+)\ DB @\1				.da @ig;
+s@^([A-Z0-9.]+)\ DFB @\1				.da @ig;
 
 # Define Storage DS -> .BS
 s@^([A-Z0-9.]+)\ DS @\1				.bs @ig;

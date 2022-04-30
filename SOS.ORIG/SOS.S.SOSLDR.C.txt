@@ -167,12 +167,12 @@ AUTO 3,1
 * REP 100
 K.FILE			.as "SOS KRNL"
 K.HDR.CNT		.da LDR.ADR-K.DRIVES
-K.DRIVES		.hs 01
-K.FLAGS			.hs 00 ; RESERVED FOR FUTURE USE
-I.PATH			.hs 0E
+K.DRIVES		.da 01
+K.FLAGS			.da 00 ; RESERVED FOR FUTURE USE
+I.PATH			.da 0E
 				.as ".D1/SOS.INTERP"
 				.bs $30-$F
-D.PATH			.hs 0E
+D.PATH			.da 0E
 				.as ".D1/SOS.DRIVER"
 				.bs $30-$F
 LDR.ADR			.da $0

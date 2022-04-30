@@ -101,7 +101,7 @@ AUTO 3,1
 * REP 60
 * PAGE
 *
-IDBYTE			.hs 81
+IDBYTE			.da 81
 *
 ALLOCSIR		.eq *
 				clc 

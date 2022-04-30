@@ -70,61 +70,61 @@ ZZORG			.eq *
 *
 FSC.CNT			.eq $13
 FSC.TBL			.eq *
-				.hs 03,5D,00,00 ; SCNUM=$C0 - CREATE
-				.hs 01,50,00,00 ; " =$C1 - DESTROY
-				.hs 02,55,00,00 ; " =$C2 - RENAME
-				.hs 03,5D,00,00 ; " =$C3 - SET.FILE.INFO
-				.hs 03,5D,00,00 ; " =$C4 - GET.FILE.INFO
-				.hs 04,55,99,00 ; " =$C5 - VOLUME
-				.hs 01,50,00,00 ; " =$C6 - SET.PREFIX
-				.hs 02,50,00,00 ; " =$C7 - GET.PREFIX
+				.da 03,5D,00,00 ; SCNUM=$C0 - CREATE
+				.da 01,50,00,00 ; " =$C1 - DESTROY
+				.da 02,55,00,00 ; " =$C2 - RENAME
+				.da 03,5D,00,00 ; " =$C3 - SET.FILE.INFO
+				.da 03,5D,00,00 ; " =$C4 - GET.FILE.INFO
+				.da 04,55,99,00 ; " =$C5 - VOLUME
+				.da 01,50,00,00 ; " =$C6 - SET.PREFIX
+				.da 02,50,00,00 ; " =$C7 - GET.PREFIX
 
-				.hs 04,58,D0,00 ; " =$C8 - OPEN
-				.hs 03,00,00,00 ; " =$C9 - NEW.LINE
-				.hs 04,05,19,00 ; " =$CA - READ
-				.hs 03,05,10,00 ; " =$CB - WRITE
-				.hs 01,00,00,00 ; " =$CC - CLOSE
-				.hs 01,00,00,00 ; " =$CD - FLUSH
-				.hs 03,00,30,00 ; " =$CE - SET.MARK
-				.hs 02,0B,00,00 ; " =$CF - GET.MARK
-				.hs 03,00,30,00 ; " =$D0 - SET.EOF
-				.hs 02,0B,00,00 ; " =$D1 - GET.EOF
-				.hs 01,00,00,00 ; " =$D2 - SET.LEVEL
-				.hs 01,80,00,00 ; " =$D3 - GET.LEVEL
+				.da 04,58,D0,00 ; " =$C8 - OPEN
+				.da 03,00,00,00 ; " =$C9 - NEW.LINE
+				.da 04,05,19,00 ; " =$CA - READ
+				.da 03,05,10,00 ; " =$CB - WRITE
+				.da 01,00,00,00 ; " =$CC - CLOSE
+				.da 01,00,00,00 ; " =$CD - FLUSH
+				.da 03,00,30,00 ; " =$CE - SET.MARK
+				.da 02,0B,00,00 ; " =$CF - GET.MARK
+				.da 03,00,30,00 ; " =$D0 - SET.EOF
+				.da 02,0B,00,00 ; " =$D1 - GET.EOF
+				.da 01,00,00,00 ; " =$D2 - SET.LEVEL
+				.da 01,80,00,00 ; " =$D3 - GET.LEVEL
 * PAGE
 *
 * DEVICE SYSTEM CALL DEFINITIONS
 *
 DSC.CNT			.eq 5
 DSC.TBL			.eq *
-				.hs 05,05,11,90 ; SCNUM=$80 - D.READ
-				.hs 04,05,11,00 ; " =$81 - D.WRITE
-				.hs 03,00,50,00 ; " =$82 - D.STATUS
-				.hs 03,00,50,00 ; " =$83 - D.CONTROL
-				.hs 02,58,00,00 ; " =$84 - GET.DEV.NUM
-				.hs 04,05,D0,00 ; " =$85 - D.INFO
+				.da 05,05,11,90 ; SCNUM=$80 - D.READ
+				.da 04,05,11,00 ; " =$81 - D.WRITE
+				.da 03,00,50,00 ; " =$82 - D.STATUS
+				.da 03,00,50,00 ; " =$83 - D.CONTROL
+				.da 02,58,00,00 ; " =$84 - GET.DEV.NUM
+				.da 04,05,D0,00 ; " =$85 - D.INFO
 *
 * UTILITY SYSTEM CALL DEFINITIONS
 *
 USC.CNT			.eq 5
 USC.TBL			.eq *
-				.hs 01,00,00,00 ; SCNUM=$60 - SET.FENCE
-				.hs 01,80,00,00 ; " =$61 - GET.FENCE
-				.hs 01,50,00,00 ; " =$62 - SET.TIME
-				.hs 01,50,00,00 ; " =$63 - GET.TIME
-				.hs 02,0B,00,00 ; " =$64 - JOYSTICK
-				.hs 00,00,00,00 ; " =$65 - COLD.START
+				.da 01,00,00,00 ; SCNUM=$60 - SET.FENCE
+				.da 01,80,00,00 ; " =$61 - GET.FENCE
+				.da 01,50,00,00 ; " =$62 - SET.TIME
+				.da 01,50,00,00 ; " =$63 - GET.TIME
+				.da 02,0B,00,00 ; " =$64 - JOYSTICK
+				.da 00,00,00,00 ; " =$65 - COLD.START
 *
 * MEMORY SYSTEM CALL DEFINITIONS
 *
 MSC.CNT			.eq 5
 MSC.TBL			.eq *
-				.hs 04,11,08,00 ; SCNUM=$40 - REQUEST.SEG
-				.hs 06,00,99,98 ; " =$41 - FIND.SEG
-				.hs 03,00,90,00 ; " =$42 - CHANGE.SEG
-				.hs 05,09,99,80 ; " =$43 - GET.SEG.INFO
-				.hs 02,18,00,00 ; " =$44 - GET.SEG.NUM
-				.hs 01,00,00,00 ; " =$45 - RELEASE.SEG
+				.da 04,11,08,00 ; SCNUM=$40 - REQUEST.SEG
+				.da 06,00,99,98 ; " =$41 - FIND.SEG
+				.da 03,00,90,00 ; " =$42 - CHANGE.SEG
+				.da 05,09,99,80 ; " =$43 - GET.SEG.INFO
+				.da 02,18,00,00 ; " =$44 - GET.SEG.NUM
+				.da 01,00,00,00 ; " =$45 - RELEASE.SEG
 *
 * DEBUG SYSTEM CALL DEFINITION
 *

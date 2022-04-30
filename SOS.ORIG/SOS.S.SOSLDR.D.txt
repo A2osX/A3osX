@@ -364,7 +364,7 @@ LDR030			lda I.PATH,Y ; REFNUM=OPEN.REF
 *
 *
 				brk 
-				.hs OPEN
+				.da OPEN
 				.da OPEN.PARMS
 				beq LDR040
 				ldx #ERR1X ; ERROR("INTERPRETER FILE NOT FOUND")
@@ -384,7 +384,7 @@ LDR040			lda OPEN.REF
 				sta RDBUF.P+1
 *
 				brk 
-				.hs READ
+				.da READ
 				.da READ.PARMS
 				beq LDR050
 				ldx #ERR0X ; ERROR("I/O ERROR")
@@ -394,7 +394,7 @@ LDR040			lda OPEN.REF
 * CLOSE INTERPRETER FILE AND CHECK LABEL ! SEE FIGURE 2. !
 * +---------------+
 LDR050			brk ; CLOSE(REFNUM=CLOSE.REF)
-				.hs CLOSE
+				.da CLOSE
 				.da CLOSE.PARMS
 				ldy #7 ; CHECK LABEL
 LDR051			lda (RDBUF.P),Y
@@ -455,7 +455,7 @@ LDR080			lda D.PATH,Y ; REFNUM=OPEN.REF
 				bpl LDR080
 *
 				brk 
-				.hs OPEN
+				.da OPEN
 				.da OPEN.PARMS
 				beq LDR090
 				ldx #ERR4X ; ERROR("DRIVER FILE NOT FOUND")
@@ -468,7 +468,7 @@ LDR090			lda OPEN.REF
 * READ IN ENTIRE DRIVER FILE INTO BANK 0
 *
 				brk ; READ(REFNUM=READ.REF
-				.hs READ ; RDBUF.P:=80:FILE
+				.da READ ; RDBUF.P:=80:FILE
 				.da READ.PARMS ; BYTES=$FFFF-FILE+1
 * ; BYTESRD=D.BYTESRD )
 				beq LDR100
@@ -479,7 +479,7 @@ LDR090			lda OPEN.REF
 * CLOSE THE DRIVER FILE AND CHECK LABEL ! SEE FIGURE 3. !
 * +---------------+
 LDR100			brk ; CLOSE(REFNUM=CLOSE.REF)
-				.hs CLOSE
+				.da CLOSE
 				.da CLOSE.PARMS
 				ldy #$7 ; CHECK LABEL
 LDR101			lda (RDBUF.P),Y
@@ -598,7 +598,7 @@ LDR140			jsr INIT.KRNL ; INIT.KRNL()
 				lda #0 ; TURN VIDEO OFF - PREVENTS CHAR "GROWTH" DURING DOWNLOAD
 				sta SCRNMODE
 				brk ; SET.PREFIX(PREFIXPATH=".D1")
-				.hs SETPREFIX
+				.da SETPREFIX
 				.da PREFX.PARMS
 *
 * LAUNCH CHARACTER SET DOWNLOAD (CONSOLE) AND CLEAR SCREEN

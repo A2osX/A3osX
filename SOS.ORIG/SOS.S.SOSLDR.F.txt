@@ -117,11 +117,11 @@ BLDS020			ldx DSEGX
 *
 *
 *
-DSEGX			.hs FF ; DRIVER SEGMENT LIST TABLE
-DSEGLIST		.hs 00 ; # PAGES FOR 1ST DRIVER SEGMENT (BANK N )
-				.hs 00 ; " 2ND " (BANK N-1)
-				.hs 00 ; " 3RD " (BANK N-2)
-				.hs 00 ; " 4TH " (BANK N-3)
+DSEGX			.da FF ; DRIVER SEGMENT LIST TABLE
+DSEGLIST		.da 00 ; # PAGES FOR 1ST DRIVER SEGMENT (BANK N )
+				.da 00 ; " 2ND " (BANK N-1)
+				.da 00 ; " 3RD " (BANK N-2)
+				.da 00 ; " 4TH " (BANK N-3)
 * PAGE
 * REP 100
 *
@@ -191,7 +191,7 @@ REL.EXIT		rts ; RETURN
 * REP 100
 ALLOC.SEG		.eq *
 				brk ; REQ.SEG(BASE=(F,0), LIMIT=(F,1D), SEGID=0, SEGNUM)
-				.hs REQSEG
+				.da REQSEG
 				.da SEGMENT
 *
 				lda #$10 ; SET BASE/LIMIT BANKS
@@ -231,7 +231,7 @@ RSEG			.eq *
 				stx SEGBASE+1
 *
 				brk ; REQ.SEG(BASE, LIMIT, SEGID, SEGNUM)
-				.hs REQSEG
+				.da REQSEG
 				.da SEGMENT
 *
 				pla 
@@ -245,7 +245,7 @@ RSEG			.eq *
 
 *
 RSEG010			brk ; REQ.SEG(BASE, LIMIT, SEGID, SEGNUM)
-				.hs REQSEG
+				.da REQSEG
 				.da SEGMENT
 *
 				rts ; RETURN
@@ -270,7 +270,7 @@ ALDS020			iny ; WHILE (Y:=Y+1) < DSEGX
 				lda DSEGLIST,Y ; PAGECT:=DSEGLIST(Y)
 				sta SEGPGCNT
 				brk ; FINDSEG (SRCHMODE=0.IN, SEGID=3.IN
-				.hs FINDSEG ; PAGECT=DSEGLIST(Y)
+				.da FINDSEG ; PAGECT=DSEGLIST(Y)
 				.da SEGMENT1 ; BASE.OUT, LIMIT.OUT)
 				jmp ALDS020
 *
@@ -381,7 +381,7 @@ WSM010			lda SOSVER-1,Y
 * PRINT DATE AND TIME MESSAGE
 *
 				brk ; GET.TIME(TIME.OUT)
-				.hs GETTIME
+				.da GETTIME
 				.da DTPARMS
 *
 				lda DATETIME+8 ;SET UP WEEKDAY
@@ -484,13 +484,13 @@ CMSGADR			.eq 40-CMSGL/2+$7D0
 * REP 100
 OPEN			.eq $C8
 *
-OPEN.PARMS		.hs 04
+OPEN.PARMS		.da 04
 				.da PATH
-OPEN.REF		.hs 00
+OPEN.REF		.da 00
 				.da OPEN.LIST
 
-				.hs 04
-OPEN.LIST		.hs 00,04 ; PAGES:=4
+				.da 04
+OPEN.LIST		.da 00,04 ; PAGES:=4
 				.da SYSBUF.P
 PATH			.bs $40 ; PATHNAME BUFFER
 I.LABEL			.as "SOS NTRP" ; FILE LABELS
@@ -500,8 +500,8 @@ D.LABEL			.as "SOS DRVR"
 * REP 100
 READ			.eq $CA
 *
-READ.PARMS		.hs 04
-READ.REF		.hs 00
+READ.PARMS		.da 04
+READ.REF		.da 00
 READ.BUF		.da RDBUF.P
 READ.BYT		.da $FFFF-FILE+1
 READ.BYTRD		.da $0
@@ -510,8 +510,8 @@ READ.BYTRD		.da $0
 * REP 100
 CLOSE			.eq $CC
 *
-CLOSE.PARMS		.hs 01
-CLOSE.REF		.hs 00
+CLOSE.PARMS		.da 01
+CLOSE.REF		.da 00
 * REP 100
 * FIND.SEG (SRCHMODE.IN, PAGES.IN, SEGID.IN, BASE.OUT, LIMIT.OUT, SEGNUM.OUT)
 * REP 100
@@ -520,8 +520,8 @@ FINDSEG			.eq $41
 SEGMENT1		.hs 06 ; FIND.SEG(SRCHMODE, SEGID, PAGECT, BASE, LIMIT, SEGNUM)
 SEGSRCH			.hs 00,03
 SEGPGCNT		.da $0000
-				.da $0
-				.da $0
+				.hs 00
+				.hs 00
 				.hs 00
 * PAGE
 * REP 100
@@ -551,7 +551,7 @@ PREFX.PATH		.hs 03
 * REP 100
 GETTIME			.eq $63
 *
-DTPARMS			.hs 01
+DTPARMS			.da 01
 				.da DATETIME
 DATETIME		.as "YYYYMMDDWHHMMSSMMM"
 * PAGE
@@ -560,7 +560,7 @@ DATETIME		.as "YYYYMMDDWHHMMSSMMM"
 * END OF SOSLDR CODE
 *
 * REP 100
-SLOP			.eq >$F8-*
+SLOP			.eq $10 ; FIXME >$F8-*
 				.bs SLOP ; +-----------------------------------+
 INITMODULE		.bs $200 ; ! KERNEL'S INIT MODULE RESIDES HERE !
 LDREND			.eq * ; +-----------------------------------+
