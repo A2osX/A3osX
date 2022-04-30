@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -10,7 +10,7 @@ NEW
 *				.TI "SOS 1.1 UTILITY MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGUMGR
+* ORG ORGUMGR
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -79,7 +79,7 @@ UMGR			.eq *
 				cmp #USWCNT
 				bcs UMGRERR
 
-				asl A
+				asl
 				tax 
 				lda USWTBL+1,X
 				pha 
@@ -185,8 +185,10 @@ LDAY			.eq $0E
 CRESET			.eq $12
 STATUS			.eq $14
 *
-WKMON			.hs 8,11,11,7,9,12
-				.hs 7,10,13,8,11,13
+*WKMON DFB 8,11,11,7,9,12
+WKMON			.hs 08,0b,0b,07,09,0c
+*DFB 7,10,13,8,11,13
+				.hs 07,0a,0d,08,0b,0d
 *
 *
 SET.TIME		.eq *
@@ -203,10 +205,10 @@ STIM011			and #$0F ; ASCII TO BCD AND
 				cpy #$07
 				beq STIM010
 				lda (TIME),Y
-				asl A
-				asl A
-				asl A
-				asl A
+				asl
+				asl
+				asl
+				asl
 				ora PCLOCK,X
 				sta PCLOCK,X
 				dey 
@@ -218,8 +220,8 @@ STIM011			and #$0F ; ASCII TO BCD AND
 				lda PCLOCK+8
 				jsr BCDBIN
 				tay 
-				lsr A
-				lsr A
+				lsr
+				lsr
 				sta WKDAY
 				tya 
 				and #$03
@@ -303,8 +305,8 @@ STIM040			stx Z.REG
 				sta CLOCK ; AND MONTH LATCHES
 				inc Z.REG
 				lda PCLOCK+8
-				lsr A
-				lsr A
+				lsr
+				lsr
 				ora #$CC
 				sta CLOCK
 *
@@ -353,8 +355,8 @@ GTIM030			plp ;RESTORE INTERRUPTS
 				stx Z.REG
 				lda CLOCK ;READ YEAR FROM DAY
 				sec ; AND MONTH LATCHES
-				rol A
-				rol A
+				rol
+				rol
 				dec Z.REG
 				and CLOCK
 				sta CLKTEMP+8
@@ -376,10 +378,10 @@ GTIM050			lda #$19
 				ldy #$11
 				ldx #$00
 GTIM060			lda PCLOCK,X ;GET MOST SIGNIFICANT
-				lsr A ; BCD DIGIT
-				lsr A
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				ora #$30 ;CONVERT TO ASCII
 				sta (TIME),Y
 				inx 
@@ -418,8 +420,8 @@ GTIM080			rts
 *
 * TEMPORARY STORAGE
 *
-OFFSET			.hs 0
-ERRCNT			.hs 0
+OFFSET			.hs 00
+ERRCNT			.hs 00
 CLKREGS			.bs 5
 MIN			.eq CLKREGS+0
 HOUR			.eq CLKREGS+1
@@ -478,8 +480,8 @@ DT050			plp ;READ YEAR FROM LATCHES
 				sta Z.REG
 				lda CLOCK
 				sec 
-				rol A
-				rol A
+				rol
+				rol
 				dec Z.REG
 				and CLOCK
 				tax 
@@ -495,11 +497,11 @@ DT060			txa
 				sta YEAR
 				lda MON ;CONVERT MONTH AND DAY
 				jsr BCDBIN ; TO BINARY THEN
-				asl A ; COMBINE WITH YEAR
-				asl A ; TO FORM DATE STAMP
-				asl A
-				asl A
-				asl A
+				asl
+				asl
+				asl
+				asl
+				asl
 				sta MON
 				rol YEAR
 				lda DAY
@@ -530,10 +532,10 @@ DT060			txa
 *
 BCDBIN			.eq *
 				pha 
-				lsr A ;ISOLATE TENS DIGIT FOR
-				lsr A ; INDEXING THE TABLE
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				tay 
 				pla 
 				and #$0F ;GET UNITS
@@ -701,15 +703,15 @@ AD.CLNUP		.eq *
 * REP 60
 *
 AD.READ			.eq *
-				lsr A ;SELECT THE APPROPRIATE
+				lsr
 				bit AD.SEL0 ; A/D INPUT
 				bcc ADR010
 				bit AD.SEL0+1
-ADR010			lsr A
+ADR010			lsr
 				bit AD.SEL1
 				bcc ADR020
 				bit AD.SEL1+1
-ADR020			lsr A
+ADR020			lsr
 				bit AD.SEL2
 				bcc ADR030
 				bit AD.SEL2+1
@@ -749,12 +751,12 @@ ADR070			plp
 				tya 
 				eor #$FF
 				lsr AD.TEMP
-				ror A
+				ror
 				lsr AD.TEMP
-				ror A
+				ror
 				lsr AD.TEMP
 				bne ADR090 ;RESULT > 255
-				ror A
+				ror
 				adc #0
 				rts 
 ADR080			lda #0
@@ -819,12 +821,12 @@ BOOTLEN			.eq *-BOOTMSG
 
 BOOTADR			.eq 40-BOOTLEN/2+$628
 * FIXME - MSB OFF
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENUMGR
-FAIL 2,"SOSORG FILE IS INCORRECT FOR UMBR"
-				.fin
+* IFNE ZZLEN-LENUMGR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR UMBR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: UMGR.SRC

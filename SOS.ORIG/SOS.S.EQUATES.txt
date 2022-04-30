@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -296,8 +296,8 @@ FCBZPP			.eq FCBPTR
 *
 *
 * PAGE
-				.ph
-				.or $0 ; (THE FOLLOWING DO NOT NEED TO BE ON ZERO PAGE. 7/16/80 JRH.)
+*				DSECT FIXME: find .or address
+				.ph $0 ; (THE FOLLOWING DO NOT NEED TO BE ON ZERO PAGE. 7/16/80 JRH.) FIXME: check if we need this
 DATBLKL			.bs 1
 DATBLKH			.bs 1
 IDXADRL			.bs 1 ; DISK ADDRESS OF INDEX BLOCK
@@ -365,7 +365,7 @@ DUPLFLAG		.bs 1 ; USED FOR DIFFERENCE BETWEEN VNFERR AND DUPVOL BY SYNPATH
 ZPGTEMP			.bs 1 ; A ONE-BYTE UNSTABLE TEMPORARY
 VCBENTRY		.bs 1 ; POINTER TO CURRENT VCB ENTRY
 *
-				.ep
+				.ep 
 *
 * CHN PATH,4,1
 

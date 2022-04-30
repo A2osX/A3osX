@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -333,7 +333,7 @@ CLRDSP			sta D.DEV,Y
 				pha ; SAVE ERROR CODE
 				ldy #VCBSTAT ; CHECK THIS BUGGER FOR AN OPEN FILE.
 				lda (VCBPTR),Y
-				asl A ; (SHIFT OPEN STATUS INTO CARRY)
+				asl
 				pla ; GET ERROR CODE AGAIN
 				bcs ROOTERR ; BRANCH IF ERROR NEEDS TO BE REPORTED
 				bne ROOT0 ; OTHERWISE, LOOK ELSEWHERE (BRANCH ALWAYS).
@@ -720,10 +720,10 @@ TSFRBLK			ldy #VCBTFRE+1
 				bne TSFR01
 				dex ; ADJUST FOR BITMAP BLOCK BOUNDARY
 TSFR01			txa
-				lsr A ; DIVIDE BY 16. THE RESULT IS THE NUMBER
-				lsr A ; OF BIT MAPS TO BE SEARCHED.
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				sta BMCNT ; SAVE IT.
 				lda #0 ; START COUNT AT ZERO.
 				sta SCRTCH
@@ -795,16 +795,16 @@ FRCNT2			iny
 				lda (VCBPTR),Y ; SHOW THIS MAP IS FIRST WITH FREE SPACE
 				sec ; CORRECT FOR EXACT MULTIPLES OF $1000
 				sbc #$01
-				lsr A
-				lsr A
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				sec ; SUBTRACT COUNTDOWN FROM TOTAL BIT MAPS
 				sbc BMCNT
 				sta NOFREE
 FRCNT3			rts
 *
-CNTFREE			asl A ; COUNT THE NUMBER OF BITS IN THIS BYTE.
+CNTFREE			asl
 				bcc CFREE1
 				inc SCRTCH
 				bne CFREE1

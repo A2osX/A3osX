@@ -11,6 +11,7 @@ s@^(REL) @* \1 @ig;
 s@^(REL)$@* \1@ig;
 s@^(ENTRY)@* \1@ig;
 s@^(EXTRN)@* \1@ig;
+s@^(LST)@* \1@ig;
 
 # Identify file boundaries
 s@================================================================================================@@ig;
@@ -26,13 +27,10 @@ s@^([A-Z0-9.]+)\ EQU @\1				.eq @ig;
 # Title (ignored)
 s@^SBTL @*				.TI @ig;
 
-# DSECT/DEND
-s@^DSECT$@				.ph@ig;
-s@^DEND$@				.ep@ig;
-
 # DO/ELSE/FIN
 s@^DO @				.do @ig;
 s@^ELSE$@				.else@ig;
+s@^ELSE (.*)$@				.else \1@ig;
 s@^FIN$@				.fin@ig;
 
 # Include
@@ -59,7 +57,10 @@ s@^ASC @				.as @ig;
 s@^CHR @				.as @ig;
 
 # Origin ORG -> .or
-s@^ORG @				.or @ig;
+# S-C loses its sh!t when more than one apears, so morph them into .ph and .ep 
+s@^DSECT@*				DSECT FIXME: find .or address@ig;
+s@^ORG (.*$)@				.ph \1 FIXME: check if we need this@ig;
+s@^DEND@				.ep @ig;
 
 # MSB - need to be concerned if OFF is set (default is ON in S-C
 s@^MSB @* FIXME - MSB @ig;
@@ -73,6 +74,10 @@ s@^AND$@				and @ig;
 s@^AND(\ )@				and @ig;
 s@^([A-Z0-9.]+)\ AND$@\1				and@ig;
 s@^([A-Z0-9.]+)\ AND @\1				and @ig;
+s@^ASL A$@				asl@ig;
+s@^ASL A\ (.*$)@				asl@ig;
+s@^([A-Z0-9.]+)\ ASL A$@\1				asl@ig;
+s@^([A-Z0-9.]+)\ ASL A\ (.*$)@\1				asl@ig;
 s@^ASL$@				asl @ig;
 s@^ASL(\ )@				asl @ig;
 s@^([A-Z0-9.]+)\ ASL$@\1				asl@ig;
@@ -193,6 +198,10 @@ s@^LDY$@				ldy @ig;
 s@^LDY(\ )@				ldy @ig;
 s@^([A-Z0-9.]+)\ LDY$@\1				ldy@ig;
 s@^([A-Z0-9.]+)\ LDY @\1				ldy @ig;
+s@^LSR A$@				lsr@ig;
+s@^LSR A\ (.*$)@				lsr@ig;
+s@^([A-Z0-9.]+)\ LSR A$@\1				lsr@ig;
+s@^([A-Z0-9.]+)\ LSR A\ (.*$)@\1				lsr@ig;
 s@^LSR$@				lsr @ig;
 s@^LSR(\ )@				lsr @ig;
 s@^([A-Z0-9.]+)\ LSR$@\1				lsr@ig;
@@ -221,10 +230,18 @@ s@^PLP$@				plp @ig;
 s@^PLP(\ )@				plp @ig;
 s@^([A-Z0-9.]+)\ PLP$@\1				plp@ig;
 s@^([A-Z0-9.]+)\ PLP @\1				plp @ig;
+s@^ROL A$@				rol@ig;
+s@^ROL A\ (.*$)@				rol@ig;
+s@^([A-Z0-9.]+)\ ROL A$@\1				rol@ig;
+s@^([A-Z0-9.]+)\ ROL A\ (.*$)@\1				rol@ig;
 s@^ROL$@				rol @ig;
 s@^ROL(\ )@				rol @ig;
 s@^([A-Z0-9.]+)\ ROL$@\1				rol@ig;
 s@^([A-Z0-9.]+)\ ROL @\1				rol @ig;
+s@^ROR A$@				ror@ig;
+s@^ROR A\ (.*$)@				ror@ig;
+s@^([A-Z0-9.]+)\ ROR A$@\1				ror@ig;
+s@^([A-Z0-9.]+)\ ROR A\ (.*$)@\1				ror@ig;
 s@^ROR$@				ror @ig;
 s@^ROR(\ )@				ror @ig;
 s@^([A-Z0-9.]+)\ ROR$@\1				ror@ig;
@@ -293,4 +310,3 @@ s@^([A-Z0-9.]+)\ TYA @\1				tya @ig;
 # Repair tabs
 s@^([A-Z0-9.]{2,7}	)	@\1@ig;
 s@^([A-Z0-9.]{8,12})\t\t\t@\1\t@ig;
-

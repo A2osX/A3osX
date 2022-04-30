@@ -1,17 +1,54 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.SRC
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+*				.TI 'SOS 1.1 DISK /// DRIVER'
 TEST			.eq 0 ;FOR FUNNY-MODE TESTING
+* INCLUDE SOSORG,6,1,254
 				.do TEST
-				.or $2000
+				.ph $2000 FIXME: check if we need this
 				.else
-				.or $2000
+* REL
+				.ph ORGDISK3 FIXME: check if we need this
 				.fin
 ZZORG			.eq *
 				.as '-'
+* FIXME - MSB OFF
+*
+* REP 40
+* COPYRIGHT (C) APPLE COMPUTER INC.
+* ALL RIGHTS RESERVED
+* REP 40
+*
 REV0ROM			.eq 0 ;1=SUPPORT REV0 ROM
+*
 				.do 1-TEST
+* ENTRY DIB1 ;DIB1
+* ENTRY DIB2 ;DIB2
+* ENTRY DIB3 ;DIB3
+* ENTRY DIB4 ;DIB4
+* ENTRY SEEKDSK3 ;SEEK CURRENT DRIVE
+*
+* EXTRN SYSERR
+*
+* EXTRN XREQCODE
+* EXTRN XBADOP
+* EXTRN XNODRIVE
+* EXTRN XIOERROR
+* EXTRN XNOWRITE
+* EXTRN XBYTECNT
+* EXTRN XBLKNUM
+* EXTRN XDISKSW
+* EXTRN XCTLCODE
+*
+* EXTRN E1908 ; GLOBAL FLAG FOR MOUSE DRIVER
+* TO SAY WE CANNOT BE INTERRUPTED
+*
 				.else
 XREQCODE		.eq $20
 XBADOP			.eq $26
@@ -72,7 +109,8 @@ R.IRQ			.eq 6 ;MAX IRQ'S TOLERATED BEFORE SEI
 * PAGE
 * ZPAGE EQUATES FOR CORE ROUTINES:
 *
-*				.or $81
+*				DSECT FIXME: find .or address
+				.ph $81 FIXME: check if we need this
 IBSLOT			.bs 1 ;SLOT=$60 FOR RTNS
 				.bs 7 ;N/A
 				.bs 1 ;RDADR:CHECKSUM
@@ -93,7 +131,7 @@ TRKN			.bs 1 ;SEEK:TARGET TRACK
 *
 * LOCAL TEMPS:
 *
-*				.or $D0 ;WE'RE ALLOWED TO $FF
+				.ph $D0 ;WE'RE ALLOWED TO $FF FIXME: check if we need this
 BLKTEMP			.bs 2 ;LOCAL TEMP FOR BLKNUMBER
 BUFTEMP			.bs 2 ;LOCAL TEMP FOR BUFFER ADDRESS
 TRACK			.bs 1 ;LOCAL TEMP FOR TRACK
@@ -105,11 +143,12 @@ BLKCOUNT		.bs 1 ;BLKS REQD TO SATISFY BYTECOUNT
 SEEKWAIT		.bs 1 ;<>0 IF SEEK DELAY NEEDED
 IRQMASK			.bs 1 ;ENTRY 'I' BIT
 TEMP			.bs 1 ;JUST A TEMP
-
+				.ep 
 * PAGE
 * DRIVER INTERFACE AREA:
 *
-*				.or $C0
+*				DSECT FIXME: find .or address
+				.ph $C0 FIXME: check if we need this
 D.COMMAND		.bs 1 ;COMMAND CODE
 D.UNITNUM		.bs 1 ;UNIT NUMBER
 D.BUFL			.bs 2 ;BUFFER ADDRESS
@@ -120,12 +159,12 @@ D.BYTES			.bs 2 ;BYTECOUNT
 D.BLOCK			.bs 2 ;REQUESTED BLOCKNUM
 D.BYTRD			.bs 2 ;BYTES READ (READ)
 				.bs 6 ;SPARES (OK AS TEMPS)
-
+				.ep 
 
 * PAGE
 DIB1			.eq * ;DIB FOR .D1
 				.da DIB2 ;FLINK
-				.da $2000 ;ENTRY POINT
+				.da MAIN ;ENTRY POINT
 				.hs 03 ;NAME LENGTH
 				.as '.D1 '
 				.hs 80 ;DEVNUM: ACTIVE
@@ -138,7 +177,7 @@ DIB1			.eq * ;DIB FOR .D1
 *
 DIB2			.eq * ;DIB FOR .D2
 				.da DIB3 ;FLINK
-				.da $2000 ;ENTRY POINT
+				.da MAIN ;ENTRY POINT
 				.hs 03 ;NAME LENGTH
 				.as '.D2 '
 				.hs 80 ;DEVNUM: ACTIVE
@@ -151,7 +190,7 @@ DIB2			.eq * ;DIB FOR .D2
 *
 DIB3			.eq * ;DIB FOR .D3
 				.da DIB4 ;FLINK
-				.da $2000 ;ENTRY POINT
+				.da MAIN ;ENTRY POINT
 				.hs 03 ;NAME LENGTH
 				.as '.D3 '
 				.hs 80 ;DEVNUM: ACTIVE
@@ -164,7 +203,7 @@ DIB3			.eq * ;DIB FOR .D3
 *
 DIB4			.eq * ;DIB FOR .D4
 				.da 0 ;NO FLINK
-				.da $2000 ;ENTRY POINT
+				.da MAIN ;ENTRY POINT
 				.hs 03 ;NAME LENGTH
 				.as '.D4 '
 				.hs 80 ;DEVNUM: ACTIVE
@@ -190,4 +229,6 @@ DIB4			.eq * ;DIB FOR .D4
 
 *--------------------------------------
 MAN
-SAVE SOS.S.DISK3
+SAVE /A3OSX.BUILD/SOS.ORIG/SOS.S.DISK3
+LOAD /A3OSX.BUILD/SOS.ORIG/SOS.S
+ASM

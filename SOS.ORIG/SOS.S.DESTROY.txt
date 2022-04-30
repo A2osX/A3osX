@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -67,10 +67,10 @@ GTINFO2			lda INFTABL,Y
 				cmp #D.STOR+1 ; IS THIS THE STORAGE TYPE BYTE?
 				bne GINFOEND ; NO, IT'S THE END OF INFO THAT CAN BE RETURNED.
 				lda DFIL+D.STOR ; GET STORAGE TYPE
-				lsr A
-				lsr A
-				lsr A
-				lsr A ; MAKE IT A VALUE 1-$F BY SHIFTING OUT FILE NAME LENGTH.
+				lsr
+				lsr
+				lsr
+				lsr
 				bpl GTINFO4 ; BRANCH ALWAYS
 *
 GTINFO3			tax ; USE AS OFFSET INTO 'D.' TABLE.

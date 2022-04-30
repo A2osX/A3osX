@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -10,7 +10,7 @@ NEW
 *				.TI "SOS 1.1 INTRPTS. & PROC. LAUNCH"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGIPL
+				.ph ORGIPL FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -320,7 +320,7 @@ PIO006			lda #0 ;SET INTERRUPT ZERO PAGE
 				and E.IER
 				ldy #7
 				ldx #$02
-PIO010			lsr A ;CHECK FLAG BITS
+PIO010			lsr
 				bcs PIO070
 				inx 
 				dey 
@@ -334,7 +334,7 @@ PIO020			lda D.IFR ;ANY INTERRUPT ON D-6522?
 				bne PIO040 ; YES
 				ldy #7
 				ldx #$09
-PIO030			lsr A ;CHECK FLAG BITS
+PIO030			lsr
 				bcs PIO070
 				inx 
 				dey 

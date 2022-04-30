@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -49,11 +49,11 @@ STATUS			.eq *
 				ldx #$60 ;DUMMY SLOT
 				lda Q6H,X ;SENSE WRITE PROTECT
 				lda Q7L,X
-				asl A ;PRESERVE IT IN CARRY
+				asl
 				lda Q6L,X ;BACK TO READ MODE
 				lda #0 ;NOW MOVE BIT TO
-				rol A ; PROPER POSITION
-				rol A ; ($02)
+				rol
+				rol
 				ldy #0
 				sta (D.STATBUF),Y ;RETURN IT
 				lda #0 ;GOOD RETURN

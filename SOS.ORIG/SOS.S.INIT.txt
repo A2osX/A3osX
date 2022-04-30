@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -10,7 +10,7 @@ NEW
 *				.TI "SOS 1.1 INITIALIZATION"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGINIT
+				.ph ORGINIT FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 100
@@ -419,11 +419,11 @@ MEMI010			tya
 				lda MEMSIZE
 				sbc #4
 				bcc MEMI.ERR
-				lsr A
-				lsr A
+				lsr
+				lsr
 				sta VRT.LIM+1
 				lda #$FE
-				ror A
+				ror
 				sta VRT.LIM
 				clc 
 				rts ; NORMAL EXIT
@@ -472,12 +472,12 @@ CLRZWRK			sta 0,X ; ZERO PAGE ZEROED
 				clc 
 				rts 
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENINIT
-FAIL 2,"SOSORG FILE IS INCORRECT FOR INIT"
-				.fin
+* IFNE ZZLEN-LENINIT
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR INIT"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: INIT.SRC

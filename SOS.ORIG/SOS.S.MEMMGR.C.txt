@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -282,7 +282,7 @@ CNVI020			cpx #$10 ; BANK = "10"
 *
 CNVI030			tay ; SHIFT BANK RIGHT ONE BIT
 				txa ; INTO HIGH BIT OF PAGE BYTE.
-				lsr A
+				lsr
 				tax 
 				tya 
 				bcc CNVI040
@@ -325,12 +325,12 @@ CNVRT.XBP		.eq *
 *
 				txa 
 
-				asl A
+				asl
 				txa 
 				and #$7F
 				tax 
 				tya 
-				rol A
+				rol
 				tay 
 *
 * CASE OF BANK: ADD PAGE BIAS
@@ -496,12 +496,12 @@ GTFR030			tya
 GTFR.ERR		lda #SEGTBLFULL
 				jsr SYSERR
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENMEMMG
-FAIL 2,"SOSORG FILE IS INCORRECT FOR MEMMGR"
-				.fin
+* IFNE ZZLEN-LENMEMMG
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR MEMMGR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: MEMMGR.C.SRC

@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -188,10 +188,10 @@ EOFUPDTE		lda (FCBPTR),Y ; WE NEED TO OR NOT.
 * PAGE
 				ldy #FCBSTYP ; AND THE LAST THING TO UPDATE IS
 				lda (FCBPTR),Y ; THE STORAGE TYPE.
-				asl A ; (SHIFT IT INTO THE HI NIBBLE)
-				asl A
-				asl A
-				asl A
+				asl
+				asl
+				asl
+				asl
 				sta SCRTCH
 				lda DFIL+D.STOR ; GET OLD TYPE BYTE (IT MIGHT BE THE SAME)
 				and #$F ; STRIP OFF OLD TYPE
@@ -332,9 +332,9 @@ PURGE			ldy #FCBSTYP ; FIND OUT WHAT TYPE OF TREE
 *
 PUR2			dey
 PUR1			txa
-				lsr A
+				lsr
 				tya 
-				ror A
+				ror
 *
 				jsr PURLBLKS ; MAKES A GOOD PTR TO DO THE RELEASING
 				ldy #FCBSTAT ; MARK INDEX BLOCK

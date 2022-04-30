@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -16,7 +16,7 @@ BFMGR			ldx COMMAND ; WHAT CALL?
 *
 *
 				lda DISPTCH,X ; TRANSLATE INTO COMMAND ADDRESS
-				asl A ; (BIT 7 INDICATES IT'S GOT A PATHNAME TO PREPROCESS)
+				asl
 				sta CMDTEMP
 				and #$3F ; (BIT 6 IS REFNUM PREPROCESS, 5 IS FOR TIME, SO STRIP EM.)
 				tax 
@@ -292,7 +292,7 @@ ENDPATH			tya ; GET CURRENT NAME LENGTH
 				lda #TOOLONG ; THIS IS A NEVER ERROR!
 				jsr SYSDEATH ; (NEVER RETURNS).
 *
-LSTNAME			beq TSTVALD
+* LSTNAME BEQ TSTVALD
 				cmp #$10 ; MAKE SURE LAST ISN'T TOO LONG
 				bcs ERRSYN1
 				iny ; PUT A ZERO AT END OF PROCESSED PATHNAME
@@ -393,11 +393,11 @@ FINDFCB			lda FCBADDRH ; INITIALIZE INDIRECT POINTER TO
 				cpy #$10 ; IS IT A VALID REFNUM?
 				bcs REEFER ; NO, THE USER'S SMOKIN DOPE!
 				tya ; TO FIND ASSOCIATED FILE CONTROL STUFF,
-				asl A ; MULTIPLY (REFNUM-1) BY 32.
-				asl A
-				asl A
-				asl A
-				asl A
+				asl
+				asl
+				asl
+				asl
+				asl
 				bcc SVFCBLO ; BRANCH IF IT'S WITHIN FIRST HALF OF FCB
 				inc FCBPTR+1 ; BUMP TO SECOND HAVE (REFNUM>8)
 SVFCBLO			sta FCBPTR ; SAVE LOW ADDRESS OF REFERENCED FCB

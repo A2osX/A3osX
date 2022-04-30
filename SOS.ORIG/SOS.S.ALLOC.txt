@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -22,11 +22,11 @@ DEALLOC			stx BMCNT ; SAVE HIGH ORDER ADDRESS OF BLOCK TO BE FREED.
 				sta NOFREE ; SAVE BIT PATTERN
 				txa ; GET LOW BLOCK ADDRESS AGAIN.
 				lsr BMCNT
-				ror A ; GET POINTER TO BYTE IN BITMAP THAT REPRESENTS
+				ror
 				lsr BMCNT ; THE BLOCK ADDRESS.
-				ror A
+				ror
 				lsr BMCNT
-				ror A
+				ror
 				sta BMPTR ; SAVE POINTER.
 				lsr BMCNT ; NOW TRANSFER BIT WHICH SPECIFIES WHICH PAGE OF BITMAP.
 				rol HALF
@@ -120,20 +120,20 @@ BITFOUND		sty BMPTR ; SAVE INDX POINTER TO VALID BIT GROUP
 				lda BASVAL ; SET UP FOR BLOCK ADDRESS CALCULATION
 				sta SCRTCH+1
 				tya ; GET ADDRESS OF BIT PATTERN
-				asl A ; MULTIPLY THIS AND BASVAL BY 8
+				asl
 				rol SCRTCH+1
-				asl A
+				asl
 				rol SCRTCH+1
-				asl A
+				asl
 				rol SCRTCH+1
 				tax ; NOW X= LOW ADDRESS WITHIN 7 OF ACTUAL ADDRESS.
 				lda (BMADR),Y ; GET BIT PATTERN AGAIN
 				sec ; MARK RIGHT END OF BYTE.
-ADCALC			rol A ; FIND LEFT MOST 'ON' BIT
+ADCALC			rol
 				bcs BOUNCE ; BRANCH IF FOUND.
 				inx ; ADJUST LOW ADDRESS
 				bne ADCALC ; BRANCH ALWAYS
-BOUNCE			lsr A ; RESTORE ALL BUT LEFT MOST BIT TO ORIGINAL POSITION
+BOUNCE			lsr
 				bcc BOUNCE ; LOOP UNTIL MARK (SET ABOVE) MOVES INTO CARRY
 				sta (BMADR),Y ; UPDATE BITMAP TO SHOW ALLOCATED BLOCK IN USE.
 				stx SCRTCH ; SAVE LOW ADDRESS.
@@ -201,10 +201,10 @@ SOMERR1			rts
 * PAGE
 NXTBMAP			ldy #VCBTBLK+1 ; BEFORE BUMPING TO NEXT MAP,
 				lda (VCBPTR),Y ; CHECK TO BE SURE THERE IS
-				lsr A ; INDEED A NEXT MAP!
-				lsr A
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				ldy #VCBCMAP
 				cmp (VCBPTR),Y ; ARE THERE MORE MAPS?
 				beq NOMORBIT ; BRANCH IF NO MORE TO LOOK AT.
@@ -247,7 +247,7 @@ TRYMAP2			dex ; WAS LAST FAILURE MAP 'A'
 BMFOUND			ldx BMTAB ; WHICH TABLE?
 				ldy #VCBCMAP
 				lda (VCBPTR),Y
-				asl A
+				asl
 				sta BASVAL
 				lda BMAMADR,X ; GET HIGH ADDRESS
 				sta BMADR+1

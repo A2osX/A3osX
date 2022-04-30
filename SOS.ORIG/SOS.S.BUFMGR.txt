@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -12,7 +12,7 @@ NEW
 * INCLUDE SOSORG,6,1,254
 *ORGBUFMG EQU $F552
 *LENBUFMG EQU $31C
-				.or ORGBUFMG
+				.ph ORGBUFMG FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -789,12 +789,12 @@ CNVA020			txa
 *
 CNVA.EXIT		rts
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENBUFMG
-FAIL 2,"SOSORG FILE IS INCORRECT FOR BUFMGR"
-				.fin
+* IFNE ZZLEN-LENBUFMG
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR BUFMGR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: BUFMGR.SRC

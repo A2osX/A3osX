@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -459,13 +459,13 @@ Q.EXIT			pla
 *
 Q.FULL			lda #EVQOVFL ;EVENT QUEUE OVERFLOW
 				jsr SYSDEATH
-LST ON
+* LST ON
 
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENIPL
-FAIL 2,"SOSORG FILE IS INCORRECT FOR IPL"
-				.fin
+* IFNE ZZLEN-LENIPL
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR IPL"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: IPL.SRC2

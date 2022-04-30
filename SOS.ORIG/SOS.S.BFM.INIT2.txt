@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -10,7 +10,7 @@ NEW
 *				.TI "SOS 1.1 BFM.INIT2"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGBFMI
+				.ph ORGBFMI FIXME: check if we need this
 * FIXME - MSB OFF
 * REP 60
 * COPYRIGHT (C) APPLE COMPUTER INC. 1980
@@ -288,9 +288,9 @@ W1			dey
 				rts 
 
 ZZLEN			.eq $400
-IFNE ZZLEN-LENBFMI
-FAIL 2,"SOSORG FILE IS INCORRECT FOR BFM.INIT2"
-				.fin
+* IFNE ZZLEN-LENBFMI
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR BFM.INIT2"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: BFM.INIT2.SRC

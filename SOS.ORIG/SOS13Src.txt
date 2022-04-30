@@ -21,11 +21,11 @@ DEALLOC			stx BMCNT ; SAVE HIGH ORDER ADDRESS OF BLOCK TO BE FREED.
 				sta NOFREE ; SAVE BIT PATTERN
 				txa ; GET LOW BLOCK ADDRESS AGAIN.
 				lsr BMCNT
-				ror A ; GET POINTER TO BYTE IN BITMAP THAT REPRESENTS
+				ror
 				lsr BMCNT ; THE BLOCK ADDRESS.
-				ror A
+				ror
 				lsr BMCNT
-				ror A
+				ror
 				sta BMPTR ; SAVE POINTER.
 				lsr BMCNT ; NOW TRANSFER BIT WHICH SPECIFIES WHICH PAGE OF BITMAP.
 				rol HALF
@@ -119,20 +119,20 @@ BITFOUND		sty BMPTR ; SAVE INDX POINTER TO VALID BIT GROUP
 				lda BASVAL ; SET UP FOR BLOCK ADDRESS CALCULATION
 				sta SCRTCH+1
 				tya ; GET ADDRESS OF BIT PATTERN
-				asl A ; MULTIPLY THIS AND BASVAL BY 8
+				asl
 				rol SCRTCH+1
-				asl A
+				asl
 				rol SCRTCH+1
-				asl A
+				asl
 				rol SCRTCH+1
 				tax ; NOW X= LOW ADDRESS WITHIN 7 OF ACTUAL ADDRESS.
 				lda (BMADR),Y ; GET BIT PATTERN AGAIN
 				sec ; MARK RIGHT END OF BYTE.
-ADCALC			rol A ; FIND LEFT MOST 'ON' BIT
+ADCALC			rol
 				bcs BOUNCE ; BRANCH IF FOUND.
 				inx ; ADJUST LOW ADDRESS
 				bne ADCALC ; BRANCH ALWAYS
-BOUNCE			lsr A ; RESTORE ALL BUT LEFT MOST BIT TO ORIGINAL POSITION
+BOUNCE			lsr
 				bcc BOUNCE ; LOOP UNTIL MARK (SET ABOVE) MOVES INTO CARRY
 				sta (BMADR),Y ; UPDATE BITMAP TO SHOW ALLOCATED BLOCK IN USE.
 				stx SCRTCH ; SAVE LOW ADDRESS.
@@ -200,10 +200,10 @@ SOMERR1			rts
 * PAGE
 NXTBMAP			ldy #VCBTBLK+1 ; BEFORE BUMPING TO NEXT MAP,
 				lda (VCBPTR),Y ; CHECK TO BE SURE THERE IS
-				lsr A ; INDEED A NEXT MAP!
-				lsr A
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				ldy #VCBCMAP
 				cmp (VCBPTR),Y ; ARE THERE MORE MAPS?
 				beq NOMORBIT ; BRANCH IF NO MORE TO LOOK AT.
@@ -246,7 +246,7 @@ TRYMAP2			dex ; WAS LAST FAILURE MAP 'A'
 BMFOUND			ldx BMTAB ; WHICH TABLE?
 				ldy #VCBCMAP
 				lda (VCBPTR),Y
-				asl A
+				asl
 				sta BASVAL
 				lda BMAMADR,X ; GET HIGH ADDRESS
 				sta BMADR+1
@@ -416,7 +416,7 @@ FILE: SOS.S.BFM.INIT2.SRC
 *				.TI "SOS 1.1 BFM.INIT2"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGBFMI
+				.ph ORGBFMI FIXME: check if we need this
 * FIXME - MSB OFF
 * REP 60
 * COPYRIGHT (C) APPLE COMPUTER INC. 1980
@@ -694,9 +694,9 @@ W1			dey
 				rts 
 
 ZZLEN			.eq $400
-IFNE ZZLEN-LENBFMI
-FAIL 2,"SOSORG FILE IS INCORRECT FOR BFM.INIT2"
-				.fin
+* IFNE ZZLEN-LENBFMI
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR BFM.INIT2"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: BFM.INIT2.SRC
@@ -718,7 +718,7 @@ FILE: SOS.S.BUFMGR.SRC
 * INCLUDE SOSORG,6,1,254
 *ORGBUFMG EQU $F552
 *LENBUFMG EQU $31C
-				.or ORGBUFMG
+				.ph ORGBUFMG FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -1495,12 +1495,12 @@ CNVA020			txa
 *
 CNVA.EXIT		rts
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENBUFMG
-FAIL 2,"SOSORG FILE IS INCORRECT FOR BUFMGR"
-				.fin
+* IFNE ZZLEN-LENBUFMG
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR BUFMGR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: BUFMGR.SRC
@@ -1575,7 +1575,7 @@ FILE: SOS.S.CFMGR.SRC
 *				.TI "SOS 1.1 CHARACTER FILE MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGCFM
+				.ph ORGCFM FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -2058,12 +2058,12 @@ GET.CFCB		.eq *
 GET.ERR			lda #BADREFNUM
 				jsr SYSERR ; ERR EXIT
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENCFM
-FAIL 2,"SOSORG FILE IS INCORRECT FOR CFMGR"
-				.fin
+* IFNE ZZLEN-LENCFM
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR CFMGR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: CFMGR.SRC
@@ -2260,10 +2260,10 @@ EOFUPDTE		lda (FCBPTR),Y ; WE NEED TO OR NOT.
 * PAGE
 				ldy #FCBSTYP ; AND THE LAST THING TO UPDATE IS
 				lda (FCBPTR),Y ; THE STORAGE TYPE.
-				asl A ; (SHIFT IT INTO THE HI NIBBLE)
-				asl A
-				asl A
-				asl A
+				asl
+				asl
+				asl
+				asl
 				sta SCRTCH
 				lda DFIL+D.STOR ; GET OLD TYPE BYTE (IT MIGHT BE THE SAME)
 				and #$F ; STRIP OFF OLD TYPE
@@ -2404,9 +2404,9 @@ PURGE			ldy #FCBSTYP ; FIND OUT WHAT TYPE OF TREE
 *
 PUR2			dey
 PUR1			txa
-				lsr A
+				lsr
 				tya 
-				ror A
+				ror
 *
 				jsr PURLBLKS ; MAKES A GOOD PTR TO DO THE RELEASING
 				ldy #FCBSTAT ; MARK INDEX BLOCK
@@ -2675,12 +2675,12 @@ OVFLOW			lda #OVRERR ; REPORT UNABLE TO SATISFY REQUEST.
 SEED1			lda C.EOFHL ; CALCULATE THE NUMBER OF
 
 				sta DFIL+D.EOF+2 ; BLOCKS NEEDED FOR PRE-ALLOCATION
-				lsr A
+				lsr
 				tay ; Y HOLDS THE NUMBER OF INDEX BLOCKS NEEDED
 				sta DATBLKH
 				lda C.EOFLH ; (CARRY UNDISTURBED FROM LAST SHIFT)
 				sta DFIL+D.EOF+1
-				ror A ; WE NOW HAVE THE LOW ORDER COUNT OF NEEDED DATA BLOCKS
+				ror
 				sta DATBLKL
 				lda C.EOFLL
 				sta DFIL+D.EOF ; (CARRY IN TACT FROM LOW COUNT)
@@ -2714,10 +2714,10 @@ TREE			iny ; ACCOUNT FOR ADDITIONAL 2ND LEVEL INDEX
 				iny ; ADD AN EXTRA INDEX BLOCK FOR TOP INDEX
 CREALC			sty INDXBLK ; STORE INDEX BLOCK COUNT
 				txa ; PUT STORAGE TYPE IN DIRECTORY ENTRY
-				asl A
-				asl A
-				asl A
-				asl A
+				asl
+				asl
+				asl
+				asl
 				ora DFIL+D.STOR
 				sta DFIL+D.STOR
 				stx LEVELS ; SAVE NUMBER OF INDEX LEVELS FOR PREALLOCATION.
@@ -2782,7 +2782,7 @@ CRERR			sec ; JUST IN CASE IT WAS CLEAR.
 *
 *
 SAPFILE			.eq *
-LSTSAP			lda DATBLKL ; GET NUMBER OF DATA BLOCKS (LOW BYTE) REQUESTED.
+* LSTSAP LDA DATBLKL ; GET NUMBER OF DATA BLOCKS (LOW BYTE) REQUESTED.
 				sta REQL
 				jsr SAPINDX ; GO ALLOCATE DATA BLOCKS AND WRITE EM.
 				bcs CRERR
@@ -2887,7 +2887,7 @@ DIROVR			lda #OVRERR ; REQUESTED DIRECTORY SIZE CAN'T BE
 				rts 
 *
 ISDIR1			lda C.EOFLH ; CALCULATE HOW MANY BLOCKS WILL
-				lsr A ; BE NEEDED FOR THIS NEW DIRECTORY.
+				lsr
 				tay ; (SAVE INITIAL COUNT IN Y)
 				lda C.EOFLL ; IF REQUESTED EOF IS NOT AN EVEN BLOCK
 				bne DADD1 ; SIZE, THEN ROUND UP.
@@ -2897,7 +2897,7 @@ TSDIRSZ			tya ; TEST TO BE SURE SIZE IS GREATER THAN ZERO
 				beq DADD1 ; IF ZERO THEN SIZE=1
 				sta DFIL+D.USAGE ; SAVE NUMBER OF BLOCKS TO BE USED.
 				sta REQL
-				asl A ; NOW SAVE ADJUSTED END OF FILE
+				asl
 				sta DFIL+D.EOF+1
 				lda #0
 				sta DFIL+D.EOF
@@ -3220,10 +3220,10 @@ GTINFO2			lda INFTABL,Y
 				cmp #D.STOR+1 ; IS THIS THE STORAGE TYPE BYTE?
 				bne GINFOEND ; NO, IT'S THE END OF INFO THAT CAN BE RETURNED.
 				lda DFIL+D.STOR ; GET STORAGE TYPE
-				lsr A
-				lsr A
-				lsr A
-				lsr A ; MAKE IT A VALUE 1-$F BY SHIFTING OUT FILE NAME LENGTH.
+				lsr
+				lsr
+				lsr
+				lsr
 				bpl GTINFO4 ; BRANCH ALWAYS
 *
 GTINFO3			tax ; USE AS OFFSET INTO 'D.' TABLE.
@@ -3657,7 +3657,7 @@ FILE: SOS.S.DEVMGR.SRC
 *				.TI "SOS 1.1 DEVICE MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGDMGR
+				.ph ORGDMGR FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 100
@@ -3939,12 +3939,12 @@ SETUP.SDT		.eq *
 				sty SXPAGE+SDTP+1
 				rts 
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENDMGR
-FAIL 2,"SOSORG FILE IS INCORRECT FOR DEVMGR"
-				.fin
+* IFNE ZZLEN-LENDMGR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR DEVMGR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: DEVMGR.SRC
@@ -3953,7 +3953,7 @@ FAIL 2,"SOSORG FILE IS INCORRECT FOR DEVMGR"
 
 
 
-FILE: SOS.S.DISK3.DATA.SRC
+FILE: SOS.S.DISK3.DAT.SRC
 
 *************************************************************************
 * APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.DATA.SRC
@@ -3968,7 +3968,7 @@ PREVCMD			.bs 1 ;PRIOR CMD (FOR REPEAT)
 *
 ESAVE			.bs 1 ;SAVED E.REG
 VBLSAVE			.bs 1 ;SAVED E.IER
-INITFLAG		.hs 0 ;<0 IS INITTED
+INITFLAG		.hs 00 ;<0 IS INITTED
 				.do REV0ROM
 ROMREV			.bs 1 ;0=REV0, <>0=REV1
 				.fin
@@ -3978,7 +3978,7 @@ T50MS			.eq $02 ; 50MS FOR MONTIMEH
 T200MS			.eq $08 ;200 MS FOR MONTIMEH
 T1SEC			.eq $27 ;1-SEC FOR MONTIMEH
 *
-MTIMES			.hs T200MS,T1SEC,T50MS ;READ,WRITE,SENSE
+MTIMES			.hs 02,08,27 ;READ,WRITE,SENSE
 *
 * REP 40
 * DRIVE TABLES:
@@ -3993,13 +3993,13 @@ DRVTRACK		.bs 4 ;CURRENT HEAD POSITION
 * THIS TABLE FILLED IN BY 'INIT'.
 *
 JMPTAB			.eq *
-RDADR			jmp *
-READ			jmp *
-WRITE			jmp *
-SEEK			jmp *
-MSWAIT			jmp *
-PRENIB			jmp *
-POSTNIB			jmp *
+RDADR			jmp $0000
+READ			jmp $0000
+WRITE			jmp $0000
+SEEK			jmp $0000
+MSWAIT			jmp $0000
+PRENIB			jmp $0000
+POSTNIB			jmp $0000
 *
 REV0			.eq * ;REV0 ADDRESSES
 				jmp $F1BD ;RDADR
@@ -4019,7 +4019,7 @@ REV1			.eq * ;REV1 ADDRESSES
 				jmp $F456 ;MSWAIT
 				jmp $F2C4 ;PRENIB
 				jmp $F30F ;POSTNIB
-ELSE ;FOR REV1 WE USE EQUATES
+				.else ;FOR REV1 WE USE EQUATES
 RDADR			.eq $F1B9 ;RDADR
 READ			.eq $F148 ;READ
 WRITE			.eq $F216 ;WRITE
@@ -4032,9 +4032,9 @@ POSTNIB			.eq $F30F ;POSTNIB
 ZZEND			.eq *
 ZZLEN			.eq *-ZZORG
 
-IFNE ZZLEN-LENDISK3
-FAIL 2,"SOSORG FILE IS INCORRECT FOR DISK3"
-				.fin
+* IFNE ZZLEN-LENDISK3
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR DISK3"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.DATA.SRC
@@ -4043,7 +4043,7 @@ FAIL 2,"SOSORG FILE IS INCORRECT FOR DISK3"
 
 
 
-FILE: SOS.S.DISK3.MAIN.SRC
+FILE: SOS.S.DISK3.MAI.SRC
 
 *************************************************************************
 * APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.MAIN.SRC
@@ -4070,10 +4070,10 @@ MAIN			.eq *
 *
 				php ;IF ALREADY SEI'D, THEN WE
 				pla ; STAY THAT WAY...
-				ror A
-				ror A
-				ror A
-				ror A
+				ror
+				ror
+				ror
+				ror
 				sta IRQMASK ;'I' BIT INTO BIT7
 *
 * MAKE SURE WE HAVE A VALID COMMAND:
@@ -4149,7 +4149,7 @@ CHKBYTE			.eq *
 				lda D.BYTES ;GET LO COUNT
 				bne BADCOUNT ;=>ERR, NOT INTEGRAL BLOCK(S)
 				lda D.BYTES+1 ;GET HI COUNT
-				lsr A ;MAKE BLOCK COUNT
+				lsr
 				bcs BADCOUNT ;=>BAD IF HALF-BLOCK COUNT
 				sta BLKCOUNT ;SAVE COUNT OF BLOCKS
 *
@@ -4408,7 +4408,7 @@ SIOWRITE		.eq *
 BADIO			.eq *
 				.do 1-REV0ROM ;FOR REV1
 				bvs FINDIT ;=>IRQ. JUST RETRY IT.
-ELSE ;FOR REV0
+				.else ;FOR REV0
 *
 * THE REV1 ROM TAKES CARE OF THE
 * IRQ RETRY COUNT, BUT REV0 DOESN'T:
@@ -4501,7 +4501,7 @@ FINDSEC2		.eq *
 				ror TEMP ;PREVENT RECOMPUTATION
 				sbc CSSTV+1
 				and #$0F
-				lsr A ;EACH 2-SECTORS IS 25 MS
+				lsr
 				jsr ADDTIME
 *
 * KEEP LOOKING TILL WE FIND IT:
@@ -4558,10 +4558,10 @@ FILE: SOS.S.DISK3.SRC
 TEST			.eq 0 ;FOR FUNNY-MODE TESTING
 * INCLUDE SOSORG,6,1,254
 				.do TEST
-				.or $2000
+				.ph $2000 FIXME: check if we need this
 				.else
 * REL
-				.or ORGDISK3
+				.ph ORGDISK3 FIXME: check if we need this
 				.fin
 ZZORG			.eq *
 				.as '-'
@@ -4656,8 +4656,8 @@ R.IRQ			.eq 6 ;MAX IRQ'S TOLERATED BEFORE SEI
 * PAGE
 * ZPAGE EQUATES FOR CORE ROUTINES:
 *
-				.ph
-				.or $81
+*				DSECT FIXME: find .or address
+				.ph $81 FIXME: check if we need this
 IBSLOT			.bs 1 ;SLOT=$60 FOR RTNS
 				.bs 7 ;N/A
 				.bs 1 ;RDADR:CHECKSUM
@@ -4678,7 +4678,7 @@ TRKN			.bs 1 ;SEEK:TARGET TRACK
 *
 * LOCAL TEMPS:
 *
-				.or $D0 ;WE'RE ALLOWED TO $FF
+				.ph $D0 ;WE'RE ALLOWED TO $FF FIXME: check if we need this
 BLKTEMP			.bs 2 ;LOCAL TEMP FOR BLKNUMBER
 BUFTEMP			.bs 2 ;LOCAL TEMP FOR BUFFER ADDRESS
 TRACK			.bs 1 ;LOCAL TEMP FOR TRACK
@@ -4690,12 +4690,12 @@ BLKCOUNT		.bs 1 ;BLKS REQD TO SATISFY BYTECOUNT
 SEEKWAIT		.bs 1 ;<>0 IF SEEK DELAY NEEDED
 IRQMASK			.bs 1 ;ENTRY 'I' BIT
 TEMP			.bs 1 ;JUST A TEMP
-				.ep
+				.ep 
 * PAGE
 * DRIVER INTERFACE AREA:
 *
-				.ph
-				.or $C0
+*				DSECT FIXME: find .or address
+				.ph $C0 FIXME: check if we need this
 D.COMMAND		.bs 1 ;COMMAND CODE
 D.UNITNUM		.bs 1 ;UNIT NUMBER
 D.BUFL			.bs 2 ;BUFFER ADDRESS
@@ -4706,7 +4706,7 @@ D.BYTES			.bs 2 ;BYTECOUNT
 D.BLOCK			.bs 2 ;REQUESTED BLOCKNUM
 D.BYTRD			.bs 2 ;BYTES READ (READ)
 				.bs 6 ;SPARES (OK AS TEMPS)
-				.ep
+				.ep 
 
 * PAGE
 DIB1			.eq * ;DIB FOR .D1
@@ -4774,7 +4774,7 @@ DIB4			.eq * ;DIB FOR .D4
 
 
 
-FILE: SOS.S.DISK3.SUBS.SRC
+FILE: SOS.S.DISK3.SUB.SRC
 
 *************************************************************************
 * APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.SUBS.SRC
@@ -4936,7 +4936,7 @@ MYSEEK			.eq *
 				ldy D.UNITNUM ;GET DRIVENUM
 
 				lda DRVTRACK,Y ;SETUP CURRENT TRACK
-				asl A ;SET IN HALFTRACKS FOR SEEK
+				asl
 				sta CURTRK ; FOR SEEK ROUTINE
 				ldx #$60 ;SET UP SLOT FOR CORE RTNS
 				lda MONTIMEH ;GET STARTING MOTOR TIME
@@ -4958,7 +4958,7 @@ MYSEEK			.eq *
 				plp ;RESTORE IRQ STATUS
 				lda TRKN ;RESTORE DESTINATION TRACK
 				sta DRVTRACK,Y ;DEST IS NOW CURRENT
-				asl A ;MAKE IT IN HALFTRACKS
+				asl
 				jsr SEEK ;GO MOVE THE HEAD...
 				lda VBLSAVE ;NOW ALLOW THAT
 				ora #$80 ; NASTY
@@ -4983,11 +4983,11 @@ MYSEEK			.eq *
 *
 BLK2SECT		.eq *
 				lda BLKTEMP+1 ;GET HI BLK HALF
-				ror A ;MOVE LO BIT TO CARRY
+				ror
 				lda BLKTEMP ;GET LO HALF
-				ror A ;COMBINE WITH HI BIT
-				lsr A
-				lsr A ;FINISH OFF DIVIDE-BY-8
+				ror
+				lsr
+				lsr
 				sta TRACK ;THAT'S THE TRACK
 				lda BLKTEMP ;GET LO HALF AGAIN
 				and #7
@@ -5068,7 +5068,7 @@ FIXRET			.eq *
 
 
 
-FILE: SOS.S.DISK3.USEL.SRC
+FILE: SOS.S.DISK3.USL.SRC
 
 *************************************************************************
 * APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.USEL.SRC
@@ -5292,11 +5292,11 @@ STATUS			.eq *
 				ldx #$60 ;DUMMY SLOT
 				lda Q6H,X ;SENSE WRITE PROTECT
 				lda Q7L,X
-				asl A ;PRESERVE IT IN CARRY
+				asl
 				lda Q6L,X ;BACK TO READ MODE
 				lda #0 ;NOW MOVE BIT TO
-				rol A ; PROPER POSITION
-				rol A ; ($02)
+				rol
+				rol
 				ldy #0
 				sta (D.STATBUF),Y ;RETURN IT
 				lda #0 ;GOOD RETURN
@@ -5716,8 +5716,8 @@ FCBZPP			.eq FCBPTR
 *
 *
 * PAGE
-				.ph
-				.or $0 ; (THE FOLLOWING DO NOT NEED TO BE ON ZERO PAGE. 7/16/80 JRH.)
+*				DSECT FIXME: find .or address
+				.ph $0 ; (THE FOLLOWING DO NOT NEED TO BE ON ZERO PAGE. 7/16/80 JRH.) FIXME: check if we need this
 DATBLKL			.bs 1
 DATBLKH			.bs 1
 IDXADRL			.bs 1 ; DISK ADDRESS OF INDEX BLOCK
@@ -5785,7 +5785,7 @@ DUPLFLAG		.bs 1 ; USED FOR DIFFERENCE BETWEEN VNFERR AND DUPVOL BY SYNPATH
 ZPGTEMP			.bs 1 ; A ONE-BYTE UNSTABLE TEMPORARY
 VCBENTRY		.bs 1 ; POINTER TO CURRENT VCB ENTRY
 *
-				.ep
+				.ep 
 *
 * CHN PATH,4,1
 
@@ -5836,7 +5836,7 @@ FILE: SOS.S.FMGR.SRC
 *				.TI "SOS 1.1 FILE MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGFMGR
+				.ph ORGFMGR FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -5936,12 +5936,12 @@ GLEVEL			ldy #0
 				sta (F.LEVEL),Y
 				rts 
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENFMGR
-FAIL 2,"SOSORG FILE IS INCORRECT FOR FMGR"
-				.fin
+* IFNE ZZLEN-LENFMGR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR FMGR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: FMGR.SRC
@@ -6284,7 +6284,7 @@ CLRDSP			sta D.DEV,Y
 				pha ; SAVE ERROR CODE
 				ldy #VCBSTAT ; CHECK THIS BUGGER FOR AN OPEN FILE.
 				lda (VCBPTR),Y
-				asl A ; (SHIFT OPEN STATUS INTO CARRY)
+				asl
 				pla ; GET ERROR CODE AGAIN
 				bcs ROOTERR ; BRANCH IF ERROR NEEDS TO BE REPORTED
 				bne ROOT0 ; OTHERWISE, LOOK ELSEWHERE (BRANCH ALWAYS).
@@ -6671,10 +6671,10 @@ TSFRBLK			ldy #VCBTFRE+1
 				bne TSFR01
 				dex ; ADJUST FOR BITMAP BLOCK BOUNDARY
 TSFR01			txa
-				lsr A ; DIVIDE BY 16. THE RESULT IS THE NUMBER
-				lsr A ; OF BIT MAPS TO BE SEARCHED.
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				sta BMCNT ; SAVE IT.
 				lda #0 ; START COUNT AT ZERO.
 				sta SCRTCH
@@ -6746,16 +6746,16 @@ FRCNT2			iny
 				lda (VCBPTR),Y ; SHOW THIS MAP IS FIRST WITH FREE SPACE
 				sec ; CORRECT FOR EXACT MULTIPLES OF $1000
 				sbc #$01
-				lsr A
-				lsr A
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				sec ; SUBTRACT COUNTDOWN FROM TOTAL BIT MAPS
 				sbc BMCNT
 				sta NOFREE
 FRCNT3			rts
 *
-CNTFREE			asl A ; COUNT THE NUMBER OF BITS IN THIS BYTE.
+CNTFREE			asl
 				bcc CFREE1
 				inc SCRTCH
 				bne CFREE1
@@ -6785,7 +6785,7 @@ FILE: SOS.S.INIT.SRC
 *				.TI "SOS 1.1 INITIALIZATION"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGINIT
+				.ph ORGINIT FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 100
@@ -7194,11 +7194,11 @@ MEMI010			tya
 				lda MEMSIZE
 				sbc #4
 				bcc MEMI.ERR
-				lsr A
-				lsr A
+				lsr
+				lsr
 				sta VRT.LIM+1
 				lda #$FE
-				ror A
+				ror
 				sta VRT.LIM
 				clc 
 				rts ; NORMAL EXIT
@@ -7247,12 +7247,12 @@ CLRZWRK			sta 0,X ; ZERO PAGE ZEROED
 				clc 
 				rts 
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENINIT
-FAIL 2,"SOSORG FILE IS INCORRECT FOR INIT"
-				.fin
+* IFNE ZZLEN-LENINIT
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR INIT"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: INIT.SRC
@@ -7271,7 +7271,7 @@ FILE: SOS.S.IPL.SRC1
 *				.TI "SOS 1.1 INTRPTS. & PROC. LAUNCH"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGIPL
+				.ph ORGIPL FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -7581,7 +7581,7 @@ PIO006			lda #0 ;SET INTERRUPT ZERO PAGE
 				and E.IER
 				ldy #7
 				ldx #$02
-PIO010			lsr A ;CHECK FLAG BITS
+PIO010			lsr
 				bcs PIO070
 				inx 
 				dey 
@@ -7595,7 +7595,7 @@ PIO020			lda D.IFR ;ANY INTERRUPT ON D-6522?
 				bne PIO040 ; YES
 				ldy #7
 				ldx #$09
-PIO030			lsr A ;CHECK FLAG BITS
+PIO030			lsr
 				bcs PIO070
 				inx 
 				dey 
@@ -8397,13 +8397,13 @@ Q.EXIT			pla
 *
 Q.FULL			lda #EVQOVFL ;EVENT QUEUE OVERFLOW
 				jsr SYSDEATH
-LST ON
+* LST ON
 
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENIPL
-FAIL 2,"SOSORG FILE IS INCORRECT FOR IPL"
-				.fin
+* IFNE ZZLEN-LENIPL
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR IPL"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: IPL.SRC2
@@ -8439,7 +8439,7 @@ FILE: SOS.S.LCHK
 * ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
 
 * INCLUDE SOSORG,6,1,254
-				.or ???????
+				.ph ??????? FIXME: check if we need this
 ---------------------------------
 IFNE ZZLEN-LEN????
 FAIL 2,"SOSORG FILE IS INCORRECT FOR ??????"
@@ -8462,7 +8462,7 @@ FILE: SOS.S.MEMMGR.A.SRC
 *				.TI "SOS 1.1 MEMORY MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGMEMMG
+				.ph ORGMEMMG FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -9849,7 +9849,7 @@ CNVI020			cpx #$10 ; BANK = "10"
 *
 CNVI030			tay ; SHIFT BANK RIGHT ONE BIT
 				txa ; INTO HIGH BIT OF PAGE BYTE.
-				lsr A
+				lsr
 				tax 
 				tya 
 				bcc CNVI040
@@ -9892,12 +9892,12 @@ CNVRT.XBP		.eq *
 *
 				txa 
 
-				asl A
+				asl
 				txa 
 				and #$7F
 				tax 
 				tya 
-				rol A
+				rol
 				tay 
 *
 * CASE OF BANK: ADD PAGE BIAS
@@ -10063,12 +10063,12 @@ GTFR030			tya
 GTFR.ERR		lda #SEGTBLFULL
 				jsr SYSERR
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENMEMMG
-FAIL 2,"SOSORG FILE IS INCORRECT FOR MEMMGR"
-				.fin
+* IFNE ZZLEN-LENMEMMG
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR MEMMGR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: MEMMGR.C.SRC
@@ -10088,7 +10088,7 @@ FILE: SOS.S.OPRMSG.SRC
 *				.TI "SOS 1.1 OPERATOR MESSAGE/REPLY"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGOMSG
+				.ph ORGOMSG FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -10147,9 +10147,9 @@ E.IER			.eq $FFEE
 *
 * ZERO PAGE DECLARATIONS
 *
-				.ph
+*				DSECT FIXME: find .or address
 ZPBASE			.eq $200
-				.or $0000 ;ZERO PAGE DECLARATIONS
+				.ph $0000 ;ZERO PAGE DECLARATIONS FIXME: check if we need this
 MSGPTR			.bs 2 ;MESSAGE POINTER
 MSGIDX			.bs 1
 *
@@ -10167,7 +10167,7 @@ SV.EPCR			.bs 1
 SV.EIER			.bs 1
 *
 FLAG			.bs 1
-				.ep
+				.ep 
 * PAGE
 OPMSGRPLY		.eq *
 *
@@ -10307,13 +10307,13 @@ OPR410			lda (DATAPTR),Y
 				sta E.IER
 				lda SV.SMODE ;RESTORE SCREEN MODE
 				sta SCRNMODE
-				lsr A
+				lsr
 				bcc OPR500
 				bit VM0+1 ;RESTORE VIDEO MODE
-OPR500			lsr A
+OPR500			lsr
 				bcc OPR510
 				bit VM1+1
-OPR510			lsr A
+OPR510			lsr
 				bcc OPR520
 				bit VM2+1
 OPR520			bit SCRNMODE
@@ -10373,7 +10373,7 @@ VID010			lda E.REG
 *
 VID020			sta E.REG
 				lda #$00
-				ror A
+				ror
 				sta SCRNMODE
 VID030			rts
 * PAGE
@@ -10395,11 +10395,11 @@ VID030			rts
 *
 SETPTRS			.eq *
 				txa 
-				lsr A
+				lsr
 				ora #$04
 				sta SCRNPTR+1
 				lda #$00
-				ror A
+				ror
 				sta SCRNPTR
 				lda /DATABUF
 
@@ -10413,13 +10413,13 @@ DBUFADR			.eq *
 				.hs >1*40+DATABUF
 				.hs >2*40+DATABUF
 				.hs >3*40+DATABUF
-LST ON
+* LST ON
 
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENOMSG
-FAIL 2,"SOSORG FILE IS INCORRECT FOR OPRMSG"
-				.fin
+* IFNE ZZLEN-LENOMSG
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR OPRMSG"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: OPRMSG.SRC
@@ -10445,7 +10445,7 @@ BFMGR			ldx COMMAND ; WHAT CALL?
 *
 *
 				lda DISPTCH,X ; TRANSLATE INTO COMMAND ADDRESS
-				asl A ; (BIT 7 INDICATES IT'S GOT A PATHNAME TO PREPROCESS)
+				asl
 				sta CMDTEMP
 				and #$3F ; (BIT 6 IS REFNUM PREPROCESS, 5 IS FOR TIME, SO STRIP EM.)
 				tax 
@@ -10721,7 +10721,7 @@ ENDPATH			tya ; GET CURRENT NAME LENGTH
 				lda #TOOLONG ; THIS IS A NEVER ERROR!
 				jsr SYSDEATH ; (NEVER RETURNS).
 *
-LSTNAME			beq TSTVALD
+* LSTNAME BEQ TSTVALD
 				cmp #$10 ; MAKE SURE LAST ISN'T TOO LONG
 				bcs ERRSYN1
 				iny ; PUT A ZERO AT END OF PROCESSED PATHNAME
@@ -10822,11 +10822,11 @@ FINDFCB			lda FCBADDRH ; INITIALIZE INDIRECT POINTER TO
 				cpy #$10 ; IS IT A VALID REFNUM?
 				bcs REEFER ; NO, THE USER'S SMOKIN DOPE!
 				tya ; TO FIND ASSOCIATED FILE CONTROL STUFF,
-				asl A ; MULTIPLY (REFNUM-1) BY 32.
-				asl A
-				asl A
-				asl A
-				asl A
+				asl
+				asl
+				asl
+				asl
+				asl
 				bcc SVFCBLO ; BRANCH IF IT'S WITHIN FIRST HALF OF FCB
 				inc FCBPTR+1 ; BUMP TO SECOND HAVE (REFNUM>8)
 SVFCBLO			sta FCBPTR ; SAVE LOW ADDRESS OF REFERENCED FCB
@@ -11082,7 +11082,7 @@ ADJMARK			lda C.MARK+3 ; MAKE SURE FOURTH BYTE OF DISPLACE IS ZIP
 				ldx #$FD ; ANTICIPATE OTHER THAN BASE OF ZERO
 				ldy #FCBMARK ; FURTHER ASSUME IT'S A BASE OFFSET FROM CURRENT POSITION
 				lda C.BASE ; NOW FIND OUT WHAT IT REALLY IS.
-				lsr A ; (CARRY SET=SUBTRACT, NON ZERO REMAINDER= OFFSET FROM EOF)
+				lsr
 				bcs SUBMARK
 				beq ADJMRK ; BRANCH IF MARK IS FROM BEGINNING OF FILE
 ADDPOSN			lda (FCBPTR),Y ; ADD USER QUANTITY TO CURRENT
@@ -11189,7 +11189,7 @@ POSNEW1			ldy #FCBMARK+2 ; TEST TO SEE IF CURRENT
 				dex 
 				bne DATLEVEL ; NO, USE CURRENT INDEXES.
 TSTINY			lda TPOSLH ; IS NEW POSITION UNDER 512?
-				lsr A
+				lsr
 				ora TPOSHI
 				bne NOIDXDAT ; NO, MARK BOTH DATA AND INDEX BLOCK AS UN-ALLOCATED.
 				ldy #FCBFRST
@@ -11211,7 +11211,7 @@ POSNIDX			ldx LEVELS ; BEFORE READING IN TOP INDEX, CHECK TO BE SURE
 				cpx #3 ; THAT THERE IS A TOP INDEX...
 				beq POSINDEX ; BRANCH IF FILE IS FULL BLOWN TREE.
 				lda TPOSHI ; IS NEW POSITION WITHIN RANGE OF A
-				lsr A ; SAPLING FILE (L.T. 128K)?
+				lsr
 				php ; ANTICIPATE NO GOOD.
 				lda #TOPALC+IDXALC+DATALC ; (TO INDICATE NO LEVEL IS ALLOCATED FOR NEW POSITION.)
 				plp ; Z FLAG TELLS ALL...
@@ -11235,7 +11235,7 @@ POSINDEX		jsr CLRSTATS ; CLEAR ALL ALLOCATION REQUIREMENTS FOR PREVIOUS POSITION
 				jsr RFCBFST ; GET HIGHEST LEVEL INDEX BLOCK.
 				bcs POSERR
 				lda TPOSHI ; THEN TEST FOR A SAP LEVEL INDEX BLOCK
-				lsr A
+				lsr
 				tay 
 				lda (TINDX),Y
 				inc TINDX+1
@@ -11255,9 +11255,9 @@ SAPLEVEL		sta BLOKNML ; READ IN NEXT LOWER INDEX BLOCK
 				jsr RFCBIDX ; READ IN SAPLING LEVEL
 				bcs POSERR
 DATLEVEL		lda TPOSHI ; NOW GET BLOCK ADDRESS OF DATA BLOCK
-				lsr A
+				lsr
 				lda TPOSLH ; ( IF THERE IS ONE )
-				ror A
+				ror
 				tay 
 				lda (TINDX),Y ; DATA BLOCK ADDRESS LOW
 				inc TINDX+1
@@ -11271,8 +11271,8 @@ DATLEVEL		lda TPOSHI ; NOW GET BLOCK ADDRESS OF DATA BLOCK
 NODATA			ldy #FCBSTAT
 				ora (FCBPTR),Y ; SET STATUS TO SHOW WHATS MISSIN'
 				sta (FCBPTR),Y
-				lsr A ; THROW AWAY BIT THAT SAYS DATA BLOCK UN-ALLOCATED
-				lsr A ; CUZ WE KNOW THAT. CARRY NOW INDICATES IF INDEX BLOCK
+				lsr
+				lsr
 				jsr ZIPDATA ; ALSO IS INVALID AND NEEDS TO BE ZEROED (CARRY UNDISTURBED)
 				bcc SVMARK ; BRANCH IF INDEX BLOCK DOESN'T NEED ZIPPIN.
 ZIPIDX			sta (TINDX),Y
@@ -11345,7 +11345,7 @@ DIRMARK			cmp #DIRTYP ; IS IT A DIRECTORY?
 				jsr SYSERR ; THE DAMN THING SHOULD OF NEVER BEEN OPENED!
 *
 DIRPOS			lda SCRTCH ; RECOVER RESULTS OF PREVIOUS SUBTRACTION.
-				lsr A ; USE DIFFERENCE AS COUNTER AS TO HOW MANY
+				lsr
 				sta CNTENT ; BLOCKS MUST BE READ TO GET TO NEW POSITION.
 				ldy #FCBMARK+1 ; TEST FOR POSITION DIRECTION.
 				lda (FCBPTR),Y
@@ -11552,10 +11552,10 @@ FCBOWNR			lda D.DEV-1,Y ; OWNERSHIP INFORMATION.
 				dey ; ORDER OF BOTH THE FCB AND DIRECTORY ENTRY
 				bne FCBOWNR ; BUFFER (D.). BEWARE OF CHANGES!!! *************
 				lda DFIL+D.STOR ; GET STORAGE TYPE.
-				lsr A ; STRIP OFF FILE NAME LENGTH.
-				lsr A
-				lsr A ; (BY DIVIDING BY 16)
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				tax ; SAVE IN X FOR LATER TYPE COMPARISON
 				ldy #FCBSTYP
 				sta (FCBPTR),Y ; SAVE STORAGE TYPE.
@@ -11782,14 +11782,14 @@ FILE: SOS.S.PRINT
 IBUFSIZ 1
 SBUFSIZ 40
 * INCLUDE SOSORG,6,1,254
-				.or ORGBFM ; BITMAPS $B800-$BBFF
+				.ph ORGBFM ; BITMAPS $B800-$BBFF FIXME: check if we need this
 ZZORG			.eq *
 * REP 60
 * (C) COPYRIGHT 1981 BY APPLE COMPUTER INC.
 * ALL RIGHTS RESERVED
 * REP 60
 * FIXME - MSB OFF
-LST VSYM
+* LST VSYM
 * CHN EQUATES,4,1
 * CHN ALLOC
 * INCLUDE POSN/OPEN
@@ -11908,7 +11908,7 @@ TREAD0			jsr PREPRW ; TEST FOR NEWLINE, SETS UP FOR PARTIAL READ.
 				bvs GORDDNE ; BRANCH IF REQUEST IS SATISFIED.
 				bcs TREAD ; CARRY SET INDICATES NEWLINE IS SET.
 				lda RWREQH ; FIND OUT HOW MANY BLOCKS ARE TO BE READ
-				lsr A ; IF LESS THAN TWO, THEN DO IT THE SLOW WAY.
+				lsr
 				beq TREAD
 				sta BULKCNT ; SAVE BULK BLOCK COUNT.
 				ldy #FCBSTAT ; MAKE SURE CURRENT DATA AREA
@@ -11936,7 +11936,7 @@ RDFAST0			inc DATPTR+1 ; BUMP ALL POINTERS BY 512 (ONE BLOCK)
 				inc TPOSHI ; OTHERWISE, MUST CHECK FOR A 128K BOUNDARY
 				lda TPOSHI ; SET CARRY IF MOD 128K HAS BEEN REACHED
 				eor #1
-				lsr A
+				lsr
 RDFAST1			dec BULKCNT ; HAVE WE READ ALL WE CAN FAST?
 				bne RDFAST2 ; BRANCH IF MORE TO READ.
 				jsr FXDATPTR ; GO FIX UP DATA POINTER TO SOS BUFFER.
@@ -11947,9 +11947,9 @@ RDFAST1			dec BULKCNT ; HAVE WE READ ALL WE CAN FAST?
 *
 RDFAST2			bcs RDFAST
 				lda TPOSHI ; GET INDEX TO NEXT BLOCK ADDRESS
-				lsr A
+				lsr
 				lda TPOSLH
-				ror A
+				ror
 				tay ; INDEX TO ADDRESS IS INT(POS/512)
 				lda (TINDX),Y ; GET LOW ADDRESS
 				sta BLOKNML
@@ -12200,7 +12200,7 @@ TWRITE			jsr RDPOSN ; READ BLOCK WE'RE
 				beq TREWRT1
 				ldy #0 ; FIND OUT IF ENOUGH DISK SPACE IS AVAILABLE FOR
 TWRTALC			iny ; INDEXES AND DATA BLOCK
-				lsr A
+				lsr
 				bne TWRTALC
 				sty REQL
 				sta REQH
@@ -12241,9 +12241,9 @@ TSTSAPWR		lda (FCBPTR),Y ; GET STATUS BYTE AGAIN.
 DBLOKALC		jsr ALCWBLK ; GO ALLOCATE FOR DATA BLOCK.
 				bcs WRITERROR
 				lda TPOSHI ; CALCULATE POSITION WITHIN INDEX BLOCK.
-				lsr A
+				lsr
 				lda TPOSLH
-				ror A
+				ror
 				tay ; NOW PUT BLOCK ADDRESS INTO INDEX BLOCK
 				inc TINDX+1 ; HIGH BYTE FIRST.
 				lda SCRTCH+1
@@ -12341,7 +12341,7 @@ TOPDOWN			jsr SWAPDOWN ; FIRST MAKE CURRENT 1ST BLOCK AN ENTRY IN NEW TOP.
 TOPDWN1			jsr ALCWBLK ; GET ANOTHER BLOCK ADDRESS FOR THE SAP LEVEL INDEX.
 				bcs TPDWNERR
 				lda TPOSHI ; CALCULATE POSITION OF NEW INDEX BLOCK
-				lsr A ; IN THE TOP OF THE TREE.
+				lsr
 				tay 
 				lda SCRTCH ; GET ADDRESS OF NEWLY ALOCATED INDEX BLOCK AGAIN
 				tax 
@@ -12453,8 +12453,8 @@ TWRPROT1		lda #STATCMD
 				jsr DMGR ; MAKE THE EXTERNAL CALL
 				bcs WPROTRET ; RETURN ANY SPECIFIC ERRORS
 				lda TWRCODE ; GET STATUS BYTE
-				lsr A ; SHIFT WRITE PROTECT STATE INTO CARRY
-				lsr A
+				lsr
+				lsr
 				lda #XNOWRITE ; ANTICIPATE WRITE PROTECTED.
 				rts ; CARRY IS INDETERMINATE
 WPROTRET		.eq *
@@ -12515,7 +12515,7 @@ FILE: SOS.S.SCMGR.SRC
 *				.TI "SOS 1.1 SYSTEM CALL MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGSCMGR
+				.ph ORGSCMGR FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -12831,8 +12831,8 @@ MOVE.PARMS		.eq *
 *
 
 MOVE010			lda SCRNUM
-				asl A
-				asl A
+				asl
+				asl
 				sta DFN.PTRX
 				lda #0
 				sta SXPAGE+DFN.PTR+1 ; AND X BYTE
@@ -12891,10 +12891,10 @@ PARMLOOP		lda RGHT.NIB
 				lda (DFN.PTR),Y
 				sta SCT.DFN
 				and #$30
-				lsr A
-				lsr A
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				sta SCT.DCNT
 				bpl VALUE ;BRANCH ALWAYS
 *
@@ -12907,10 +12907,10 @@ ELSE.RNIB		lda SCT.DFN
 				and #$03
 				sta SCT.DCNT
 				tya 
-				asl A
-				asl A
-				asl A
-				asl A
+				asl
+				asl
+				asl
+				asl
 
 				sta SCT.DFN
 				inc DFN.PTRX ; ADVANCE SYS CALL DFN PTR
@@ -13110,12 +13110,12 @@ PTR.ERR			lda #BADSCBNDS
 PTR.ERR1		lda #BADXBYTE
 				jsr SYSERR
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENSCMGR
-FAIL 2,"SOSORG FILE IS INCORRECT FOR SCMGR"
-				.fin
+* IFNE ZZLEN-LENSCMGR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR SCMGR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: SCMGR.SRC
@@ -13361,7 +13361,7 @@ FILE: SOS.S.SOSLDR.B.SRC
 *************************************************************************
 * ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
 
-.PAGE
+* PAGE
 
 ;*******************************************************************************
 ;
@@ -13416,7 +13416,7 @@ FILE: SOS.S.SOSLDR.B.SRC
 ;
 ;*******************************************************************************
 
-.PAGE
+* PAGE
 
 ; ! ! ! ! ! ! !
 ; $9FFF +---------------+ +---------------+ ! +---------------+
@@ -13993,7 +13993,7 @@ LDR010			lda $380,X
 				lda B.REG ; SYSBANK:=BREG
 				and #$0F
 				sta SYSBANK
-				asl A ; MEMSIZ:=SYSBANK*2+4 "16K CHUNKS"
+				asl
 				clc 
 				adc #4
 				sta MEMSIZE ; AND, MEMSIZE (SIZE IN 16K BYTE "CHUNKS")
@@ -15091,7 +15091,7 @@ ERROR			.eq *
 				sec 
 				lda #40
 				sbc ETEMP
-				lsr A
+				lsr
 				clc 
 				adc ETEMP
 				tay 
@@ -15172,7 +15172,7 @@ WAM010			lda AMSG-1,Y
 				clc 
 				lda #40
 				adc #SOSVERL
-				lsr A
+				lsr
 				tax 
 				ldy #SOSVERL
 WSM010			lda SOSVER-1,Y
@@ -15192,7 +15192,7 @@ WSM010			lda SOSVER-1,Y
 				and #$0F
 				beq WDM040 ;NO CLOCK
 				sta WTEMP
-				asl A
+				asl
 				adc WTEMP
 				tax 
 				ldy #3
@@ -15215,7 +15215,7 @@ WDM010			lda DAYNAME-1,X
 				bcc WDM020
 				adc #9
 WDM020			sta WTEMP
-				asl A
+				asl
 				adc WTEMP
 				tax 
 				ldy #3
@@ -15385,13 +15385,13 @@ D.CHRSET		.eq D.DRIVES+$2+$10
 D.KYBD			.eq D.CHRSET+$10+$400
 * REP 100
 
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
 *
-NE ZZLEN-LENLODR
-FAIL 2,"SOSORG FILE IS INCORRECT FOR SOS LOADER"
-				.fin
+* NE ZZLEN-LENLODR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR SOS LOADER"
+* FIN
 *
 
 *************************************************************************
@@ -15410,7 +15410,7 @@ FILE: SOS.S.SOSLDR.SRC
 
 *				.TI "SOS 1.1 SOS LOADER"
 * REL
-				.or $1E00
+				.ph $1E00 FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 100
@@ -15667,10 +15667,10 @@ GETVOL			jsr VERFYVOL ; IS THE CORRECT VOLUME ON LINE NOW?
 VONLINE			ldx DEVNUM ; UPDATE THE
 				jsr UPBMAP ; DIRTY BIT MAP
 MARKSWAP		lda VCBPTR ; CALCULATE
-				lsr A ; SWAP BYTE
-				lsr A ; AND
-				lsr A ; MARK ALL FILES
-				lsr A ; BELONGING TO THIS VOLUME
+				lsr
+				lsr
+				lsr
+				lsr
 				sec ; AS SWAPPED OUT
 				ora #$80
 				pha ; SAVE SWAP BYTE
@@ -16037,7 +16037,7 @@ FILE: SOS.S.SYSERR.SRC
 *				.TI "SOS 1.1 SYSTEM ERROR ROUTINES"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGSERR
+				.ph ORGSERR FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -16194,10 +16194,10 @@ SD020			lda MSG,X
 *
 				lda SDEATH.REGS+A.SAVE ; DISPLAY ERROR CODE (2 HEX DIGITS)
 				clc 
-				lsr A
-				lsr A
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				jsr PRINT ; FIRST DIGIT
 				inx 
 				lda SDEATH.REGS+A.SAVE
@@ -16226,12 +16226,12 @@ PRNT100			adc #$36 ; "A"-"F"
 PRNT110			sta MSGBASE-1,X
 				rts 
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENSERR
-FAIL 2,"SOSORG FILE IS INCORRECT FOR SYSERR"
-				.fin
+* IFNE ZZLEN-LENSERR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR SYSERR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: SYSERR.SRC
@@ -16249,7 +16249,7 @@ FILE: SOS.S.SYSGLOB.SRC
 
 *				.TI "SOS 1.1 GLOBAL EQUATES"
 * REL
-				.or $18FC
+				.ph $18FC FIXME: check if we need this
 * FIXME - MSB OFF
 * REP 60
 * COPYRIGHT (C) APPLE COMPUTER INC. 1980
@@ -16448,7 +16448,7 @@ DBUGBRK			nop ;TO ENABLE DEBUG BREAK POINTS,
 *
 KYBDNMI			jmp USERNMI
 				jmp NMIDBUG
-NMISPSV			.hs 0
+NMISPSV			.hs 00
 				jmp NMICONT
 NMIEXIT			rts
 *
@@ -16478,7 +16478,7 @@ QEV.THIS		.hs 00 ;POINTER FOR QUEEVENT
 QEV.LAST		.hs 00 ;POINTER FOR QUEEVENT
 *
 SOSQUIT			.bs COLDSTRT
-BACKMASK		.hs BACKBIT ; MASK USED BY BFM TO UPDATE BACKUP BIT
+BACKMASK		.bs BACKBIT ; MASK USED BY BFM TO UPDATE BACKUP BIT
 *
 * TO CLEAR THE BACKUP BIT, A PROGRAM MUST JSR TO CLRBMASK THRU 1934 THEN DO A
 * SET-FILE-INFO WITH NO INTERVENING SOS CALLS. ANY SOS CALL WILL
@@ -16607,7 +16607,7 @@ SEGNOTFND		.eq $E4 ;SEGMENT NOT FOUND
 BADSRCHMODE		.eq $E5 ;INVALID SEARCH MODE PARM
 BADCHGMODE		.eq $E6 ;INVALID CHANGE MODE PARM
 BADPGCNT		.eq $E7 ;INVALID PAGE COUNT PARM
-				.or SYSGLOB+$100
+				.ph SYSGLOB+$100 FIXME: check if we need this
 				.da $B800 ;KERNEL TARGET ADDRESS
 				.da $47C0 ; AND LENGTH
 
@@ -16654,7 +16654,7 @@ FILE: SOS.S.UMGR.SRC
 *				.TI "SOS 1.1 UTILITY MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGUMGR
+* ORG ORGUMGR
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -16723,7 +16723,7 @@ UMGR			.eq *
 				cmp #USWCNT
 				bcs UMGRERR
 
-				asl A
+				asl
 				tax 
 				lda USWTBL+1,X
 				pha 
@@ -16829,8 +16829,10 @@ LDAY			.eq $0E
 CRESET			.eq $12
 STATUS			.eq $14
 *
-WKMON			.hs 8,11,11,7,9,12
-				.hs 7,10,13,8,11,13
+*WKMON DFB 8,11,11,7,9,12
+WKMON			.hs 08,0b,0b,07,09,0c
+*DFB 7,10,13,8,11,13
+				.hs 07,0a,0d,08,0b,0d
 *
 *
 SET.TIME		.eq *
@@ -16847,10 +16849,10 @@ STIM011			and #$0F ; ASCII TO BCD AND
 				cpy #$07
 				beq STIM010
 				lda (TIME),Y
-				asl A
-				asl A
-				asl A
-				asl A
+				asl
+				asl
+				asl
+				asl
 				ora PCLOCK,X
 				sta PCLOCK,X
 				dey 
@@ -16862,8 +16864,8 @@ STIM011			and #$0F ; ASCII TO BCD AND
 				lda PCLOCK+8
 				jsr BCDBIN
 				tay 
-				lsr A
-				lsr A
+				lsr
+				lsr
 				sta WKDAY
 				tya 
 				and #$03
@@ -16947,8 +16949,8 @@ STIM040			stx Z.REG
 				sta CLOCK ; AND MONTH LATCHES
 				inc Z.REG
 				lda PCLOCK+8
-				lsr A
-				lsr A
+				lsr
+				lsr
 				ora #$CC
 				sta CLOCK
 *
@@ -16997,8 +16999,8 @@ GTIM030			plp ;RESTORE INTERRUPTS
 				stx Z.REG
 				lda CLOCK ;READ YEAR FROM DAY
 				sec ; AND MONTH LATCHES
-				rol A
-				rol A
+				rol
+				rol
 				dec Z.REG
 				and CLOCK
 				sta CLKTEMP+8
@@ -17020,10 +17022,10 @@ GTIM050			lda #$19
 				ldy #$11
 				ldx #$00
 GTIM060			lda PCLOCK,X ;GET MOST SIGNIFICANT
-				lsr A ; BCD DIGIT
-				lsr A
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				ora #$30 ;CONVERT TO ASCII
 				sta (TIME),Y
 				inx 
@@ -17062,8 +17064,8 @@ GTIM080			rts
 *
 * TEMPORARY STORAGE
 *
-OFFSET			.hs 0
-ERRCNT			.hs 0
+OFFSET			.hs 00
+ERRCNT			.hs 00
 CLKREGS			.bs 5
 MIN			.eq CLKREGS+0
 HOUR			.eq CLKREGS+1
@@ -17122,8 +17124,8 @@ DT050			plp ;READ YEAR FROM LATCHES
 				sta Z.REG
 				lda CLOCK
 				sec 
-				rol A
-				rol A
+				rol
+				rol
 				dec Z.REG
 				and CLOCK
 				tax 
@@ -17139,11 +17141,11 @@ DT060			txa
 				sta YEAR
 				lda MON ;CONVERT MONTH AND DAY
 				jsr BCDBIN ; TO BINARY THEN
-				asl A ; COMBINE WITH YEAR
-				asl A ; TO FORM DATE STAMP
-				asl A
-				asl A
-				asl A
+				asl
+				asl
+				asl
+				asl
+				asl
 				sta MON
 				rol YEAR
 				lda DAY
@@ -17174,10 +17176,10 @@ DT060			txa
 *
 BCDBIN			.eq *
 				pha 
-				lsr A ;ISOLATE TENS DIGIT FOR
-				lsr A ; INDEXING THE TABLE
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				tay 
 				pla 
 				and #$0F ;GET UNITS
@@ -17345,15 +17347,15 @@ AD.CLNUP		.eq *
 * REP 60
 *
 AD.READ			.eq *
-				lsr A ;SELECT THE APPROPRIATE
+				lsr
 				bit AD.SEL0 ; A/D INPUT
 				bcc ADR010
 				bit AD.SEL0+1
-ADR010			lsr A
+ADR010			lsr
 				bit AD.SEL1
 				bcc ADR020
 				bit AD.SEL1+1
-ADR020			lsr A
+ADR020			lsr
 				bit AD.SEL2
 				bcc ADR030
 				bit AD.SEL2+1
@@ -17393,12 +17395,12 @@ ADR070			plp
 				tya 
 				eor #$FF
 				lsr AD.TEMP
-				ror A
+				ror
 				lsr AD.TEMP
-				ror A
+				ror
 				lsr AD.TEMP
 				bne ADR090 ;RESULT > 255
-				ror A
+				ror
 				adc #0
 				rts 
 ADR080			lda #0
@@ -17463,12 +17465,12 @@ BOOTLEN			.eq *-BOOTMSG
 
 BOOTADR			.eq 40-BOOTLEN/2+$628
 * FIXME - MSB OFF
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENUMGR
-FAIL 2,"SOSORG FILE IS INCORRECT FOR UMBR"
-				.fin
+* IFNE ZZLEN-LENUMGR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR UMBR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: UMGR.SRC

@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -9,7 +9,7 @@ NEW
 
 *				.TI "SOS 1.1 SOS LOADER"
 * REL
-				.or $1E00
+				.ph $1E00 FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 100

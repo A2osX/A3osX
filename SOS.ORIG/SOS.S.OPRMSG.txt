@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -10,7 +10,7 @@ NEW
 *				.TI "SOS 1.1 OPERATOR MESSAGE/REPLY"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGOMSG
+				.ph ORGOMSG FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -69,9 +69,9 @@ E.IER			.eq $FFEE
 *
 * ZERO PAGE DECLARATIONS
 *
-				.ph
+*				DSECT FIXME: find .or address
 ZPBASE			.eq $200
-				.or $0000 ;ZERO PAGE DECLARATIONS
+				.ph $0000 ;ZERO PAGE DECLARATIONS FIXME: check if we need this
 MSGPTR			.bs 2 ;MESSAGE POINTER
 MSGIDX			.bs 1
 *
@@ -89,7 +89,7 @@ SV.EPCR			.bs 1
 SV.EIER			.bs 1
 *
 FLAG			.bs 1
-				.ep
+				.ep 
 * PAGE
 OPMSGRPLY		.eq *
 *
@@ -229,13 +229,13 @@ OPR410			lda (DATAPTR),Y
 				sta E.IER
 				lda SV.SMODE ;RESTORE SCREEN MODE
 				sta SCRNMODE
-				lsr A
+				lsr
 				bcc OPR500
 				bit VM0+1 ;RESTORE VIDEO MODE
-OPR500			lsr A
+OPR500			lsr
 				bcc OPR510
 				bit VM1+1
-OPR510			lsr A
+OPR510			lsr
 				bcc OPR520
 				bit VM2+1
 OPR520			bit SCRNMODE
@@ -295,7 +295,7 @@ VID010			lda E.REG
 *
 VID020			sta E.REG
 				lda #$00
-				ror A
+				ror
 				sta SCRNMODE
 VID030			rts
 * PAGE
@@ -317,11 +317,11 @@ VID030			rts
 *
 SETPTRS			.eq *
 				txa 
-				lsr A
+				lsr
 				ora #$04
 				sta SCRNPTR+1
 				lda #$00
-				ror A
+				ror
 				sta SCRNPTR
 				lda /DATABUF
 
@@ -335,13 +335,13 @@ DBUFADR			.eq *
 				.hs >1*40+DATABUF
 				.hs >2*40+DATABUF
 				.hs >3*40+DATABUF
-LST ON
+* LST ON
 
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENOMSG
-FAIL 2,"SOSORG FILE IS INCORRECT FOR OPRMSG"
-				.fin
+* IFNE ZZLEN-LENOMSG
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR OPRMSG"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: OPRMSG.SRC

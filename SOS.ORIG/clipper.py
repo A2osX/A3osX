@@ -4,7 +4,7 @@ import os
 import re
 from enum import Enum
 
-preamble="NEW\r\n  AUTO 3,1\r\n*--------------------------------------\r\n"
+preamble="NEW\r\nAUTO 3,1\r\n*--------------------------------------\r\n"
 postamble="*--------------------------------------\r\nMAN\r\nSAVE /A3OSX.BUILD/SOS.ORIG/{}\r\nLOAD /A3OSX.BUILD/SOS.ORIG/SOS.S\r\nASM\r\n"
 
 file = open('SOS13Src.txt', 'r')

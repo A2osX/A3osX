@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -288,7 +288,7 @@ LDR010			lda $380,X
 				lda B.REG ; SYSBANK:=BREG
 				and #$0F
 				sta SYSBANK
-				asl A ; MEMSIZ:=SYSBANK*2+4 "16K CHUNKS"
+				asl
 				clc 
 				adc #4
 				sta MEMSIZE ; AND, MEMSIZE (SIZE IN 16K BYTE "CHUNKS")

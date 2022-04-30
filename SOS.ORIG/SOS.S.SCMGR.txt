@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -10,7 +10,7 @@ NEW
 *				.TI "SOS 1.1 SYSTEM CALL MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGSCMGR
+				.ph ORGSCMGR FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -326,8 +326,8 @@ MOVE.PARMS		.eq *
 *
 
 MOVE010			lda SCRNUM
-				asl A
-				asl A
+				asl
+				asl
 				sta DFN.PTRX
 				lda #0
 				sta SXPAGE+DFN.PTR+1 ; AND X BYTE
@@ -386,10 +386,10 @@ PARMLOOP		lda RGHT.NIB
 				lda (DFN.PTR),Y
 				sta SCT.DFN
 				and #$30
-				lsr A
-				lsr A
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				sta SCT.DCNT
 				bpl VALUE ;BRANCH ALWAYS
 *
@@ -402,10 +402,10 @@ ELSE.RNIB		lda SCT.DFN
 				and #$03
 				sta SCT.DCNT
 				tya 
-				asl A
-				asl A
-				asl A
-				asl A
+				asl
+				asl
+				asl
+				asl
 
 				sta SCT.DFN
 				inc DFN.PTRX ; ADVANCE SYS CALL DFN PTR
@@ -605,12 +605,12 @@ PTR.ERR			lda #BADSCBNDS
 PTR.ERR1		lda #BADXBYTE
 				jsr SYSERR
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENSCMGR
-FAIL 2,"SOSORG FILE IS INCORRECT FOR SCMGR"
-				.fin
+* IFNE ZZLEN-LENSCMGR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR SCMGR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: SCMGR.SRC

@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -124,7 +124,7 @@ SIOWRITE		.eq *
 BADIO			.eq *
 				.do 1-REV0ROM ;FOR REV1
 				bvs FINDIT ;=>IRQ. JUST RETRY IT.
-ELSE ;FOR REV0
+				.else ;FOR REV0
 *
 * THE REV1 ROM TAKES CARE OF THE
 * IRQ RETRY COUNT, BUT REV0 DOESN'T:
@@ -217,7 +217,7 @@ FINDSEC2		.eq *
 				ror TEMP ;PREVENT RECOMPUTATION
 				sbc CSSTV+1
 				and #$0F
-				lsr A ;EACH 2-SECTORS IS 25 MS
+				lsr
 				jsr ADDTIME
 *
 * KEEP LOOKING TILL WE FIND IT:

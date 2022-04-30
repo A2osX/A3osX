@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -10,7 +10,7 @@ NEW
 *				.TI "SOS 1.1 FILE MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGFMGR
+				.ph ORGFMGR FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -110,12 +110,12 @@ GLEVEL			ldy #0
 				sta (F.LEVEL),Y
 				rts 
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENFMGR
-FAIL 2,"SOSORG FILE IS INCORRECT FOR FMGR"
-				.fin
+* IFNE ZZLEN-LENFMGR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR FMGR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: FMGR.SRC

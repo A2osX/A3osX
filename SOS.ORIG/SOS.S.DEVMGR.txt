@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -10,7 +10,7 @@ NEW
 *				.TI "SOS 1.1 DEVICE MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGDMGR
+				.ph ORGDMGR FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 100
@@ -292,12 +292,12 @@ SETUP.SDT		.eq *
 				sty SXPAGE+SDTP+1
 				rts 
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENDMGR
-FAIL 2,"SOSORG FILE IS INCORRECT FOR DEVMGR"
-				.fin
+* IFNE ZZLEN-LENDMGR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR DEVMGR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: DEVMGR.SRC

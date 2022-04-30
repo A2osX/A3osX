@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -10,7 +10,7 @@ NEW
 *				.TI "SOS 1.1 SYSTEM ERROR ROUTINES"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.or ORGSERR
+				.ph ORGSERR FIXME: check if we need this
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -167,10 +167,10 @@ SD020			lda MSG,X
 *
 				lda SDEATH.REGS+A.SAVE ; DISPLAY ERROR CODE (2 HEX DIGITS)
 				clc 
-				lsr A
-				lsr A
-				lsr A
-				lsr A
+				lsr
+				lsr
+				lsr
+				lsr
 				jsr PRINT ; FIRST DIGIT
 				inx 
 				lda SDEATH.REGS+A.SAVE
@@ -199,12 +199,12 @@ PRNT100			adc #$36 ; "A"-"F"
 PRNT110			sta MSGBASE-1,X
 				rts 
 *
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
-IFNE ZZLEN-LENSERR
-FAIL 2,"SOSORG FILE IS INCORRECT FOR SYSERR"
-				.fin
+* IFNE ZZLEN-LENSERR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR SYSERR"
+* FIN
 
 *************************************************************************
 * END OF APPLE /// SOS 1.3 SOURCE CODE FILE: SYSERR.SRC

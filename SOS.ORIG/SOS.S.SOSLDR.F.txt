@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -287,7 +287,7 @@ ERROR			.eq *
 				sec 
 				lda #40
 				sbc ETEMP
-				lsr A
+				lsr
 				clc 
 				adc ETEMP
 				tay 
@@ -368,7 +368,7 @@ WAM010			lda AMSG-1,Y
 				clc 
 				lda #40
 				adc #SOSVERL
-				lsr A
+				lsr
 				tax 
 				ldy #SOSVERL
 WSM010			lda SOSVER-1,Y
@@ -388,7 +388,7 @@ WSM010			lda SOSVER-1,Y
 				and #$0F
 				beq WDM040 ;NO CLOCK
 				sta WTEMP
-				asl A
+				asl
 				adc WTEMP
 				tax 
 				ldy #3
@@ -411,7 +411,7 @@ WDM010			lda DAYNAME-1,X
 				bcc WDM020
 				adc #9
 WDM020			sta WTEMP
-				asl A
+				asl
 				adc WTEMP
 				tax 
 				ldy #3
@@ -581,13 +581,13 @@ D.CHRSET		.eq D.DRIVES+$2+$10
 D.KYBD			.eq D.CHRSET+$10+$400
 * REP 100
 
-LST ON
+* LST ON
 ZZEND			.eq *
 ZZLEN			.eq ZZEND-ZZORG
 *
-NE ZZLEN-LENLODR
-FAIL 2,"SOSORG FILE IS INCORRECT FOR SOS LOADER"
-				.fin
+* NE ZZLEN-LENLODR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR SOS LOADER"
+* FIN
 *
 
 *************************************************************************
