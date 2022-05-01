@@ -1,0 +1,26 @@
+NEW
+  AUTO 3,1
+*--------------------------------------
+* HARDWARE EQUATES  
+*--------------------------------------
+Z.REG			 .EQ $FFD0  
+E.REG			 .EQ $FFDF
+B.REG			 .EQ $FFEF
+*    
+KBPORT			 .EQ $C008  
+*    
+BELL			 .EQ $C040  
+*    
+VM0				 .EQ $C050  
+VM1				 .EQ $C052  
+VM2				 .EQ $C054  
+VM3				 .EQ $C056  
+*    
+E.T2			 .EQ $FFE8  
+E.ACR			 .EQ $FFEB  
+E.PCR			 .EQ $FFEC  
+E.IFR			 .EQ $FFED  
+E.IER			 .EQ $FFEE  
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/INC/IO.I

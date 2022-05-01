@@ -1,0 +1,23 @@
+NEW
+AUTO 3,1
+*--------------------------------------
+				.LIST ON
+				.OP 6502
+				.OR $1E00 * Maybe
+				.TF /A3OSX.BUILD/SOS.KERNEL
+*--------------------------------------
+				.INB /A3OSX.BUILD/INC/IO.I
+				.INB /A3OSX.BUILD/INC/SOS.I
+*--------------------------------------
+*				.INB /A3OSX.BUILD/SOS/SOS.S.SYSGLOB
+*				.INB /A3OSX.BUILD/SOS/SOS.S.SOSLDR
+*				.INB /A3OSX.BUILD/SOS/SOS.S.SOSLDR.A
+*				.INB /A3OSX.BUILD/SOS/SOS.S.SOSLDR.B
+*				.INB /A3OSX.BUILD/SOS/SOS.S.SOSLDR.C
+*				.INB /A3OSX.BUILD/SOS/SOS.S.SOSLDR.D
+*   			.INB /A3OSX.BUILD/SOS/SOS.S.SOSLDR.E
+*				.INB /A3OSX.BUILD/SOS/SOS.S.SOSLDR.F
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS/SOS.S
+ASM

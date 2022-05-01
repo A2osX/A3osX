@@ -1,0 +1,248 @@
+NEW
+AUTO 3,1
+*--------------------------------------
+
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.MAIN.SRC
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+* PAGE
+* MAIN ENTRY POINT:
+*
+* DISABLE NMI/RESET AND ENABLE ROM/IO SPACE
+*
+MAIN			.eq *
+				lda E.REG ;SAVE CALLER'S
+				and #$FF-$20 ;DROP SCREEN BIT
+				sta ESAVE ; ENVIRONMENT
+				.do 1-TEST ;NO RESETLOCK FOR TESTING
+				lda E.REG ;GET EREG AGAIN
+				and #$FF-$10 ;DISABLE NMI/RESET
+				.fin
+				ora #$03 ;ENABLE ROM/IO SPACE
+				sta E.REG
+*
+				lda NOSCROLL ;DISABLE SMOOTHSCROLL
+*
+				php ;IF ALREADY SEI'D, THEN WE
+				pla ; STAY THAT WAY...
+				ror
+				ror
+				ror
+				ror
+				sta IRQMASK ;'I' BIT INTO BIT7
+*
+* MAKE SURE WE HAVE A VALID COMMAND:
+*
+				lda D.COMMAND ;GET IT
+				bmi BADCMD ;=>WOW!
+				beq IOSETUP ;=>ZERO IS A READ
+				cmp #10 ;OFF THE END?
+				bcs BADCMD ;=>YES
+				cmp #9 ;REPEAT?
+				bne CMD1 ;=>NOPE
+*
+* REPEAT. SIMPLY GET PRIOR COMMAND:
+*
+				lda PREVUNIT ;IS THIS REPEAT FOR
+				cmp D.UNITNUM ; SAME UNIT?
+				bne BADOP ;=>NO? ILLEGAL!
+				lda PREVCMD ;YES, SET COMMAND
+				beq RPTOK ;=>REPEAT'ED READ IS OK
+				cmp #1 ;IF NOT, IS IT REPEAT'ED WRITE?
+				bne BADOP ;=>CAN'T REPEAT OTHER COMMANDS
+RPTOK			.eq *
+				sta D.COMMAND ;SAME AS BEFORE
+				cmp #0 ;READ?
+				beq IOSETUP ;=>YES
+* NOW REPEAT GOES LIKE OTHERS:
+*
+*
+CMD1			.eq *
+				cmp #1 ;WRITE?
+				bne CMD2 ;=>NOPE
+				jmp IOSETUP ;=>YES
+CMD2			.eq *
+				cmp #2 ;STATUS?
+				bne CMD3 ;=>NOT STATUS
+				lda D.STATCODE ;IS IT 'SENSE'?
+				beq GOSTAT ;=>YES
+				lda #XCTLCODE ;ILLEGAL CODE
+				jmp EXIT
+GOSTAT			.eq *
+				jmp DRVSETUP ;=>YES
+*
+CMD3			.eq *
+				cmp #8 ;INIT?
+				bne BADOP ;=>NOPE
+				jmp INIT ;=>YES, DO INIT
+*
+
+BADOP			.eq *
+				lda #XBADOP ;ILLEGAL COMMAND
+				jmp EXIT ;BACK TO YOU
+*
+BADCMD			.eq *
+				lda #XREQCODE ;INVALID COMMAND
+				jmp EXIT ;BACK TO YOU
+* PAGE
+* SETUP WHAT WE HAVE TO BEFORE
+* PERFORMING THE I/O OPERATION:
+*
+IOSETUP			.eq *
+				lda D.BLOCK+1 ;VALIDATE BLOCKNUM
+				beq CHKBYTE ;=> IF <256, IT'S OK
+				cmp #2 ;IS IT <512?
+				bcs BADBLOCK ;=>BAD BOY!
+				lda D.BLOCK ;YES, CHECK LO HALF
+				cmp #280-256 ; FOR RANGE
+				bcc CHKBYTE ;=>IT'S OK
+BADBLOCK		.eq *
+				lda #XBLKNUM ;BAD BLOCK NUMBER
+				jmp EXIT ;RETURN BAD NEWS
+*
+CHKBYTE			.eq *
+				lda D.BYTES ;GET LO COUNT
+				bne BADCOUNT ;=>ERR, NOT INTEGRAL BLOCK(S)
+				lda D.BYTES+1 ;GET HI COUNT
+				lsr
+				bcs BADCOUNT ;=>BAD IF HALF-BLOCK COUNT
+				sta BLKCOUNT ;SAVE COUNT OF BLOCKS
+*
+* DOES REQUESTED BYTECOUNT CAUSE US
+* TO RUN OFF END OF DISK?
+*
+				lda BLKCOUNT ;NO. ADD STARTBLOCK
+				clc ; AND BLKCOUNT AND SEE
+				adc D.BLOCK ; IF WE'RE TOO BIG
+				ldx D.BLOCK+1 ;DID IT START OUT > 255?
+				bne BLKG255 ;=>YES
+				bcc DRVSETUP ;=>DEFINITELY < 256
+				bcs CHKLO ;=>IF CARRY,THEN >256
+BLKG255			.eq *
+				bcs BADCOUNT ;>255+CARRY IS NOW >511
+CHKLO			.eq *
+				cmp #280-256+1 ;281..511 ?
+				bcc DRVSETUP ;=>NO, WE ARE OK
+BADCOUNT		.eq *
+				lda #XBYTECNT ;ILLEGAL BYTECOUNT
+				jmp EXIT ;SORRY...
+* PAGE
+*
+* SELECT THE APPROPRIATE DRIVE:
+*
+DRVSETUP		.eq *
+				lda D.COMMAND ;SAVE THIS COMMAND
+				sta PREVCMD ; AND DEVICE FOR
+				lda D.UNITNUM ; SUBSEQUENT
+				sta PREVUNIT ; 'REPEAT' CALL
+				lda E.REG ;DOWNSHIFT TO
+				ora #$80 ; 1MHZ FOR REMAINDER
+				sta E.REG ; OF DRIVER EXECUTION
+				jsr UNITSEL ;SELECT & START IT
+*
+* SEE IF THE MOTOR STARTED. IF NOT,
+* THEN IT'S EITHER DISKSWITCH OR NODRIVE.
+*
+				jsr CHKDRV ;MOTOR RUNNING?
+				bne DOIO ;=>YES, GREAT.
+*
+* IF WE GET A MOTOR WHEN WE MOVE
+* THE HEAD, THEN IT'S DISKSWITCH.
+*
+				ldx D.UNITNUM ;FORCE HEAD MOTION
+				inc DRVTRACK,X ; EVEN IF ALREADY ON ZERO
+				inc DRVTRACK,X ;GIVE HIM A FIRM KNOCKER
+				lda #0 ;SEEK TO TRACK ZERO
+				jsr MYSEEK ; FOR BFM DIR READ
+				jsr CHKDRV ;RUNNING NOW?
+				bne DSWITCH ;=>YES, A SWITCHEROO
+				lda #0
+				ldy D.UNITNUM ;FORGET THAT THIS
+
+				sta DRIVESEL,Y ; DRIVE WAS 'SELECTED'
+				lda #XNODRIVE ;NO, A MISSING DRIVE!
+				jmp EXIT
+*
+DSWITCH			.eq *
+				lda #XDISKSW ;USER PULLED A FAST ONE
+				jmp EXIT ; BUT HE CAN'T FOOL US.
+* PAGE
+* PREPARE TO DO THE OPERATION:
+*
+DOIO			.eq *
+				lda D.BUFL ;COPY USER BUFFER
+				sta BUFTEMP ; AND BLOCK NUMBER
+				lda D.BUFH ; TO OUR WORKSPACE
+				sta BUFTEMP+1
+				lda $1400+D.BUFH
+				sta $1400+BUFTEMP+1
+				lda D.BLOCK
+				sta BLKTEMP
+				lda D.BLOCK+1
+				sta BLKTEMP+1
+*
+* IF CALLER GAVE US A COUNT OF ZERO BYTES,
+* THEN WE'RE ALL DONE!
+*
+				lda D.COMMAND ;IS IT STATUS?
+				cmp #2 ;IF SO, THEN BYTECOUNT
+				bne DOIO2 ; IS MEANINGLESS
+				jmp STATUS
+DOIO2			.eq *
+				ldy BLKCOUNT ;BLKS=0?
+				beq READOK ;=>YES, YOU GET GOOD RETURN
+				cmp #0 ;READ COMMAND?
+				beq READREQ ;=>YES
+				jmp WRITEREQ
+* PAGE
+* REP 40
+* -- READ --
+* REP 40
+READREQ			.eq *
+				lda #0 ;CLEAR COUNT OF
+				ldy #0
+				sta (D.BYTRD),Y ; BYTES READ
+				iny 
+				sta (D.BYTRD),Y
+READREQ2		.eq *
+				jsr BLK2SECT ;COMPUTE TRK/SECTOR THIS BLOCK
+*
+				jsr SECTORIO ;READ IT PLEASE
+				bcs READERR ;=>WE LOSE.
+				inc SECTOR ;BUMP TO NEXT
+				inc SECTOR ; LOGICAL SECTOR
+				inc BUF+1 ;BUMP SECTOR BUFFER
+				jsr SECTORIO ;READ IT TOO
+				bcs READERR ;=>WE LOSE.
+				ldy #1
+				lda (D.BYTRD),Y ;BUMP COUNT OF
+				clc 
+				adc #2
+				sta (D.BYTRD),Y ; BYTES READ
+*
+* MORE BLOCKS TO GO?
+*
+				jsr MOREBLKS ;SETUP FOR NEXT BLOCK
+				bne READREQ2 ;=>MORE TO READ...
+READOK			.eq *
+				lda #0 ;GOOD RETURN
+				jmp EXIT ;TELL HAPPY USER
+*
+READERR			.eq *
+				jmp EXIT ;RETURN ERROR CODE
+* CHN DISK3.WRT.SRC
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.MAIN.SRC
+*************************************************************************
+
+
+
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS/SOS.S.DISK3.MAI
+LOAD /A3OSX.BUILD/SOS/SOS.S
+ASM

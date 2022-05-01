@@ -1,0 +1,842 @@
+NEW
+AUTO 3,1
+*--------------------------------------
+
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: UMGR.SRC
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+*				.TI "SOS 1.1 UTILITY MANAGER"
+* REL
+* INCLUDE SOSORG,6,1,254
+* ORG ORGUMGR
+ZZORG			.eq *
+* FIXME - MSB OFF
+* REP 60
+* COPYRIGHT (C) APPLE COMPUTER INC. 1980
+* ALL RIGHTS RESERVED
+* REP 60
+* UTILITY MANAGER
+*
+* THIS MODULE HANDLES THE FOLLOWING SOS CALLS:
+* SET.FENCE, GET.FENCE
+* SET.TIME, GET.TIME
+* JOYSTICK, COLDSTRT
+*
+* IN ADDITION, IT CONTAINS THE ROUITNE DATETIME WHICH
+* PROVIDES THE DATE AND TIME FOR THE BLOCK FILE MANAGER.
+*
+* REP 60
+*
+* ENTRY UMGR
+* ENTRY DATETIME
+* ENTRY BCDBIN
+* ENTRY COLDSTRT
+*
+* ENTRY PCLOCK
+*
+* EXTRN SYSBANK
+* EXTRN CEVPRI
+* EXTRN SYSERR
+* EXTRN BADSCNUM
+* EXTRN BADJMODE
+* EXTRN XNORESRC
+* EXTRN ALLOCSIR
+* EXTRN DEALCSIR
+*
+U.TPARMX		.eq $C0
+U.REQCODE		.eq U.TPARMX
+PRIORITY		.eq U.TPARMX+1
+J.MODE			.eq U.TPARMX+1
+J.VALUE			.eq U.TPARMX+2
+TIME			.eq U.TPARMX+1
+MEMORY			.eq U.TPARMX+1
+*
+BITON2			.eq $04
+BITON5			.eq $20
+BITON6			.eq $40
+BITON7			.eq $80
+BITOFF5			.eq $DF
+*
+Z.REG			.eq $FFD0
+E.REG			.eq $FFDF
+B.REG			.eq $FFEF
+* PAGE
+* REP 35
+*
+* UTILITY SWITCH
+*
+* REP 35
+*
+*
+UMGR			.eq *
+				lda E.REG ;SELECT $C000 I/O SPACE
+				ora #BITON6
+				sta E.REG
+*
+				lda U.REQCODE
+				cmp #USWCNT
+				bcs UMGRERR
+
+				asl
+				tax 
+				lda USWTBL+1,X
+				pha 
+				lda USWTBL,X
+				pha 
+				rts 
+*
+UMGRERR			lda #BADSCNUM
+				jsr SYSERR
+*
+* UTILITY SWITCH TABLE
+*
+USWTBL			.eq *
+				.da SET.FENCE-1
+				.da GET.FENCE-1
+				.da SET.TIME-1
+				.da GET.TIME-1
+				.da JOYSTICK-1
+				.da COLDSTRT-1
+USWCNT			.eq *-USWTBL/2
+* PAGE
+* REP 60
+*
+* SET.FENCE(IN.PRIORITY) SYSTEM CALL
+*
+* GET.FENCE(OUT.PRIORITY) SYSTEM CALL
+*
+* THESE TWO CALLS ALLOW THE CALLER TO EITHER RETRIEVE OR SET
+* THE CURRENT SYSTEM EVENT PRIORITY THRESHOLD. BY RAISING
+* THE FENCE, A USER MAY INHIBIT THE EXECUTION OF EVENTS WHOSE
+* PRIORITY IS EQUAL TO OR LESS THAN THE VALUE OF THE SYSTEM
+* FENCE.
+*
+* REP 60
+*
+*
+SET.FENCE		.eq *
+				lda PRIORITY
+				sta CEVPRI
+				rts ; NORMAL EXIT
+*
+*
+GET.FENCE		.eq *
+				lda CEVPRI
+				ldy #0
+				sta (PRIORITY),Y
+				rts ; NORMAL EXIT
+* PAGE
+* REP 60
+*
+* SET.TIME(IN.TIME)
+* GET.TIME(OUT.TIME)
+*
+* THESE SYSTEM CALLS ALLOW THE USER TO SET AND READ THE
+* SYSTEM'S CLOCK. THE TIME IS EXPRESSED AS AN EIGHTEEN
+* DIGIT ASCII STRING IN THE FORM "YYYYMMDDWHHMMSSMMM".
+*
+* YYYY YEAR [1900-1999]
+* MM MONTH [01-12]
+* DD DAY [01-31]
+* W WEEKDAY [1-7] 1 => SUNDAY
+* HH HOUR [00-23]
+* MM MINUTE [00-59]
+* SS SECOND [00-59]
+* MMM MILLISECOND [000-999]
+*
+* THE CLOCK CHIP AUTOMATICALLY MAINTAINS THE TIME AND
+* DATE FROM MILLISECONDS TO MONTHS. IT DOES NOT MAINTAIN
+* THE YEAR, HOWEVER, NOR DOES IT RECOGNIZE 29 FEBRUARY
+* IN LEAP YEARS. THE SOFTWARE SETS THE DAY AND MONTH
+* LATCHES TO THE DON'T CARE STATE AND USES THE REMAINING
+* EIGHT BITS TO HOLD A TWO DIGIT BCD YEAR. THE CLOCK
+* MUST BE RESET AT THE BEGINNING OF EACH YEAR AND ON
+* 29 FEBRUARY IN LEAP YEARS.
+*
+* SET.TIME ASSUMES THAT THE DATE IS VALID AND CORRECT.
+* THE CENTURY IS IGNORED AND MILLISECONDS ARE ALWAYS SET
+* TO ZERO. GET.TIME ALWAYS SETS THE CENTURY TO 19.
+*
+* REP 60
+
+*
+*
+* TEMPORARY ZERO PAGE
+*
+PCLK			.eq $D0 ;POINTER TO SAVED PCLOCK
+WKDAY			.eq $D2
+CKSUM			.eq $D3
+CLKTEMP			.eq $18D4 ;THROUGH $18DD - ABSOLUTE
+*
+* CLOCK LOCAL DATA
+*
+PCLOCK			.bs $0A ;PSEUDO CLOCK REGISTERS
+RETRY			.bs $01
+*
+* CLOCK HARDWARE ADDRESSES
+*
+CLOCK			.eq $C070
+CSEC			.eq $02
+CMIN			.eq $03
+CMON			.eq $07
+LDAY			.eq $0E
+CRESET			.eq $12
+STATUS			.eq $14
+*
+*WKMON DFB 8,11,11,7,9,12
+WKMON			.da 08,0b,0b,07,09,0c
+*DFB 7,10,13,8,11,13
+				.da 07,0a,0d,08,0b,0d
+*
+*
+SET.TIME		.eq *
+				ldx #$00
+				ldy #$12
+				lda #'0'
+				bne STIM011
+*
+STIM010			inx
+				lda (TIME),Y ;CONVERT TIME FROM
+STIM011			and #$0F ; ASCII TO BCD AND
+				sta PCLOCK,X ; TRANSFER TO PCLOCK
+				dey 
+				cpy #$07
+				beq STIM010
+				lda (TIME),Y
+				asl
+				asl
+				asl
+				asl
+				ora PCLOCK,X
+				sta PCLOCK,X
+				dey 
+				bpl STIM010
+*
+				lda PCLOCK+7 ;CALCULATE WEEKDAY
+				jsr BCDBIN
+				tax 
+				lda PCLOCK+8
+				jsr BCDBIN
+				tay 
+				lsr
+				lsr
+				sta WKDAY
+				tya 
+				and #$03
+				bne STIM015
+				cpx #3
+				bcs STIM015 ; <SRS 82.162>
+				dey 
+STIM015			clc
+				tya 
+				adc WKDAY
+				adc WKMON-1,X
+				sta WKDAY
+				lda PCLOCK+6
+				jsr BCDBIN
+				clc 
+				adc WKDAY
+				sec 
+STIM016			sbc #7
+				cmp #8
+				bcs STIM016
+				sta PCLOCK+5
+*
+
+				lda #$D0
+				sta PCLK ;POINT (PCLK) TO 8F:FFD0
+				lda #$FF
+				sta PCLK+1
+				lda #$8F
+				sta $1401+PCLK
+				lda #$A5
+				sta CKSUM ;INITIALIZE CHECKSUM
+				ldy #$00
+*
+STIM020			lda PCLOCK,Y ;SAVE PCLOCK
+				sta (PCLK),Y ; BEHIND 6522
+				eor CKSUM
+				sta CKSUM
+				iny 
+				cpy #$0A
+				bcc STIM020
+				sta (PCLK),Y ;SAVE CHECKSUM
+*
+				lda Z.REG
+				pha ;SAVE ZERO PAGE
+				lda E.REG
+				pha ;SAVE ENVIRONMENT
+				ora #BITON7 ; AND SET 1 MHZ
+				sta E.REG
+*
+				ldy #STATUS
+				sty Z.REG
+				lda CLOCK ;DOES CLOCK EXIST?
+				bmi STIM050 ; NO
+*
+				ldx #CRESET
+				stx Z.REG
+				lda #$FF ;RESET ALL COUNTERS
+				sta CLOCK
+				sta CLOCK
+*
+				ldx #CSEC-1
+STIM030			inx
+				php 
+				sei ;DISABLE INTERRUPTS
+STIM040			stx Z.REG
+				lda CLOCK ;(DUMMY READ FOR STATUS)
+				lda PCLOCK,X
+				sta CLOCK ;SET CLOCK COUNTER
+				lda CLOCK ;(DUMMY READ FOR STATUS)
+				sty Z.REG
+				lda CLOCK ;CHECK STATUS BIT
+				bne STIM040
+				plp ;RESTORE INTERRUPTS
+				cpx #CMON
+				bcc STIM030
+*
+				ldx #LDAY
+				stx Z.REG
+				lda PCLOCK+8
+				ora #$CC ;STUFF YEAR INTO DAY
+				sta CLOCK ; AND MONTH LATCHES
+				inc Z.REG
+				lda PCLOCK+8
+				lsr
+				lsr
+				ora #$CC
+				sta CLOCK
+*
+STIM050			pla
+				sta E.REG ;RESTORE ENVIRONMENT
+				pla 
+				sta Z.REG ; AND ZERO PAGE
+				rts 
+* PAGE
+GET.TIME		.eq *
+				lda Z.REG ;SAVE ZERO PAGE
+				pha 
+				lda E.REG ;SAVE ENVIRONMENT
+				pha 
+				ora #BITON7
+				sta E.REG ;SET 1 MHZ
+*
+				ldy #STATUS
+				sty Z.REG
+
+				lda CLOCK ;DOES CLOCK EXIST?
+				bmi GTIM050 ; NO
+*
+				lda #$10 ;ALLOW $10 RETRYS
+				sta RETRY
+GTIM010			ldx #CMON+1
+				php 
+				sei ;DISABLE INTERRUPTS
+*
+GTIM020			dex
+				bmi GTIM030 ;ALL DONE
+				stx Z.REG
+				lda CLOCK ;COPY CLOCK COUNTERS
+				sta CLKTEMP,X ; TO TEMP REGISTERS
+				sty Z.REG
+				lda CLOCK ;CHECK STATUS BIT
+				beq GTIM020
+*
+				plp ;CLOCK READ ERROR
+				dec RETRY
+				bpl GTIM010 ;TRY AGAIN
+				bmi GTIM050
+*
+GTIM030			plp ;RESTORE INTERRUPTS
+				ldx #LDAY+1
+				stx Z.REG
+				lda CLOCK ;READ YEAR FROM DAY
+				sec ; AND MONTH LATCHES
+				rol
+				rol
+				dec Z.REG
+				and CLOCK
+				sta CLKTEMP+8
+*
+				ldx #$09
+GTIM040			lda CLKTEMP,X ;COPY CLOCK DATA
+				sta PCLOCK,X ; TO PSEUDO CLOCK
+				dex 
+				bpl GTIM040
+*
+GTIM050			lda #$19
+				sta PCLOCK+9
+*
+				pla 
+				sta E.REG ;RESTORE ENVIRONMENT
+				pla 
+				sta Z.REG ; AND ZERO PAGE
+*
+				ldy #$11
+				ldx #$00
+GTIM060			lda PCLOCK,X ;GET MOST SIGNIFICANT
+				lsr
+				lsr
+				lsr
+				lsr
+				ora #$30 ;CONVERT TO ASCII
+				sta (TIME),Y
+				inx 
+				dey 
+				bmi GTIM080
+GTIM070			lda PCLOCK,X ;GET LEAST SIGNIFICANT
+				and #$0F ; BCD DIGIT
+				ora #$30 ;CONVERT TO ASCII
+				sta (TIME),Y
+				dey 
+				cpy #$07
+				bne GTIM060
+				inx 
+				bne GTIM070
+GTIM080			rts
+* PAGE
+* REP 60
+*
+* SUBROUTINE DATETIME
+*
+* THIS SUBROUTINE READS THE CLOCK AND WRITES A DATE/TIME
+* STAMP TO A FOUR BYTE BUFFER ON THE CALLER'S ZERO PAGE;
+* THE DATA FORMAT IS SHOWN BELOW. ON ENTRY, X MUST POINT
+* TO THE BUFFER. ON EXIT, ALL REGISTERS ARE CLOBBERED.
+* IF AN ERROR OCCURS, CARRY IS SET AND THE BUFFER IS
+* SET TO ZERO; OTHERWISE, CARRY IS CLEARED.
+
+*
+* BITS: 7 6 5 4 3 2 1 0
+* X+0 M M M D D D D D
+* X+1 Y Y Y Y Y Y Y M
+* X+2 - MINUTE -
+* X+3 - - HOUR - -
+*
+* REP 60
+*
+* TEMPORARY STORAGE
+*
+OFFSET			.da 00
+ERRCNT			.da 00
+CLKREGS			.bs 5
+MIN			.eq CLKREGS+0
+HOUR			.eq CLKREGS+1
+DAY			.eq CLKREGS+3
+MON			.eq CLKREGS+4
+YEAR			.eq CLKREGS+2
+*
+*
+DATETIME		.eq *
+				stx OFFSET
+				lda Z.REG
+				pha ;SAVE ZERO PAGE
+				lda E.REG
+				pha ; AND ENVIRONMENT
+				ora #BITON7+BITON6 ;SET 1 MHZ AND
+				sta E.REG ; ENABLE I/O SPACE
+*
+				ldy #STATUS
+				sty Z.REG
+				lda CLOCK ;DOES CLOCK EXIST?
+				bmi DT030 ; NO
+*
+				lda #8
+				sta ERRCNT ;ALLOW 8 RETRYS
+DT010			ldx #CMON+1
+				php 
+				sei ;DISABLE INTERRUPTS
+*
+DT020			dex
+				cpx #CMIN
+				bcc DT050
+				stx Z.REG
+				lda CLOCK ;READ THE CLOCK
+				sta CLKREGS-CMIN,X
+				sty Z.REG
+				lda CLOCK ;CHECK STATUS
+				beq DT020
+*
+				plp ;CLOCK READ ERROR
+				dec ERRCNT
+				bpl DT010
+DT030			pla
+				sta E.REG ;RESTORE ENVIRONMENT
+				pla 
+				sta Z.REG ; AND ZERO PAGE
+				ldx #CMON-CMIN
+DT040			lda PCLOCK+CMIN,X
+				sta CLKREGS,X
+				dex 
+				bpl DT040
+				ldx PCLOCK+8
+				jmp DT060
+*
+DT050			plp ;READ YEAR FROM LATCHES
+				lda #LDAY+1
+				sta Z.REG
+				lda CLOCK
+				sec 
+				rol
+				rol
+				dec Z.REG
+				and CLOCK
+				tax 
+*
+				pla 
+				sta E.REG ;RESTORE ENVIRONMENT
+				pla 
+				sta Z.REG ; AND ZERO PAGE
+
+*
+DT060			txa
+				jsr BCDBIN ;CONVERT YEAR TO BINARY
+				sta YEAR
+				lda MON ;CONVERT MONTH AND DAY
+				jsr BCDBIN ; TO BINARY THEN
+				asl
+				asl
+				asl
+				asl
+				asl
+				sta MON
+				rol YEAR
+				lda DAY
+				jsr BCDBIN
+				ora MON
+				ldx OFFSET
+				sta 0,X
+				lda YEAR
+				sta 1,X
+				lda MIN ;CONVERT MINUTE
+				jsr BCDBIN
+				sta 2,X
+				lda HOUR ;CONVERT HOUR
+				jsr BCDBIN
+				sta 3,X
+				clc 
+				rts 
+* PAGE
+* REP 60
+*
+* SUBROUTINE BCDBIN
+*
+* THIS SUBROUTINE CONVERTS A BYTE FROM BCD TO BINARY.
+* THE BYTE IS PASSED AND RETURNED IN A. THERE IS NO
+* ERROR CHECKING. Y IS DESTROYED AND X IS UNCHANGED.
+*
+* REP 60
+*
+BCDBIN			.eq *
+				pha 
+				lsr
+				lsr
+				lsr
+				lsr
+				tay 
+				pla 
+				and #$0F ;GET UNITS
+				clc 
+				adc TENS,Y ;ADD IN TENS
+				rts 
+*
+TENS			.da 00,10,20,30,40,50,60,70,80,90
+* PAGE
+* REP 60
+*
+* SOS CALL $64 -- JOYSTICK INPUT
+* JOYSTICK(IN.J.MODE; OUT.J.VALUE)
+*
+* REP 60
+*
+*
+AD.INPUT		.eq $D0
+AD.TEMP			.eq $D1
+*
+PA.SW0			.eq $C061 ;PORT A, SWITCH 0
+PA.SW1			.eq $C063 ;PORT A, SWITCH 1
+PB.SW0			.eq $C062 ;PORT B, SWITCH 0
+PB.SW1			.eq $C060 ;PORT B, SWITCH 1
+*
+AD.SEL0			.eq $C058 ;A/D SELECT CONTROLS
+AD.SEL1			.eq $C05E
+AD.SEL2			.eq $C05A
+AD.CHRG			.eq $C05C ;A/D RAMP CHARGE /
+AD.STRT			.eq $C05D ; START TIMEOUT
+AD.FLAG			.eq $C066 ;A/D TIMEOUT FLAG
+*
+TCHARGE			.eq 500 ;CHARGE TIME FOR A/D
+TOFFSET			.eq 360 ;OFFSET TIME TO A/D WINDOW
+*
+ANALOG			.eq $F4A8 ;ROM ENTRY FOR ANALOG INPUT
+
+ANLOG1			.eq $F4AB ; INTERRUPT REENTRY
+D.T2			.eq $FFD8 ;TIMER
+D.ACR			.eq $FFDB ;AUXILIARY CONTROL REGISTER
+D.IFR			.eq $FFDD ;INTERRUPT FLAG REGISTER
+*
+ENSEL			.eq $C0DC
+ENSIO			.eq $C0DE
+*
+*
+JOYSTICK		.eq *
+				lda J.MODE ;VALIDATE J.MODE
+				cmp #$08
+				bcc JS010
+				lda #BADJMODE
+JS.ERR			jsr SYSERR
+*
+JS010			jsr AD.SETUP ;SET UP RESOURCES
+				bcs JS.ERR
+				lda J.MODE ;READ PORT B OR PORT A?
+				and #BITON2
+				bne JS020
+				lda PB.SW0 ;PORT B
+				ldx PB.SW1
+				ldy #$01
+				bne JS030
+JS020			lda PA.SW0 ;PORT A
+				ldx PA.SW1
+				ldy #$03
+JS030			sty AD.INPUT ;SAVE INPUT SELECT
+				and #BITON7
+				beq JS040
+				lda #$FF
+JS040			ldy #$00
+				sta (J.VALUE),Y ;RETURN SWITCH 0
+				txa 
+				and #BITON7
+				beq JS050
+				lda #$FF
+JS050			iny
+				sta (J.VALUE),Y ;RETURN SWITCH 1
+*
+				lsr J.MODE
+				bcc JS060
+				lda AD.INPUT
+				jsr AD.READ ;READ A/D
+				ldy #$02
+				sta (J.VALUE),Y ;RETURN X AXIS
+JS060			inc AD.INPUT
+				lsr J.MODE
+				bcc JS070
+				lda AD.INPUT
+				jsr AD.READ ;READ A/D
+				ldy #$03
+				sta (J.VALUE),Y ;RETURN Y AXIS
+*
+JS070			jsr AD.CLNUP ;CLEAN UP
+				rts ; AND EXIT
+* PAGE
+* REP 60
+*
+* SUBROUTINE AD.SETUP
+* THIS SUBROUTINE SETS UP THE ENVIRONMENT AND RESOURCES
+* FOR READING THE JOYSTICKS. IF AN ERROR OCCURS, CARRY
+* IS SET AND AN ERROR NUMBER IS RETURNED IN A.
+* OTHERWISE, CARRY IS CLEARED.
+*
+* REP 60
+AD.SETUP		.eq *
+				lda #JOYSIRSIZ
+				ldx #JOYSIRTBL
+				ldy /JOYSIRTBL
+				jsr ALLOCSIR ;ALLOCATE RESOURCES
+				bcc ADS010
+				lda #XNORESRC
+				rts 
+ADS010			lda E.REG
+				and #$7F ;SET 2 MHZ,
+				ora #$43 ; ENABLE ROM, & I/O SPACE
+				sta E.REG
+				php 
+				sei 
+
+				lda D.ACR
+				and #BITOFF5 ;SET UP TIMER
+				sta D.ACR
+				plp 
+				bit ENSEL ;DISABLE ENSEL
+				bit ENSIO ;SET ENSIO FOR INPUT
+				rts 
+*
+JOYSIRTBL		.eq *
+				.da 0C,00,00,00,00 ;ENSIO
+				.da 0D,00,00,00,00 ;ENSEL
+				.da 0E,00,00,00,00 ;6522 D.T2
+JOYSIRSIZ		.eq *-JOYSIRTBL
+* REP 60
+*
+* SUBROUTINE AD.CLNUP
+* THIS SUBROUTINE RESTORES THE ENVIRONMENT AND RELEASES
+* THE RESOURCES AFTER READING THE JOYSTICKS.
+*
+* REP 60
+AD.CLNUP		.eq *
+				lda E.REG
+				and #$3C ;RESTORE RAM AT $C000 & $F000
+				sta E.REG
+				lda #JOYSIRSIZ
+				ldx #JOYSIRTBL
+				ldy /JOYSIRTBL
+				jsr DEALCSIR ;DEALLOCATE RESOURCES
+				rts 
+* PAGE
+* REP 60
+*
+* SUBROUTINE AD.READ
+* THIS SUBROUTINE READS A SPECIFIED A/D INPUT AND RETURNS
+* AN 8 BIT RESULT. IT ASSUMES THAT THE A/D RESOURCES HAVE
+* BEEN ALLOCATED, THE I/O SPACE AND $F000 ROM HAVE BEEN
+* SELECTED, AND THE SYSTEM IS RUNNING IN 2 MHZ MODE.
+*
+* PARAMETERS:
+* A: A/D INPUT PORT (0-7)
+*
+* RETURN VALUE:
+* A: RESULT (0 - 255)
+* X, Y: UNDEFINED
+*
+* REP 60
+*
+AD.READ			.eq *
+				lsr
+				bit AD.SEL0 ; A/D INPUT
+				bcc ADR010
+				bit AD.SEL0+1
+ADR010			lsr
+				bit AD.SEL1
+				bcc ADR020
+				bit AD.SEL1+1
+ADR020			lsr
+				bit AD.SEL2
+				bcc ADR030
+				bit AD.SEL2+1
+ADR030			php
+*
+ADR040			cli
+				bit AD.CHRG ;CHARGE A/D CAPACITOR
+				lda #TCHARGE
+				sta D.T2
+				lda /TCHARGE
+				sta D.T2+1
+				lda #BITON5
+ADR050			bit D.IFR
+				beq ADR050
+*
+				sei 
+				sec 
+				lda #TOFFSET
+				sta D.T2 ;SET UP TIMER
+				lda /TOFFSET
+				bit AD.STRT ;START A/D TIMEOUT
+				jsr ANALOG ;MEASURE CONVERSION TIME
+				bcc ADR070
+*
+
+ADR060			cli ;PROCESS AN INTERRUPT
+				sei 
+				bit AD.FLAG ;STILL TIMING?
+				bpl ADR040 ; NO -- START OVER
+				jsr ANLOG1 ; YES -- CONTINUE
+				bcs ADR060
+*
+ADR070			plp
+				eor #$FF ;NORMALIZE RESULT
+				bmi ADR080 ;RESULT < 0
+				sta AD.TEMP
+				tya 
+				eor #$FF
+				lsr AD.TEMP
+				ror
+				lsr AD.TEMP
+				ror
+				lsr AD.TEMP
+				bne ADR090 ;RESULT > 255
+				ror
+				adc #0
+				rts 
+ADR080			lda #0
+				rts 
+ADR090			lda #$FF
+				rts 
+* PAGE
+* REP 60
+*
+* SYSTEM COLD START
+*
+* THIS ROUTINE IS CALLED TO TELL THE USER TO REBOOT THE
+* SYSTEM. IT CLEARS THE SCREEN, DISPLAYS A MESSAGE,
+* OVERWRITES BANKED MEMORY, AND HANGS UNTIL THE USER
+* PERFORMS A HARD RESET.
+*
+* REP 60
+*
+*
+COLDSTRT		.eq *
+				sei ;SHUT DOWN INTERRUPTS
+				lda #$40 ; AND IGNORE NMI
+				sta $FFCA
+				lda #$67
+				sta E.REG ;DISABLE RESET
+				lda #$00
+				sta Z.REG ;USE PAGE ZERO
+*
+				ldx SYSBANK
+				lda #$BF
+				ldy #$00
+				sty MEMORY
+CS010			sta MEMORY+1
+				stx B.REG
+				lda #$A0
+CS020			sta (MEMORY),Y ;SET MEMORY TO BLANKS
+				dey 
+				bne CS020
+				dec MEMORY+1
+				bne CS020
+				dex 
+				bpl CS010
+*
+				ldy #6
+CS030			sta $C050,Y ;SELECT 40 COLUMN
+				dey ; BLACK & WHITE TEXT
+				bpl CS030
+*
+				ldy #BOOTLEN
+CS040			lda BOOTMSG-1,Y ;PRINT BOOT MESSAGE
+				sta BOOTADR-1,Y
+				dey 
+				bne CS040
+*
+				lda #$77
+				sta E.REG ;ENABLE RESET
+				jmp * ;HANG UNTIL RESET
+* PAGE
+* FIXME - MSB ON
+BOOTMSG			.as "INSERT SYSTEM DISKETTE & REBOOT"
+BOOTLEN			.eq *-BOOTMSG
+
+BOOTADR			.eq 40-BOOTLEN/2+$628
+* FIXME - MSB OFF
+* LST ON
+ZZEND			.eq *
+ZZLEN			.eq ZZEND-ZZORG
+* IFNE ZZLEN-LENUMGR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR UMBR"
+* FIN
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: UMGR.SRC
+*************************************************************************
+
+
+
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS/SOS.S.UMGR
+LOAD /A3OSX.BUILD/SOS/SOS.S
+ASM

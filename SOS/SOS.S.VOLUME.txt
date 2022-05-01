@@ -1,0 +1,236 @@
+NEW
+AUTO 3,1
+*--------------------------------------
+
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: VOLUME
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+* PAGE
+* REP 40
+* NAME : VOLUME
+* FUNCTION: RETURN VOLUME INFO
+* INPUT : DEVICE NAME
+* OUTPUT : THE INFO
+* VOLATILE: ALL REGS
+* REP 40
+*
+VOLUME			.eq *
+				lda C.DNAMP ; TRANSFER DEVICE NAME
+				sta DVNAMP ; NAME FOR DMGR
+				lda C.DNAMP+1
+				sta DVNAMP+1
+				lda SISTER+C.DNAMP+1 ; AND XTND
+				sta SISTER+DVNAMP+1
+				jsr GETDNUM ; GET DEVNUM
+				bcc VOL7 ; =>SOME KINDA ERROR
+				rts ; RETURN ERROR
+VOL7			bmi VOL2 ; =>IT'S GOOD...
+				lda #NOTBLKDEV ; NOT BLOCKED
+				jmp VOLERR ; =>RETURN THE ERROR
+*
+* UNCONDITIONALLY READ ROOT DIRECTORY:
+*
+VOL2			.eq *
+				lda SCRTCH+1
+				sta DEVNUM ; SETUP DEV NUMBER
+				lda #2 ; BLKNUM=2
+				ldx #0
+				jsr GETROT0 ; GET IT PLEASE
+				lda #VNFERR ; ERROR CODE
+				bcc VOL8 ; BRANCH IF NO ERROR ON READ
+				rts ; =>ERROR, PASS IT ON.
+*
+VOL8			lda #VCB ; SET VCBPTR TO THE
+				sta VCBPTR ; FIRST OF THEM
+				lda /VCB
+				sta VCBPTR+1
+*
+* IS THIS VOLUME SOS OR OTHER?
+*
+				jsr TSTSOS ; WHICH KIND?
+				bcc VLOGGED ; =>IT'S SOS
+				jmp VNOTSOS ; =>NOT SOS
+*
+* IS THIS SOS VOLUME LOGGED IN?
+*
+VLOGGED			.eq *
+				jsr CMPVCB ; DOES VOLNAME MATCH?
+				bcc VFOUND ; =>YES, WE KNOW ABOUT IT.
+				jsr VNXTVCB ; BUMP TO NEXT
+				bcc VLOGGED ; =>TRY 'EM ALL...
+				bcs VNEW ; =>NOT FOUND, IT'S NEW (BRANCH ALWAYS)
+*
+*
+* IT'S BEEN LOGGED IN BEFORE:
+* IS IT SWAPPED IN OR OUT?
+*
+VFOUND			.eq *
+				ldy #VCBSWAP ; INDEX TO IT
+				lda (VCBPTR),Y ; SWAPPED?
+				bpl VFOUND1 ; =>IN. RETURN THE INFO
+*
+* SWAPPED OUT. BEFORE WE SWAP IT
+* IN, MAKE SURE IT BELONGS ON
+* THIS DEVICE!
+*
+				ldy #VCBDEV ; INDEX TO IT
+				lda (VCBPTR),Y ; GET ITS DEVICE
+				cmp DEVNUM ; CORRECT DEVICE?
+
+				beq VSWAPIN ; =>YES
+				lda #DUPVOL ; IF FOR ANOTHER DEV,
+				jmp VOLERR ; THEN IT'S AN ERROR!
+*
+* NOW SWAP-IN THIS VOLUME:
+*
+VSWAPIN			.eq *
+				jsr SWAPIN ; SWAP IT IN
+				jmp VINFO ; AND RETURN THE INFO
+*
+VFOUND1			ldy #VCBDEV
+				lda (VCBPTR),Y ; SAME DEVICES?
+				cmp DEVNUM
+				beq VINFO ; YES; RETURN THE INFORMATION
+				ldy #VCBSTAT
+				lda (VCBPTR),Y ; OPEN FILES?
+				bpl VFOUND2 ; BRANCH IF NOT
+				lda #DUPVOL
+				bne VOLERR ; ELSE REPORT DUPLICATE VOLUME ERROR (BRANCH ALWAYS)
+VFOUND2			ldy #VCBNML ; MOVE THE LOGIN TO THIS NEW DEVICE
+				lda #0 ; BY UNLOGGING THE OLD
+				sta (VCBPTR),Y ; AND LOGGING IN THE NEW (DROP INTO VNEW)
+* REP 40
+*
+* IT'S A BRAND NEW VOLUME.
+* GUESS WE'LL HAVE TO LOG IT IN:
+*
+VNEW			.eq *
+				lda DEVNUM ; PASS A REG TO SWAPOUT
+				jsr SWAPOUT ; SWAP ANY ACTIVE VOL ON THIS DEVICE
+				bcc VNEW1 ; BRANCH ON NO ERROR
+				lda #XIOERROR
+				rts 
+VNEW1			lda #VCB ; FIND AN EMPTY VCB
+				sta VCBPTR
+				lda /VCB
+				sta VCBPTR+1
+VFREE			ldy #VCBNML
+				lda (VCBPTR),Y ; EMPTY VCB?
+				beq VLOGIN ; ITS FREE, USE IT
+				ldy #VCBDEV
+				lda (VCBPTR),Y ; OR ONE WITH SAME DEVICE
+				cmp DEVNUM
+				bne VFREEX ; BRANCH IF NO DEVICE MATCH
+				ldy #VCBSTAT
+				lda (VCBPTR),Y ; AND NO OPEN FILES
+				bpl VLOGIN ; BRANCH IF OK TO REUSE THIS VCB
+				lda DEVNUM ; THEN WE MUST SWAP OUT THIS VOLUME
+				jsr SWAPOUT
+				bcc VFREEX ; SWAPOUT PROCEEDED OK
+				lda #XIOERROR ; ELSE REPORT ERROR
+				rts 
+VFREEX			jsr VNXTVCB ; TRY NEXT
+				bcc VFREE ; MORE TO COME
+* RAN OUT OF MT'S ... FIND W/O FILES
+VNFIL			ldy #VCBSTAT
+				lda (VCBPTR),Y
+				bpl VLOGIN
+				jsr VNXTVCB
+				bcc VNFIL
+* ALL OPEN ... REPORT VCBFULL
+				lda #FCBFULL
+				bne VOLERR
+VLOGIN			.eq *
+				jsr LOGVCB ; AND LOGIN THIS ONE
+* REP 40
+*
+* RETURN ALL THE NICE INFO:
+*
+VINFO			.eq *
+				lda #0
+				ldy #VCBTFRE ; FETCH VOLUME FREE BLOCK COUNT
+				sta (VCBPTR),Y ; FORCE RESCAN OF ALL
+				iny ; BITMAPS
+				sta (VCBPTR),Y ; TO MAKE SURE VCB INFO CURRENT
+				sta REQL ; FREE BLOCKS
+				sta REQH
+				jsr TSFRBLK
+*
+				ldx VCBPTR ; GET VCB INDEX
+				ldy #0
+
+VINFO1			.eq *
+				lda VCB+VCBTBLK,X ; MOVE TOTAL
+				sta (C.OUTBLK),Y ; BLOCKS AVAIL
+				inx 
+				iny 
+				cpy #4 ; AND FREE ONES TOO
+				bne VINFO1
+*
+				ldy #0 ; NOW DO VOLNAME
+				lda (VCBPTR),Y
+				tay 
+VINFO2			.eq *
+				lda (VCBPTR),Y
+				sta (C.OUTVOL),Y
+				dey 
+				bpl VINFO2
+				clc 
+				bcc VOLRET ; =>DONE
+*
+VOLERR			.eq *
+				sec 
+VOLRET			.eq *
+				rts 
+* PAGE
+* REP 40
+* THIS ISN'T A SOS VOLUME. MARK
+* THE ACTIVE VOL THIS DEVICE
+* SO THAT IT GETS CHECKED LATER:
+*
+VNOTSOS			.eq *
+				ldy #VCBDEV ; IS VCB FOR THIS
+				lda (VCBPTR),Y ; DEVICE?
+				cmp DEVNUM
+				bne VNS2
+				ldy #VCBSTAT ; INDEX TO IT
+				lda (VCBPTR),Y ; GET STATUS
+				bpl VNS2 ; =>NOT ACTIVE.
+				ora #DSWITCH ; SET 'SWITCHEROO'
+				sta (VCBPTR),Y ; PUT IT BACK
+*
+VNS2			.eq *
+				jsr VNXTVCB ; GET NEXT VCB
+				bcc VNOTSOS ; =>TRY 'EM ALL.
+*
+				lda #NOTSOS ; GIVE THE ERROR
+				bne VOLERR ; (BRANCH ALWAYS)
+* SKP 5
+* NAME : VNXTVCB
+* FUNCTION: BUMP VCBPTR TO NEXT VCB
+* INPUT : NOTHING
+* OUTPUT : VCBPTR UPDATED
+* : 'BCC' IF MORE TO GO
+* : 'BCS' IF DONE
+* VOLATILE: AC
+*
+VNXTVCB			.eq *
+				lda VCBPTR
+				clc 
+				adc #VCBSIZE ; BUMP IT
+				sta VCBPTR
+				rts ; CARRY SET IF END OF PAGE
+
+* CHN CREATE,4,1
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: VOLUME
+*************************************************************************
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS/SOS.S.VOLUME
+LOAD /A3OSX.BUILD/SOS/SOS.S
+ASM

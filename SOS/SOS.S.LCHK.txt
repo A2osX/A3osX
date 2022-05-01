@@ -1,0 +1,28 @@
+NEW
+AUTO 3,1
+*--------------------------------------
+
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: LCHK
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+* INCLUDE SOSORG,6,1,254
+				.ph ??????? FIXME: check if we need this
+---------------------------------
+IFNE ZZLEN-LEN????
+FAIL 2,"SOSORG FILE IS INCORRECT FOR ??????"
+				.fin
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: LCHK
+*************************************************************************
+
+
+
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS/SOS.S.LCHK
+LOAD /A3OSX.BUILD/SOS/SOS.S
+ASM

@@ -1,0 +1,626 @@
+NEW
+AUTO 3,1
+*--------------------------------------
+
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: SCMGR.SRC
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+*				.TI "SOS 1.1 SYSTEM CALL MANAGER"
+* REL
+* INCLUDE SOSORG,6,1,254
+				.ph ORGSCMGR FIXME: check if we need this
+ZZORG			.eq *
+* FIXME - MSB OFF
+* REP 60
+* COPYRIGHT (C) APPLE COMPUTER INC. 1980
+* ALL RIGHTS RESERVED
+* REP 60
+*
+* SYSTEM CALL MANAGER (VERSION = 1.1O )
+* (DATE = 8/04/81)
+*
+* THE SYSTEM CALL MANAGER:
+* (1) RETRIEVE THE SYSCALL #,
+* (2) DETERMINE THE LOCATION OF THE SYSTEM CALL PARMS AND
+* MOVE THEM TO THE SOS ZPAGE,
+* (3) TRANSFER CONTROL TO THE APPROPRIATE INTERFACE MANAGER,
+* (FILE,DEVICE,UTILITY,MEMORY)
+*
+* REP 60
+*
+* ENTRY SCMGR
+*
+* EXTRN FMGR
+* EXTRN DMGR
+* EXTRN UMGR
+* EXTRN MMGR
+* EXTRN DBUGBRK
+*
+* EXTRN SYSERR
+* EXTRN SERR
+* EXTRN BADSCNUM
+* EXTRN BADCZPAGE
+* EXTRN BADXBYTE
+* EXTRN BADSCPCNT
+* EXTRN BADSCBNDS
+*
+* EXTRN SZPAGE
+* EXTRN SXPAGE
+* EXTRN CZPAGE
+* EXTRN CXPAGE
+* EXTRN CSPAGE
+* PAGE
+* REP 60
+*
+* SYSTEM CALL PARAMETER DEFINITION TABLES
+*
+* EACH ENTRY IS FOUR BYTES LONG. THE FIRST BYTE CONTAINS THE
+* NUMBER OF PARMS IN THE CALL. THE REMAINING SIX NIBBLES, EACH
+* DEFINE A PARAMETER IN THE CALL. THE FIRST BIT OF THE
+* NIBBLE DEFINES WHETHER THE PARM IS INPUT (0) OR OUTPUT (1).
+* THE NEXT BIT DEFINES WHETHER THE PARM IS BY VALUE (0)
+* OR BY REFERENCE (1). THE FINAL TWO BITS SPECIFY THE
+* PARM LENGTH IN BYTES (E.G. 0=LENGTH OF 1, 3=LENGTH OF 4 BYTES)
+*
+* REP 60
+*
+* FILE SYSTEM CALL DEFINITIONS
+*
+FSC.CNT			.eq $13
+FSC.TBL			.eq *
+				.da 03,5D,00,00 ; SCNUM=$C0 - CREATE
+				.da 01,50,00,00 ; " =$C1 - DESTROY
+				.da 02,55,00,00 ; " =$C2 - RENAME
+				.da 03,5D,00,00 ; " =$C3 - SET.FILE.INFO
+				.da 03,5D,00,00 ; " =$C4 - GET.FILE.INFO
+				.da 04,55,99,00 ; " =$C5 - VOLUME
+				.da 01,50,00,00 ; " =$C6 - SET.PREFIX
+				.da 02,50,00,00 ; " =$C7 - GET.PREFIX
+
+				.da 04,58,D0,00 ; " =$C8 - OPEN
+				.da 03,00,00,00 ; " =$C9 - NEW.LINE
+				.da 04,05,19,00 ; " =$CA - READ
+				.da 03,05,10,00 ; " =$CB - WRITE
+				.da 01,00,00,00 ; " =$CC - CLOSE
+				.da 01,00,00,00 ; " =$CD - FLUSH
+				.da 03,00,30,00 ; " =$CE - SET.MARK
+				.da 02,0B,00,00 ; " =$CF - GET.MARK
+				.da 03,00,30,00 ; " =$D0 - SET.EOF
+				.da 02,0B,00,00 ; " =$D1 - GET.EOF
+				.da 01,00,00,00 ; " =$D2 - SET.LEVEL
+				.da 01,80,00,00 ; " =$D3 - GET.LEVEL
+* PAGE
+*
+* DEVICE SYSTEM CALL DEFINITIONS
+*
+DSC.CNT			.eq 5
+DSC.TBL			.eq *
+				.da 05,05,11,90 ; SCNUM=$80 - D.READ
+				.da 04,05,11,00 ; " =$81 - D.WRITE
+				.da 03,00,50,00 ; " =$82 - D.STATUS
+				.da 03,00,50,00 ; " =$83 - D.CONTROL
+				.da 02,58,00,00 ; " =$84 - GET.DEV.NUM
+				.da 04,05,D0,00 ; " =$85 - D.INFO
+*
+* UTILITY SYSTEM CALL DEFINITIONS
+*
+USC.CNT			.eq 5
+USC.TBL			.eq *
+				.da 01,00,00,00 ; SCNUM=$60 - SET.FENCE
+				.da 01,80,00,00 ; " =$61 - GET.FENCE
+				.da 01,50,00,00 ; " =$62 - SET.TIME
+				.da 01,50,00,00 ; " =$63 - GET.TIME
+				.da 02,0B,00,00 ; " =$64 - JOYSTICK
+				.da 00,00,00,00 ; " =$65 - COLD.START
+*
+* MEMORY SYSTEM CALL DEFINITIONS
+*
+MSC.CNT			.eq 5
+MSC.TBL			.eq *
+				.da 04,11,08,00 ; SCNUM=$40 - REQUEST.SEG
+				.da 06,00,99,98 ; " =$41 - FIND.SEG
+				.da 03,00,90,00 ; " =$42 - CHANGE.SEG
+				.da 05,09,99,80 ; " =$43 - GET.SEG.INFO
+				.da 02,18,00,00 ; " =$44 - GET.SEG.NUM
+				.da 01,00,00,00 ; " =$45 - RELEASE.SEG
+*
+* DEBUG SYSTEM CALL DEFINITION
+*
+DBUG			.eq $FE
+* PAGE
+* REP 60
+*
+* DATA DECLARATIONS
+*
+* REP 60
+Z.REG			.eq $FFD0
+SP.SAVE			.eq $01FF
+Z.SAVE			.eq $01FD
+B.SAVE			.eq $01FC
+*
+ADR.LOW			.eq $2000 ; LOW ADDRESS (BOUNDS CHECKING)
+ADR.HIGH		.eq $B800 ; HIGH ADDRESS
+ADR.MID			.eq $A000 ; MIDDLE ADDRESS
+*
+* SCMGR'S VARIABLES
+*
+SCM.VARS		.eq $E0
+SCNUM			.eq SCM.VARS+0 ; SYSTEM CALL NUMBER
+SCRNUM			.eq SCM.VARS+0 ; SYSTEM CALL REQUEST NUMBER
+SCPTR			.eq SCM.VARS+1 ;&2 SYSTEM CALL POINTER
+MOVE.VARS		.eq SCPTR+2 ; !! (LOOKOUT) !!
+*
+*
+F.TPARMX		.eq $A0 ; FILE SYS CALL PARM START LOC
+D.TPARMX		.eq $C0 ; DEVICE SYS CALL PARM START LOC
+U.TPARMX		.eq $C0 ; UTILITY SYS CALL PARM START LOC
+M.TPARMX		.eq $60 ; MEMORY SYS CALL PARM START LOC
+*
+* MOVE.PARM'S VARIABLES
+*
+
+TPARMX			.eq MOVE.VARS+0 ; TARGET ADR OF SYS CALL PARMS
+DFN.PTR			.eq MOVE.VARS+1 ;&2
+DFN.PTRX		.eq MOVE.VARS+3
+SCPTRX			.eq MOVE.VARS+4
+RGHT.NIB		.eq MOVE.VARS+5
+SCT.DFN			.eq MOVE.VARS+6
+SCT.DCNT		.eq MOVE.VARS+7
+PARM.CNT		.eq MOVE.VARS+8
+* PAGE
+* REP 60
+*
+* SYSTEM CALL MANAGER
+*
+* REP 60
+*
+SCMGR			.eq *
+				lda /SZPAGE ; SET Z REG TO SOS ZPAGE
+				sta Z.REG
+*
+* SET SYSTEM X BYTES TO ABSOLUTE ADDRESS MODE.
+*
+				lda #0
+				sta SXPAGE+SCPTR+1
+				sta SERR ; AND INIT SYSTEM ERR CODE
+*
+* CALLER'S Z REG MUST BE $1A !!
+* (B REG NOT CHECKED)
+*
+				lda Z.SAVE
+				cmp /CZPAGE
+				beq SCM005
+				lda #BADCZPAGE
+				jsr SYSERR ; EXIT TO DISPATCHER
+*
+* RETRIEVE CALLER'S PC ON HIS STACK
+*
+SCM005			ldx SP.SAVE
+				lda CSPAGE+6,X
+				sta SCPTR+1
+				lda CSPAGE+5,X
+				sta SCPTR
+				bne SCM010 ; AND POINT IT TO SYS CALL NUM
+				dec SCPTR+1
+SCM010			dec SCPTR
+*
+* ADVANCE CALLER'S PC ON HIS STACK.
+*
+				clc 
+				lda CSPAGE+5,X
+				adc #2
+				sta CSPAGE+5,X
+				bcc SCM020
+				inc CSPAGE+6,X
+*
+* RETRIEVE SYSTEM CALL NUMBER
+*
+SCM020			ldy #0
+				lda (SCPTR),Y
+				cmp #DBUG
+				bne SCM025
+				jsr DBUGBRK ; DEBUG SYSTEM CALL
+SCM025			sta SCNUM
+*
+* RETRIEVE SYSTEM CALL PARAMETER ADDRESS
+*
+				iny 
+				ldx #SCPTR
+				jsr POINTER
+				bcc SCM030
+				rts ; ERROR EXIT
+*
+* CASE INTERFACE CODE OF SYSTEM CALL NUMBER
+* (INTERFACE CODE STRIPPED, LEAVING REQUEST CODE)
+*
+SCM030			lda #$20
+				bit SCNUM
+				bpl SCM050
+				lda SCNUM
+				and #$3F
+				sta SCRNUM
+				bvc SCM040
+
+*
+				lda #F.TPARMX ; "11XXXXXX" - JMP TO FILE MANAGER.
+				sta TPARMX
+				ldx #FSC.TBL
+				ldy /FSC.TBL
+				lda #FSC.CNT
+				jsr MOVE.PARMS
+				bcs SCM.ERR1 ; ERR EXIT
+				jmp FMGR
+*
+SCM040			lda #D.TPARMX ; "10XXXXXX" - JMP TO DEVICE MANAGER.
+				sta TPARMX
+				ldx #DSC.TBL
+				ldy /DSC.TBL
+				lda #DSC.CNT
+				jsr MOVE.PARMS
+				bcs SCM.ERR1 ; ERR EXIT
+				jmp DMGR
+*
+SCM050			bvc SCM.ERR
+				php 
+				lda SCNUM
+				and #$1F
+				sta SCRNUM
+				plp 
+				beq SCM060
+*
+				lda #U.TPARMX ; "011XXXXX" - JMP TO UTILITY MANAGER.
+				sta TPARMX
+				ldx #USC.TBL
+				ldy /USC.TBL
+				lda #USC.CNT
+				jsr MOVE.PARMS
+				bcs SCM.ERR1 ; ERR EXIT
+				jmp UMGR
+*
+SCM060			lda #M.TPARMX ; "010XXXXX" - JMP TO MEMORY MANAGER.
+				sta TPARMX
+				ldx #MSC.TBL
+				ldy /MSC.TBL
+				lda #MSC.CNT
+				jsr MOVE.PARMS
+				bcs SCM.ERR1 ; ERR EXIT
+				jmp MMGR
+*
+SCM.ERR			lda #BADSCNUM ; ERROR, INVALID SYSTEM CALL NUMBER.
+SCM.ERR1		jsr SYSERR ; EXIT TO DISPATCHER ON ERROR
+* PAGE
+* REP 60
+*
+* MOVE.PARMS
+*
+* MOVES THE CALLER'S PARAMETERS TO THE OPERATING SYSTEM'S
+* ZERO PAGE, ACCORDING TO THE SPECIFICATIONS CONTAINED
+* IN THE SPECIFIED SYS CALL DFN TABLE.
+*
+* INPUT: (A) = MAX # ENTRIES IN PARM DFN TABLE
+* (X) = PARM DFN TBL ADR (LO)
+* (Y) = " (HI)
+* SCPTR = ADR OF CALLER'S SYS CALL PARMS
+* ERROR: CARRY SET (SYSERR)
+*
+* REP 60
+*
+MOVE.PARMS		.eq *
+				stx DFN.PTR ; SAVE ADR OF DEFINITION TABLE
+				sty DFN.PTR+1
+*
+* IF REQ NUM > MAX REQ NUM (A REG)
+*
+				cmp SCRNUM
+				bcs MOVE010
+*
+* THEN ERR(BAD SYS CALL NUM)
+*
+				lda #BADSCNUM
+				bcc SYSERR1 ;BRANCH ALWAYS TAKEN
+*
+* CALCULATE DEFINITION TABLE INDEX
+* AND INIT SYS CALL PARM INDEX
+*
+
+MOVE010			lda SCRNUM
+				asl
+				asl
+				sta DFN.PTRX
+				lda #0
+				sta SXPAGE+DFN.PTR+1 ; AND X BYTE
+				sta SCPTRX
+*
+* IF SCPTR(SCPTRX)<>DFN.PTR(DFN.PTRX) THEN ERR
+*
+				tay 
+				lda (SCPTR),Y
+				ldy DFN.PTRX
+				cmp (DFN.PTR),Y
+				beq INITLOOPCT
+*
+				lda #BADSCPCNT ; ERR, CALLER'S PARM COUNT INVALID
+SYSERR1			jsr SYSERR ; EXIT
+*
+* INIT LOOP CTR(PARM.CNT) TO # OF PARMS IN SYS CALL
+*
+INITLOOPCT		sta PARM.CNT
+*
+* ADVANCE PTRS
+*
+*
+				inc SCPTRX
+				inc DFN.PTRX
+*
+* MOVE REQ CODE TO SYS ZPAGE PARM LIST
+* AND ADVANCE SYS ZPAGE PTR (X=TPARMX)
+*
+				lda SCRNUM
+				ldx TPARMX
+				sta 0,X
+				inx 
+*
+* INIT NIBBLE FLAG TO "RIGHT" NIBBLE
+* ZERO STATE="LEFT" NIBBLE
+*
+				lda #$FF
+				sta RGHT.NIB
+* REP 60
+*
+* BEGIN PARAMETER PROCESSING LOOP
+*
+PARMLOOP		lda RGHT.NIB
+				eor #$FF ; COMPLEMENT NIBBLE FLAG
+				sta RGHT.NIB
+*
+* IF "LEFT" NIBBLE
+*
+				bne ELSE.RNIB
+*
+* THEN FETCH SYS CALL PARM DFN
+* AND # OF BYTES IN PARM WITHIN IT
+*
+				ldy DFN.PTRX
+				lda (DFN.PTR),Y
+				sta SCT.DFN
+				and #$30
+				lsr
+				lsr
+				lsr
+				lsr
+				sta SCT.DCNT
+				bpl VALUE ;BRANCH ALWAYS
+*
+* ELSE FETCH SYS CALL PARM DFN
+* AND # OF BYTES IN PARM WITHIN IT
+* FROM "RIGHT" NIBBLE OF DFN BYTE
+*
+ELSE.RNIB		lda SCT.DFN
+				tay 
+				and #$03
+				sta SCT.DCNT
+				tya 
+				asl
+				asl
+				asl
+				asl
+
+				sta SCT.DFN
+				inc DFN.PTRX ; ADVANCE SYS CALL DFN PTR
+* REP 60
+*
+* PARAMETER PASSED BY VALUE
+*
+* REP 60
+VALUE			bit SCT.DFN
+				bvs REFERENCE
+				bmi VAL.OUT
+*
+* INPUT BY VALUE
+*
+				ldy SCPTRX ; MOVE BYTES TO ZPAGE
+VAL.IN			lda (SCPTR),Y
+				sta 0,X
+				iny 
+				inx 
+				dec SCT.DCNT
+				bpl VAL.IN
+				sty SCPTRX
+				jmp ENDLOOP1
+*
+* OUTPUT BY VALUE
+*
+VAL.OUT			clc ; BUILD PTR TO PARM ON ZPAGE
+				lda SCPTR
+				adc SCPTRX
+				sta 0,X
+				inx 
+				lda SCPTR+1
+				adc #0
+				sta 0,X
+*
+				clc ; ADVANCE INDEX TO NEXT PARM
+				lda SCPTRX
+				adc SCT.DCNT
+				sta SCPTRX
+*
+				lda SXPAGE+SCPTR+1 ; INCLUDE X BYTE
+				sta SXPAGE,X
+				jmp ENDLOOP2
+* REP 60
+*
+* PARAMETER PASSED BY REFERENCE
+*
+* REP 60
+REFERENCE		bpl REF1
+*
+* "LIST" PTR FOUND, CHK IF "LENGTH" PARM = 0
+*
+				ldy SCPTRX
+				iny 
+				iny 
+				lda (SCPTR),Y
+				beq ENDLOOP0 ; "LENGTH" PARM=0, SKIP "LIST" PARM
+*
+REF1			ldy SCPTRX ; MOVE PTR TO ZPAGE
+				jsr POINTER
+				bcs PARM.ERR ; ERROR EXIT
+*
+* ADVANCE SYSTEM ZPAGE POINTER (X), CALLER'S PARM PTR.
+* DECREMENT PARM CTR AND CHECK IF LAST PARM PROCESSED.
+*
+ENDLOOP0		inx
+				inc SCPTRX
+ENDLOOP2		inx
+				inc SCPTRX
+ENDLOOP1		dec PARM.CNT
+				beq PARM.EXIT
+				bmi PARM.EXIT ;SPECIAL FOR 'COLD START'
+				jmp PARMLOOP
+*
+* END OF PARAMETER PROCESSING LOOP
+*
+* REP 60
+*
+PARM.EXIT		clc ; NO ERRORS
+PARM.ERR		rts ; RETURN TO SYS CALL MANAGER
+* PAGE
+* REP 60
+
+*
+* POINTER
+*
+* INPUT: SRC ADR (SCPTR),Y & (SCPTR),Y+1
+* DEST ADR (X)
+*
+* OUTPUT: SCPTR UNCHANGED
+* X REG "
+* A,Y REGS FLATTENED
+*
+* ERROR: CARRY SET (SYSERR)
+*
+* POINTER. RETRIEVES THE CALLER'S POINTER PARAMETER IN
+* (SCPTR),Y, PERFORMS ADDRESS COMPENSATION, IF NECESSARY
+* AND PLACES THE RESULTING POINTER AT X, X+1 AND SXPAGE+1,X.
+*
+* REP 60
+*
+POINTER			.eq *
+				lda (SCPTR),Y
+				pha 
+				iny 
+				lda (SCPTR),Y
+				beq INDIRECT
+*
+				sta 1,X ; DIRECT POINTER
+				pla 
+				sta 0,X
+				ldy #0
+				beq PTR010
+*
+INDIRECT		pla ; INDIRECT POINTER
+				tay 
+				lda CZPAGE,Y
+				sta 0,X
+				lda CZPAGE+1,Y
+				sta 1,X
+				lda CXPAGE+1,Y
+				tay 
+*
+PTR010			lda 1,X
+*
+* CHECK BOUNDS OF CALLER'S POINTER PARAMETER
+*
+				cpy #$8F
+				bcc PTR.X808E
+				beq PTR.X8F
+				bcs PTR.ERR1 ; ERROR, INVALID X BYTE
+PTR.X8F			cmp /ADR.LOW
+				bcc PTR.ERR
+				cmp /ADR.HIGH
+				bcs PTR.ERR
+				bcc PTR.EXIT
+*
+* X BYTE = 80..8E
+*
+PTR.X808E		cpy #$80
+				bcc PTR.X0
+				cmp #0
+				beq PTR.ERR
+				cmp #$FF
+				bne PATCH
+				iny ; $8N:FFXX --> $8N+1:7FXX
+				lda #$7F
+				bne PTR.EXIT
+*
+* X BYTE = 0
+*
+PTR.X0			cpy #0
+				bne PTR.ERR1
+				cmp /ADR.LOW
+				bcc PTR.ERR
+				cmp /ADR.HIGH
+				bcs PTR.ERR
+				cmp /ADR.MID
+				bcs PTR.EXIT
+*
+				pha 
+				lda B.SAVE
+				and #$0F
+				bne PTR030
+
+				pla ; $B=0:2000..9FFF --> $8F:2000.9FFF
+				ldy #$8F
+				bne PTR.EXIT
+*
+PTR030			ora #$80 ; $B<>0:2000..9FFF --> $8B:0000..7FFF
+				tay 
+				pla 
+				sec 
+				sbc #$20
+				bne PATCH
+				dey ; $8B:00XX --> $8B-1:80XX
+				lda #$80
+*
+PATCH			cpy #$80 ; KLUDGE FOR BFM: $8N:01XX --> $8N-1:81XX
+				bcc PTR.EXIT
+				cmp #1
+				bne PTR.EXIT
+				cpy #$80
+				beq PTR.ERR ; ERROR, $80:01XX NOT ALLOWED
+				dey 
+				lda #$81
+*
+PTR.EXIT		sta 1,X
+				tya 
+				sta SXPAGE+1,X
+				clc 
+				rts 
+*
+*
+PTR.ERR			lda #BADSCBNDS
+				jsr SYSERR
+PTR.ERR1		lda #BADXBYTE
+				jsr SYSERR
+*
+* LST ON
+ZZEND			.eq *
+ZZLEN			.eq ZZEND-ZZORG
+* IFNE ZZLEN-LENSCMGR
+* FAIL 2,"SOSORG FILE IS INCORRECT FOR SCMGR"
+* FIN
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: SCMGR.SRC
+*************************************************************************
+
+
+
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS/SOS.S.SCMGR
+LOAD /A3OSX.BUILD/SOS/SOS.S
+ASM

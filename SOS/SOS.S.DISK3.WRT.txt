@@ -1,0 +1,184 @@
+NEW
+AUTO 3,1
+*--------------------------------------
+
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.WRT.SRC
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+* PAGE
+* REP 40
+* --- WRITE ---
+* REP 40
+*
+WRITEREQ		.eq *
+				jsr BLK2SECT ;COMPUTE TRK/SECTOR THIS BLOCK
+				lda E.REG ;SET 2 MHZ
+				and #$7F
+				sta E.REG
+				jsr PRENIB ;PRENIBBLIZE FOR WRITE
+				jsr SECTORIO ;WRITE IT OUT...
+				bcs WRITERR ;=>SOMETHING'S WRONG
+*
+				inc SECTOR ;BUMP TO NEXT
+				inc SECTOR ; LOGICAL SECTOR
+				inc BUF+1 ;BUMP SECTOR BUFFER ADDRESS
+				lda E.REG ;SET 2 MHZ
+				and #$7F
+				sta E.REG
+				jsr PRENIB ;PRENIBBLIZE FOR WRITE
+				jsr SECTORIO ;WRITE IT OUT
+				bcs WRITERR ;=>SOMETHING'S WRONG
+*
+* MORE BYTES TO DO?
+*
+				jsr MOREBLKS ;SETUP FOR NEXT
+				bne WRITEREQ ;=>MORE TO DO
+				lda #0 ;GOOD RETURN
+				jmp EXIT
+*
+WRITERR			.eq *
+				jmp EXIT ;RETURN ERROR CODE
+* PAGE
+* REP 40
+* --- STATUS ---
+* REP 40
+*
+STATUS			.eq *
+				ldx #$60 ;DUMMY SLOT
+				lda Q6H,X ;SENSE WRITE PROTECT
+				lda Q7L,X
+				asl
+				lda Q6L,X ;BACK TO READ MODE
+				lda #0 ;NOW MOVE BIT TO
+				rol
+				rol
+				ldy #0
+				sta (D.STATBUF),Y ;RETURN IT
+				lda #0 ;GOOD RETURN
+				jmp EXIT ;DONE
+* PAGE
+* REP 40
+* --- INIT ---
+* REP 40
+*
+INIT			.eq *
+				lda INITFLAG ;INIT'ED YET?
+				bmi GOODINIT ;=>YES, DONE
+*
+				lda #$60 ;SETUP SLOT FOR
+				sta IBSLOT ; CORE ROUTINES
+				lda #$FF ;PREVENT SECOND
+				sta INITFLAG ; INIT
+				lda #0 ;CLEAR STUFF OUT
+				sta PREVUNIT ;SOSBOOT JUST USED .D1
+				ldy #4
+CLRDRVS			.eq *
+				lda #0
+				sta DRIVESEL-1,Y ;NOBODY SELECTED
+				sta UPTIME-1,Y ;ALL OFF
+
+				sta DRVTRACK-1,Y
+				dey 
+				bne CLRDRVS
+				.do 1-TEST ;ONLY IF NOT TESTING
+*
+* SET UP .D1 SINCE LOADER'S USING IT:
+*
+				lda E.REG ;SET 1MHZ FOR THE
+				ora #$80 ; STATEMACHINE I/O
+				sta E.REG
+				jsr CHKDRV ;IS .D1 MOTOR SPINNING?
+				beq INIT2 ;=>NO, MOTOR'S OFF
+				lda #T200MS ;UPTIME GOOD FOR READS
+				sta UPTIME+0
+INIT2			.eq *
+				lda #1
+				sta DRIVESEL+0 ;.D1 IS THE CURRENT DRIVE
+				lda $0300+CURTRK ;RETRIEVE CURRENT TRACK
+				sta DRVTRACK+0 ;REMEMBER IT
+				.fin
+*
+* SET UP JMP TABLE FOR CORRECT ROM:
+*
+				.do REV0ROM ;ONLY IF SUPPORTING IT!
+				lda $F1B9 ;LOOK FOR START OF RDADR
+				cmp #$A0 ;IS IT RDADR (REV1)?
+				beq INITREV1 ;=>YES
+				cmp #$60 ;IS IT END OF READ (REV0)?
+				bne INITERR ;=>NEITHER!
+				ldy #0 ;REV=0
+				beq INITVECT ;(ALWAYS TAKEN)
+INITREV1		.eq *
+				ldy #VSIZE
+INITVECT		.eq *
+				sty ROMREV ;SET ROM REVISION INDICATOR
+				ldx #VSIZE
+MOVEVECT		.eq *
+				lda REV0,Y ;GET A BYTE
+				sta JMPTAB,Y ;MOVE IT
+				iny 
+				dex 
+				bne MOVEVECT
+				.fin
+GOODINIT		.eq *
+				lda #0 ;RETCODE=GOOD, IF YOU CARE
+				clc ;SAY 'GOOD INIT'
+				bcc EXIT ;(ALWAYS TAKEN)
+				.do REV0ROM
+INITERR			.eq *
+				sec ;SAY 'BAD INIT'
+* FALL THRU TO EXIT
+				.fin
+* PAGE
+* REP 40
+* -- EXIT PATH --
+* REP 40
+*
+EXIT			.eq *
+				pha ;SAVE RETURN CODE
+*
+* UPDATE UPTIME BY 50 MS (3 SECTOR-TIMES)
+* TO ACCOUNT FOR READ/WRITE TIME:
+*
+				lda D.COMMAND ;GET COMMAND
+				cmp #2 ;SENSE OR INIT?
+				bcs EXIT2 ;=>YES, NO TIME USED UP
+				lda #2 ;TIME=50 MS (2 UNITS)
+				jsr ADDTIME ;BUMP UPTIME(S)
+*
+* RESTORE CALLER ENVIRONMENT:
+*
+EXIT2			.eq *
+				lda E.REG ;GET CURRENT STATE
+				and #$20 ; OF THE SCREEN
+				ora ESAVE ;MERGE WITH CALLER STATE
+				sta E.REG
+				jsr FIXIRQ ;RE-ENABLE IRQ IF OK
+				lda MOTOROFF ;START MOTOR-OFF TIMEOUT
+				pla ;RESTORE RETURN CODE
+				.do TEST ;IF TEST, NO SYSERR
+				rts 
+
+				.else
+				bne GOERR ;=>ERROR RETURN VIA SYSERR
+				clc 
+				rts ;GOOD RETURN W/CARRY CLEAR
+GOERR			.eq *
+				jsr SYSERR ;RETURN VIA SYSERR
+				.fin
+
+* CHN DISK3.SIO.SRC
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.WRT.SRC
+*************************************************************************
+
+
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS/SOS.S.DISK3.WRT
+LOAD /A3OSX.BUILD/SOS/SOS.S
+ASM

@@ -1,0 +1,38 @@
+NEW
+AUTO 3,1
+*--------------------------------------
+
+*************************************************************************
+* APPLE /// SOS 1.3 SOURCE CODE FILE: SOS.LINK
+*************************************************************************
+* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT
+
+SOSLDR.OBJ
+INIT.OBJ
+SYSGLOB.OBJ
+BFM.INIT2.OBJ
+BFM.OBJ
+OPRMSG.OBJ
+IPL.OBJ
+UMGR.OBJ
+DISK3.OBJ
+SYSERR.OBJ
+SCMGR.OBJ
+FMGR.OBJ
+CFMGR.OBJ
+DEVMGR.OBJ
+BUFMGR.OBJ
+MEMMGR.OBJ
+END
+
+*************************************************************************
+* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: SOS.LINK
+*************************************************************************
+
+
+
+*--------------------------------------
+MAN
+SAVE /A3OSX.BUILD/SOS/SOS.S.SOS.LINK
+LOAD /A3OSX.BUILD/SOS/SOS.S
+ASM
