@@ -59,9 +59,9 @@ BITON6			.eq $40
 BITON7			.eq $80
 BITOFF5			.eq $DF
 *
-Z.REG			.eq $FFD0
-E.REG			.eq $FFDF
-B.REG			.eq $FFEF
+* Z.REG EQU $FFD0
+* E.REG EQU $FFDF
+* B.REG EQU $FFEF
 * PAGE
 * REP 35
 *

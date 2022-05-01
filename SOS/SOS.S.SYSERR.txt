@@ -38,9 +38,9 @@ ZZORG			.eq *
 *
 * REP 60
 *
-E.REG			.eq $FFDF
-Z.REG			.eq $FFD0
-B.REG			.eq $FFEF
+* E.REG EQU $FFDF
+* Z.REG EQU $FFD0
+* B.REG EQU $FFEF
 *
 S.SAVE			.eq $09 ; REGISTER SAVE AREA
 PCH.SAVE		.eq $08
