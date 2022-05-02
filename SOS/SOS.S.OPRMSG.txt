@@ -10,7 +10,7 @@ AUTO 3,1
 *				.TI "SOS 1.1 OPERATOR MESSAGE/REPLY"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.ph ORGOMSG FIXME: check if we need this
+* ORG ORGOMSG
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -49,23 +49,23 @@ ZZORG			.eq *
 *
 * HARDWARE EQUATES
 *
-Z.REG			.eq $FFD0
-E.REG			.eq $FFDF
+* Z.REG EQU $FFD0
+* E.REG EQU $FFDF
 *
-KBPORT			.eq $C008
+* KBPORT EQU $C008
 *
-BELL			.eq $C040
+* BELL EQU $C040
 *
-VM0			.eq $C050
-VM1			.eq $C052
-VM2			.eq $C054
-VM3			.eq $C056
+* VM0 EQU $C050
+* VM1 EQU $C052
+* VM2 EQU $C054
+* VM3 EQU $C056
 *
-E.T2			.eq $FFE8
-E.ACR			.eq $FFEB
-E.PCR			.eq $FFEC
-E.IFR			.eq $FFED
-E.IER			.eq $FFEE
+* E.T2 EQU $FFE8
+* E.ACR EQU $FFEB
+* E.PCR EQU $FFEC
+* E.IFR EQU $FFED
+* E.IER EQU $FFEE
 *
 * ZERO PAGE DECLARATIONS
 *

@@ -157,7 +157,7 @@ DRVSETUP		.eq *
 				lda #0 ;SEEK TO TRACK ZERO
 				jsr MYSEEK ; FOR BFM DIR READ
 				jsr CHKDRV ;RUNNING NOW?
-				bne DSWITCH ;=>YES, A SWITCHEROO
+				bne D.SWITCH ;=>YES, A SWITCHEROO
 				lda #0
 				ldy D.UNITNUM ;FORGET THAT THIS
 
@@ -165,7 +165,7 @@ DRVSETUP		.eq *
 				lda #XNODRIVE ;NO, A MISSING DRIVE!
 				jmp EXIT
 *
-DSWITCH			.eq *
+D.SWITCH		.eq *
 				lda #XDISKSW ;USER PULLED A FAST ONE
 				jmp EXIT ; BUT HE CAN'T FOOL US.
 * PAGE

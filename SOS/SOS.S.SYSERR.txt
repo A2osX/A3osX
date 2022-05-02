@@ -10,7 +10,7 @@ AUTO 3,1
 *				.TI "SOS 1.1 SYSTEM ERROR ROUTINES"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.ph ORGSERR FIXME: check if we need this
+* ORG ORGSERR
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60

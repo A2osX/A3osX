@@ -135,7 +135,7 @@ DBUG			.eq $FE
 * DATA DECLARATIONS
 *
 * REP 60
-Z.REG			.eq $FFD0
+* Z.REG EQU $FFD0
 SP.SAVE			.eq $01FF
 Z.SAVE			.eq $01FD
 B.SAVE			.eq $01FC

@@ -10,7 +10,7 @@ AUTO 3,1
 *				.TI "SOS 1.1 FILE MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.ph ORGFMGR FIXME: check if we need this
+* ORG ORGFMGR
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60

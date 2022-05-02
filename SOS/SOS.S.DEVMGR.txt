@@ -10,7 +10,7 @@ AUTO 3,1
 *				.TI "SOS 1.1 DEVICE MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.ph ORGDMGR FIXME: check if we need this
+* ORG ORGDMGR
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 100

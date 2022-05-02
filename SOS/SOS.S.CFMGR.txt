@@ -10,7 +10,7 @@ AUTO 3,1
 *				.TI "SOS 1.1 CHARACTER FILE MANAGER"
 * REL
 * INCLUDE SOSORG,6,1,254
-				.ph ORGCFM FIXME: check if we need this
+* ORG ORGCFM
 ZZORG			.eq *
 * FIXME - MSB OFF
 * REP 60
@@ -106,8 +106,8 @@ DNUM.TEMP		.bs 1
 *
 DCLOSE.ERR		.eq F.TPARMX+$F
 DCLOSE.TBL		.eq $200
-TRUE			.eq $80
-FALSE			.eq $0
+* TRUE EQU $80
+* FALSE EQU $0
 *
 *
 * REP 60
@@ -116,7 +116,7 @@ FALSE			.eq $0
 * (ENTRY 0 IS NOT USED)
 *
 * REP 60
-CFCB.MAX		.eq 17
+* CFCB.MAX EQU 17
 CFCB.DEV		.bs CFCB.MAX
 CFCB.LVL		.bs CFCB.MAX
 * PAGE

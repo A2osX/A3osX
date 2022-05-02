@@ -1,5 +1,5 @@
 NEW
-  AUTO 3,1
+AUTO 3,1
 *--------------------------------------
 
 *************************************************************************
@@ -10,8 +10,8 @@ NEW
 *				.TI "SOS 1.1 INITIALIZATION"
 * REL
 * INCLUDE SOSORG,6,1,254
-*				.ph ORGINIT FIXME: check if we need this
-* ZZORG			.eq *
+* ORG ORGINIT
+* ZZORG EQU *
 * FIXME - MSB OFF
 * REP 100
 * COPYRIGHT (C) APPLE COMPUTER INC. 1981
@@ -106,8 +106,8 @@ NEW
 *
 * CONSTANT DECLARATIONS
 *
-* TRUE			.eq $80
-* FALSE			.eq $00
+* TRUE EQU $80
+* FALSE EQU $00
 BITON6			.eq $40
 BITON7			.eq $80
 *
@@ -437,7 +437,7 @@ MEMI.ERR		lda #MEM2SML ; FATAL ERR - MEM < 64K
 *
 * REP 60
 *
-* SISTER			.eq $1400 ;BFM XPAGE
+* SISTER EQU $1400 ;BFM XPAGE
 BFM.INIT		.eq *
 				lda #BFMFCB1 ; ADDRESS OF PAGE 1 OF FCB
 				sta >FCBZPP+1
