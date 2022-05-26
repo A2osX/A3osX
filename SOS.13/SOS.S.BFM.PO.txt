@@ -720,6 +720,6 @@ TSNXFCB			 LDA FCBPTR ; CALCULATE NEXT FCB AREA (+$20)
 				 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.posn.open.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.bfm.po
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

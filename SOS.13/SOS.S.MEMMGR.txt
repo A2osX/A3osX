@@ -1435,6 +1435,6 @@ ZZLEN			.EQ ZZEND-ZZORG
 				.FIN
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13/sos.s.memmgr.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.memmgr
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

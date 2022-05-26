@@ -485,6 +485,6 @@ SCRHIGH			 EQU <SCRTCH ; AND DEVICE NUMBERS FROM BOB'S CODE.
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.destroy.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.bfm.d
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

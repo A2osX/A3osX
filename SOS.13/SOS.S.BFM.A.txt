@@ -400,6 +400,6 @@ FADDR			 LDX DFIL+D.FRST ; (BUFFER ADDRESS IS IN 'TINDX')
 				 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.alloc.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.bfm.a
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

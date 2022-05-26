@@ -599,6 +599,6 @@ RTV1			 TXA  ; RECALL ERROR
 				 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.path.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.bfm.p
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

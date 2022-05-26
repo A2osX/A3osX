@@ -7,13 +7,24 @@ NEW
 				.TF /A3OSX.BUILD/SOS.KERNEL
 *--------------------------------------
 				.INB /A3OSX.BUILD/inc/io.i
+				.INB /A3OSX.BUILD/inc/mon.i
 				.INB /A3OSX.BUILD/inc/sos.i
 *--------------------------------------
 				.INB /A3OSX.BUILD/SOS.13/sos.s.sosldr
 				.INB /A3OSX.BUILD/SOS.13/sos.s.init
 				.INB /A3OSX.BUILD/SOS.13/sos.s.sysglob
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfminit
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm
+				.INB /A3OSX.BUILD/SOS.13/sos.s.bfminit2
+				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.e
+				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.p
+				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.v
+				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.c
+				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.f
+				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.a
+				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.po
+				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.rw
+				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.ce
+				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.d
+				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.sw
 				.INB /A3OSX.BUILD/SOS.13/sos.s.oprmsg
 				.INB /A3OSX.BUILD/SOS.13/sos.s.ipl
 				.INB /A3OSX.BUILD/SOS.13/sos.s.umgr

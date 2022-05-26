@@ -227,6 +227,6 @@ CHN				 CREATE,4,1
 				 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.volume.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.bfm.v
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

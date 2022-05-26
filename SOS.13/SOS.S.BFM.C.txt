@@ -550,6 +550,6 @@ DRVISDNE		 CLC  ;INDICATE NO ERROR./
 *************************************************************************  
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.create.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.bfm.c
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

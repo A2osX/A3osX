@@ -819,6 +819,6 @@ ZZLEN			 EQU ZZEND-ZZORG
 				 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.umgr.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.umgr
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

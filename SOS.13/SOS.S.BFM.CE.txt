@@ -413,6 +413,6 @@ CHN				 DESTROY,4,2
 				 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.close.eof.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.bfm.ce
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

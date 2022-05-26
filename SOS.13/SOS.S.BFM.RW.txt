@@ -672,6 +672,6 @@ WRAPDNE			 RTS  ; RETURN VALID HIGH ADDRESS AND BANK BYTE.
 				 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.read.write.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.bfm.rw
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

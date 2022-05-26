@@ -366,6 +366,6 @@ VCBENTRY		 DS 1 ; POINTER TO CURRENT VCB ENTRY
 				 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.equates.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.bfm.e
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

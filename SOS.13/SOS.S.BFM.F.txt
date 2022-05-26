@@ -811,6 +811,6 @@ CFREE1			 TAX
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.fndfil.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.bfm.f
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

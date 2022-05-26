@@ -1,227 +1,1176 @@
 NEW
   AUTO 3,1
 *--------------------------------------
-*************************************************************************  
-* APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.SRC  
-*************************************************************************  
-* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT  
-				 
-SBTL			 'SOS 1.1 DISK /// DRIVER'  
-TEST			 EQU 0 ;FOR FUNNY-MODE TESTING  
-INCLUDE			 SOSORG,6,1,254  
-DO				 TEST  
-ORG				 $2000  
-ELSE			  
-REL				  
-ORG				 ORGDISK3  
-FIN				  
-ZZORG			 EQU *  
-CHR				 '-'  
-MSB				 OFF  
+TEST			.EQ 0 					;FOR FUNNY-MODE TESTING  
+				.DO TEST  
+				.OR	$2000  
+				.ELSE			  
+				.OR	ORGDISK3  
+				.FIN				  
+ZZORG			.EQ *  
+* ?????				CHR				 '-'  
 *  
-REP				 40  
-* COPYRIGHT (C) APPLE COMPUTER INC.  
-* ALL RIGHTS RESERVED  
-REP				 40  
+REV0ROM			.EQ 0 					;1=SUPPORT REV0 ROM  
 *  
-REV0ROM			 EQU 0 ;1=SUPPORT REV0 ROM  
-*  
-DO				 1-TEST  
-ENTRY			 DIB1 ;DIB1  
-ENTRY			 DIB2 ;DIB2  
-ENTRY			 DIB3 ;DIB3  
-ENTRY			 DIB4 ;DIB4  
-ENTRY			 SEEKDSK3 ;SEEK CURRENT DRIVE  
-*  
-EXTRN			 SYSERR  
-*  
-EXTRN			 XREQCODE  
-EXTRN			 XBADOP  
-EXTRN			 XNODRIVE  
-EXTRN			 XIOERROR  
-EXTRN			 XNOWRITE  
-EXTRN			 XBYTECNT  
-EXTRN			 XBLKNUM  
-EXTRN			 XDISKSW  
-EXTRN			 XCTLCODE  
-*  
-EXTRN			 E1908 ; GLOBAL FLAG FOR MOUSE DRIVER  
-* TO SAY WE CANNOT BE INTERRUPTED  
-*  
-ELSE			  
-XREQCODE		 EQU $20  
-XBADOP			 EQU $26  
-XNODRIVE		 EQU $28  
-XIOERROR		 EQU $27  
-XNOWRITE		 EQU $2B  
-XBYTECNT		 EQU $2C  
-XBLKNUM			 EQU $2D  
-XDISKSW			 EQU $2E  
-XCTLCODE		 EQU $21  
-FIN				  
-PAGE			  
-* DISK /// CONTROLLER EQUATES:  
-*  
-* MOTOR SELECT BITS:  
-*  
-* DRIVE INT EXT1 EXT2  
-* ----- --- ---- ----  
-* .D1 1 X X  
-* .D2 X 0 1  
-* .D3 X 1 0  
-* .D4 X 1 1  
-*  
-MS.INT			 EQU $C0D4 ;MOTOR SELECT:INTERNAL DRIVE  
-MD.INT			 EQU $C0D5 ;MOTOR DESELECT:INTERNAL DRIVE  
-*  
-MS.EXT1			 EQU $C0D3 ;MOTOR SELECT:EXTERNAL DRIVE  
-MS.EXT2			 EQU $C0D1 ;MOTOR SELECT:EXTERNAL DRIVE  
-MD.EXT1			 EQU $C0D2 ;MOTOR DESELECT:EXTERNAL DRIVE  
-MD.EXT2			 EQU $C0D0 ;MOTOR DESELECT:EXTERNAL DRIVE  
-*     
-IS.INT			 EQU $C0EA ;I/O SELECT:INTERNAL DRIVE  
-IS.EXT			 EQU $C0EB ;I/O SELECT:EXTERNAL DRIVE  
-*     
-NOSCROLL		 EQU $C0D8 ;SMOOTHSCROLL OFF  
-*     
-MOTOROFF		 EQU $C0E8 ;MOTOR(S) START POWEROFF T/O  
-MOTORON			 EQU $C0E9 ;MOTOR(S) POWER ON  
-Q6L				 EQU $C08C ;Q7L,Q6L=READ  
-Q6H				 EQU $C08D ;Q7L,Q6H=SENSE WPROT  
-Q7L				 EQU $C08E ;Q7H,Q6L=WRITE  
-Q7H				 EQU $C08F ;Q7H,Q6H=WRITE STORE  
-*     
-* OTHER EQUATES:     
-*     
-E.REG			 EQU $FFDF ;ENVIRONMENT REGISTER  
-E.IER			 EQU $FFEE ;INTERRUPT ENABLE REGISTER  
+				.DO 1-TEST  
+				.ELSE			  
+XREQCODE		.EQ $20  
+XBADOP			.EQ $26  
+XNODRIVE		.EQ $28  
+XIOERROR		.EQ $27  
+XNOWRITE		.EQ $2B  
+XBYTECNT		.EQ $2C  
+XBLKNUM			.EQ $2D  
+XDISKSW			.EQ $2E  
+XCTLCODE		.EQ $21  
+				.FIN				  
 *     
 * RETRY COUNTERS:    
 *    
-R.RECAL			 EQU 1 ;MAX RECALIBRATES  
+R.RECAL			.EQ 1 					;MAX RECALIBRATES  
 * R.RECAL MUST NOT BECOME ZERO! (MOUSE WILL BE LOCKED OUT) 000100 * SEE DISK3.SIO.SRC LINE 14 FOR DETAIL  
-R.FIND			 EQU 3 ;MAX REVS TO FIND A SECTOR  
-R.IOERR			 EQU 4 ;MAX RETRIES ON READ ERROR  
-R.IRQ			 EQU 6 ;MAX IRQ'S TOLERATED BEFORE SEI  
-				PAGE    
-* ZPAGE EQUATES FOR CORE ROUTINES:  
+R.FIND			.EQ 3 					;MAX REVS TO FIND A SECTOR  
+R.IOERR			.EQ 4 					;MAX RETRIES ON READ ERROR  
+R.IRQ			.EQ 6 					;MAX IRQ'S TOLERATED BEFORE SEI  
+*
+* ZPAGE.EQATES FOR CORE ROUTINES:  
 *  
-DSECT			  
-				ORG $81   
-IBSLOT			 DS 1 ;SLOT=$60 FOR RTNS  
-				DS 7 ;N/A  
-				DS 1 ;RDADR:CHECKSUM  
-				DS 1 ;N/A  
-IMASK			 DS 1 ;BIT7 SET IF IRQ ALLOWED  
-CURTRK			 DS 1 ;SEEK:CURRENT TRACK  
-				DS 2 ;N/A  
-INTRTRY			 DS 1 ;READ: IRQ RETRY COUNT  
-				DS 5 ;N/A  
-				DS 1 ;RDADR:'MUST FIND' COUNT  
-				DS 1 ;READ,WRITE: CHECKSUM  
-CSSTV			 DS 4 ;RDADR:CKSUM,SEC,TRK,VOL  
-MONTIMEL		 EQU CSSTV+2 ;MSWAIT:MOTOR-ON TIME  
-MONTIMEH		 EQU MONTIMEL+1   
-BUF				 DS 2 ;PRENIB,POSTNIB:USER BUFFER  
-				DS 1 ;SEEK:PRIOR PHASE  
-TRKN			 DS 1 ;SEEK:TARGET TRACK  
+				.OR $81   
+IBSLOT			.BS 1 					;SLOT=$60 FOR RTNS  
+				.BS 7 					;N/A  
+				.BS 1 					;RDADR:CHECKSUM  
+				.BS 1 					;N/A  
+IMASK			.BS 1 					;BIT7 SET IF IRQ ALLOWED  
+CURTRK			.BS 1 					;SEEK:CURRENT TRACK  
+				.BS 2 					;N/A  
+INTRTRY			.BS 1 					;READ: IRQ RETRY COUNT  
+				.BS 5 					;N/A  
+				.BS 1 					;RDADR:'MUST FIND' COUNT  
+				.BS 1 					;READ,WRITE: CHECKSUM  
+CSSTV			.BS 4 					;RDADR:CKSUM,SEC,TRK,VOL  
+MONTIMEL		.EQ CSSTV+2 			;MSWAIT:MOTOR-ON TIME  
+MONTIMEH		.EQ MONTIMEL+1   
+BUF				.BS 2 					;PRENIB,POSTNIB:USER BUFFER  
+				.BS 1 					;SEEK:PRIOR PHASE  
+TRKN			.BS 1 					;SEEK:TARGET TRACK  
 *     
 * LOCAL TEMPS:     
 *     
-				ORG $D0 ;WE'RE ALLOWED TO $FF  
-BLKTEMP			 DS 2 ;LOCAL TEMP FOR BLKNUMBER  
-BUFTEMP			 DS 2 ;LOCAL TEMP FOR BUFFER ADDRESS  
-TRACK			 DS 1 ;LOCAL TEMP FOR TRACK  
-SECTOR			 DS 1 ;LOCAL TEMP FOR SECTOR  
-RETRYADR		 DS 1 ;LOCAL TEMP FOR SECTOR-FIND RETRIES  
-RETRYCNT		 DS 1 ;LOCAL TEMP FOR I/O RETRIES  
-RECALCNT		 DS 1 ;LOCAL TEMP FOR RECAL COUNT  
-BLKCOUNT		 DS 1 ;BLKS REQD TO SATISFY BYTECOUNT  
-SEEKWAIT		 DS 1 ;<>0 IF SEEK DELAY NEEDED  
-IRQMASK			 DS 1 ;ENTRY 'I' BIT  
-TEMP			 DS 1 ;JUST A TEMP  
-				DEND    
-				PAGE    
+				.OR $D0 				;WE'RE ALLOWED TO $FF  
+BLKTEMP			.BS 2 					;LOCAL TEMP FOR BLKNUMBER  
+BUFTEMP			.BS 2 					;LOCAL TEMP FOR BUFFER ADDRESS  
+TRACK			.BS 1 					;LOCAL TEMP FOR TRACK  
+SECTOR			.BS 1 					;LOCAL TEMP FOR SECTOR  
+RETRYADR		.BS 1 					;LOCAL TEMP FOR SECTOR-FIND RETRIES  
+RETRYCNT		.BS 1 					;LOCAL TEMP FOR I/O RETRIES  
+RECALCNT		.BS 1 					;LOCAL TEMP FOR RECAL COUNT  
+BLKCOUNT		.BS 1 					;BLKS REQD TO SATISFY BYTECOUNT  
+SEEKWAIT		.BS 1 					;<>0 IF SEEK DELAY NEEDED  
+IRQMASK			.BS 1 					;ENTRY 'I' BIT  
+TEMP			.BS 1 					;JUST A TEMP  
+*
 * DRIVER INTERFACE AREA:    
 *    
-DSECT			    
-ORG				 $C0   
-D.COMMAND		 DS 1 ;COMMAND CODE  
-D.UNITNUM		 DS 1 ;UNIT NUMBER  
-D.BUFL			 DS 2 ;BUFFER ADDRESS  
-D.BUFH			 EQU D.BUFL+1   
-D.STATCODE		 EQU D.BUFL ;DSTATUS CODE  
-D.STATBUF		 EQU D.BUFH ;^DSTATUS LIST  
-D.BYTES			 DS 2 ;BYTECOUNT  
-D.BLOCK			 DS 2 ;REQUESTED BLOCKNUM  
-D.BYTRD			 DS 2 ;BYTES READ (READ)  
-DS				 6 ;SPARES (OK AS TEMPS)  
-DEND			    
-				PAGE   
-DIB1			 EQU *  ;DIB FOR .D1  
-				DW DIB2  ;FLINK  
-				DW MAIN  ;ENTRY POINT  
-				DFB 3  ;NAME LENGTH  
-				ASC '.D1 '   
-				DFB $80  ;DEVNUM: ACTIVE  
-				DFB 0  ;SLOT  
-				DFB 0  ;UNIT NUMBER  
-				DFB $E1,1,0  ;TYPE,SUB,FILLER  
-				DW 280  ;BLOCKCOUNT  
-				DW 1  ;MANUFACTURER=APPLE  
-				DW $1100  ;VERSION=1.1  
+				.OR $C0   
+D.COMMAND		.BS 1 					;COMMAND CODE  
+D.UNITNUM		.BS 1 					;UNIT NUMBER  
+D.BUFL			.BS 2 					;BUFFER ADDRESS  
+D.BUFH			.EQ D.BUFL+1   
+D.STATCODE		.EQ D.BUFL 				;DSTATUS CODE  
+D.STATBUF		.EQ D.BUFH 				;^DSTATUS LIST  
+D.BYTES			.BS 2 					;BYTECOUNT  
+D.BLOCK			.BS 2 					;REQUESTED BLOCKNUM  
+D.BYTRD			.BS 2 					;BYTES READ (READ)  
+				.BS 6 					;SPARES (OK AS TEMPS)  
+ 
+DIB1			.DA DIB2  				FLINK  
+				.DA MAIN  				ENTRY POINT  
+				.DA #3  				NAME LENGTH  
+				.AS '.D1 '   
+				.DA #$80  				DEVNUM: ACTIVE  
+				.DA #0  				SLOT  
+				.DA #0  				UNIT NUMBER  
+				.DA #$E1,#1,#0 			TYPE,SUB,FILLER  
+				.DA 280  				BLOCKCOUNT  
+				.DA 1  					MANUFACTURER=APPLE  
+				.DA $1100  				VERSION=1.1  
 *      
-DIB2			 EQU *  ;DIB FOR .D2  
-				DW DIB3  ;FLINK  
-				DW MAIN  ;ENTRY POINT  
-				DFB 3  ;NAME LENGTH  
-				ASC '.D2 '   
-				DFB $80  ;DEVNUM: ACTIVE  
-				DFB 0  ;SLOT  
-				DFB 1  ;UNIT NUMBER  
-				DFB $E1,1,0  ;TYPE,SUB,FILLER  
-				DW 280  ;BLOCKCOUNT  
-				DW 1  ;MANUFACTURER=APPLE  
-				DW $1100  ;VERSION=1.1  
+DIB2			.DA DIB3  				FLINK  
+				.DA MAIN  				ENTRY POINT  
+				.DA #3  				NAME LENGTH  
+				.AS '.D2 '   
+				.DA #$80  				DEVNUM: ACTIVE  
+				.DA #0  				SLOT  
+				.DA #1  				UNIT NUMBER  
+				.DA #$E1,#1,#0 			TYPE,SUB,FILLER  
+				.DA 280  				BLOCKCOUNT  
+				.DA 1  					MANUFACTURER=APPLE  
+				.DA $1100  				VERSION=1.1 
 *      
-DIB3			 EQU *  ;DIB FOR .D3  
-				DW DIB4  ;FLINK  
-				DW MAIN  ;ENTRY POINT  
-				DFB 3  ;NAME LENGTH  
-				ASC '.D3 '   
-				DFB $80  ;DEVNUM: ACTIVE  
-				DFB 0  ;SLOT  
-				DFB 2  ;UNIT NUMBER  
-				DFB $E1,1,0  ;TYPE,SUB,FILLER  
-				DW 280  ;BLOCKCOUNT  
-				DW 1  ;MANUFACTURER=APPLE  
-				DW $1100  ;VERSION=1.1  
+DIB3			.DA DIB4  				FLINK  
+				.DA MAIN  				ENTRY POINT  
+				.DA #3  				NAME LENGTH  
+				.AS '.D3 '   
+				.DA #$80  				DEVNUM: ACTIVE  
+				.DA #0  				SLOT  
+				.DA #2  				UNIT NUMBER  
+				.DA #$E1,#1,#0 			TYPE,SUB,FILLER  
+				.DA 280  				BLOCKCOUNT  
+				.DA 1  					MANUFACTURER=APPLE  
+				.DA $1100  				VERSION=1.1 
 *      
-DIB4			 EQU *  ;DIB FOR .D4  
-				DW 0  ;NO FLINK  
-				DW MAIN  ;ENTRY POINT  
-				DFB 3  ;NAME LENGTH  
-				ASC '.D4 '   
-				DFB $80  ;DEVNUM: ACTIVE  
-				DFB 0  ;SLOT  
-				DFB 3  ;UNIT NUMBER  
-				DFB $E1,1,0  ;TYPE,SUB,FILLER  
-				DW 280  ;BLOCKCOUNT  
-				DW 1  ;MANUFACTURER=APPLE  
-				DW $1100  ;VERSION=1.1  
-				DW 1  ;MANUFACTURER=APPLE  
-				DW $1100  ;VERSION=1.1  
-				     
-				CHN DISK3.MAIN.SRC    
-				INCLUDE SOSORG,6,1,254    
-				     
-*************************************************************************  
-* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: DISK3.SRC  
-*************************************************************************  
-				 
-				 
+DIB4			.DA 0  					NO FLINK  
+				.DA MAIN  				ENTRY POINT  
+				.DA #3  				NAME LENGTH  
+				.AS '.D3 '   
+				.DA #$80  				DEVNUM: ACTIVE  
+				.DA #0  				SLOT  
+				.DA #3  				UNIT NUMBER  
+				.DA #$E1,#1,#0 			TYPE,SUB,FILLER  
+				.DA 280  				BLOCKCOUNT  
+				.DA 1  					MANUFACTURER=APPLE  
+				.DA $1100  				VERSION=1.1  
+*  
+* DISABLE NMI/RESET AND ENABLE ROM/IO SPACE  
+*  
+MAIN			lda E.REG 				SAVE CALLER'S  
+				and #$FF-$20 			DROP SCREEN BIT  
+				sta ESAVE 				ENVIRONMENT  
+				.DO	1-TEST 				NO RESETLOCK FOR TESTING  
+				lda E.REG 				GET EREG AGAIN  
+				and #$FF-$10 			DISABLE NMI/RESET  
+				.FIN  
+				ora #$03 				ENABLE ROM/IO SPACE  
+				sta E.REG  
+*  
+				lda NOSCROLL 			DISABLE SMOOTHSCROLL  
+*  
+				php 					IF ALREADY SEI'D, THEN WE  
+				pla 					STAY THAT WAY...  
+				ror
+				ror  
+				ror  
+				ror  
+				sta IRQMASK 			'I' BIT INTO BIT7  
+*  
+* MAKE SURE WE HAVE A VALID COMMAND:  
+*  
+				lda D.COMMAND 			GET IT  
+				bmi BADCMD 				=>WOW!  
+				beq IOSETUP 			=>ZERO IS A READ  
+				cmp #10 				OFF THE END?  
+				bcs BADCMD 				=>YES  
+				cmp #9 					REPEAT?  
+				bne CMD1 				=>NOPE  
+*  
+* REPEAT. SIMPLY GET PRIOR COMMAND:  
+*  
+				lda	PREVUNIT 			IS THIS REPEAT FOR  
+				cmp	D.UNITNUM 			SAME UNIT?  
+				bne	BADOP 				=>NO? ILLEGAL!  
+				lda	PREVCMD 			YES, SET COMMAND  
+				beq	RPTOK 				=>REPEAT'ED READ IS OK  
+				cmp	#1 					IF NOT, IS IT REPEAT'ED WRITE?  
+				bne	BADOP 				=>CAN'T REPEAT OTHER COMMANDS  
+
+RPTOK			sta	D.COMMAND 			;SAME AS BEFORE  
+				cmp	#0 					;READ?  
+				beq	IOSETUP 			;=>YES  
+* NOW REPEAT GOES LIKE OTHERS:  
+*  
+*  
+CMD1			cmp #1 					;WRITE?  
+				bne CMD2				;=>NOPE  
+				jmp IOSETUP 			;=>YES  
+
+CMD2			cmp #2 					;STATUS?  
+				bne CMD3 				;=>NOT STATUS  
+				lda D.STATCODE 			;IS IT 'SENSE'?  
+				beq GOSTAT 				;=>YES  
+				lda #XCTLCODE 			;ILLEGAL CODE  
+				jmp EXIT  
+
+GOSTAT			jmp DRVSETUP 			;=>YES  
+*  
+CMD3			cmp #8 					;INIT?  
+				bne BADOP 				;=>NOPE  
+				jmp INIT 				;=>YES, DO INIT  
+*  
+BADOP			lda #XBADOP 			;ILLEGAL COMMAND  
+				jmp EXIT 				;BACK TO YOU  
+*     
+BADCMD			lda #XREQCODE 			;INVALID COMMAND  
+				jmp EXIT 				;BACK TO YOU  
+
+* SETUP WHAT WE HAVE TO BEFORE   
+* PERFORMING THE I/O OPERATION:   
+*   
+IOSETUP			lda D.BLOCK+1 			;VALIDATE BLOCKNUM  
+				beq CHKBYTE 			;=> IF <256, IT'S OK  
+				cmp #2 					;IS IT <512?  
+				bcs BADBLOCK 			;=>BAD BOY!  
+				lda D.BLOCK 			;YES, CHECK LO HALF  
+				cmp #280-256 			; FOR RANGE  
+				bcc CHKBYTE 			;=>IT'S OK  
+
+BADBLOCK		lda #XBLKNUM 			;BAD BLOCK NUMBER  
+				jmp EXIT 				;RETURN BAD NEWS  
+*   
+CHKBYTE			lda D.BYTES 			;GET LO COUNT  
+				bne BADCOUNT 			;=>ERR, NOT INTEGRAL BLOCK(S)  
+				lda D.BYTES+1 			;GET HI COUNT  
+				lsr A 					;MAKE BLOCK COUNT  
+				bcs BADCOUNT 			;=>BAD IF HALF-BLOCK COUNT  
+				sta BLKCOUNT 			;SAVE COUNT OF BLOCKS  
+*   
+* DOES REQUESTED BYTECOUNT CAUSE US   
+* TO RUN OFF END OF DISK?   
+*   
+				lda	BLKCOUNT 			;NO. ADD STARTBLOCK  
+				clc						; AND BLKCOUNT AND SEE  
+				adc	D.BLOCK 			; IF WE'RE TOO BIG  
+				ldx	D.BLOCK+1 			;DID IT START OUT > 255?  
+				bne	BLKG255 			;=>YES  
+				bcc	DRVSETUP			;=>DEFINITELY < 256  
+				bcs	CHKLO 				;=>IF CARRY,THEN >256  
+
+BLKG255			bcs	BADCOUNT 			;>255+CARRY IS NOW >511  
+
+CHKLO			cmp	#280-256+1 			;281..511 ?  
+				bcc	DRVSETUP 			;=>NO, WE ARE OK  
+
+BADCOUNT		lda	#XBYTECNT 			;ILLEGAL BYTECOUNT  
+				jmp	EXIT 				;SORRY...  
+*   
+* SELECT THE APPROPRIATE DRIVE:   
+*   
+DRVSETUP		lda D.COMMAND 			;SAVE THIS COMMAND  
+				sta PREVCMD 			; AND DEVICE FOR  
+				lda D.UNITNUM 			; SUBSEQUENT  
+				sta PREVUNIT 			; 'REPEAT' CALL  
+				lda E.REG 				;DOWNSHIFT TO  
+				ora #$80 				; 1MHZ FOR REMAINDER  
+				sta E.REG 				; OF DRIVER EXECUTION  
+				jsr UNITSEL 			;SELECT & START IT  
+*   
+* SEE IF THE MOTOR STARTED. IF NOT,   
+* THEN IT'S EITHER DISKSWITCH OR NODRIVE.   
+*   
+				jsr	CHKDRV 				;MOTOR RUNNING?  
+				bne	DOIO 				;=>YES, GREAT.  
+*   
+* IF WE GET A MOTOR WHEN WE MOVE   
+* THE HEAD, THEN IT'S DISKSWITCH.   
+*   
+				ldx D.UNITNUM 			;FORCE HEAD MOTION  
+				inc DRVTRACK,X 			; EVEN IF ALREADY ON ZERO  
+				inc DRVTRACK,X 			;GIVE HIM A FIRM KNOCKER  
+				lda #0 					;SEEK TO TRACK ZERO  
+				jsr MYSEEK 				; FOR BFM DIR READ  
+				jsr CHKDRV 				;RUNNING NOW?  
+				bne DSWITCH 			;=>YES, A SWITCHEROO  
+				lda #0   
+				ldy D.UNITNUM 			;FORGET THAT THIS  
+				sta DRIVESEL,Y 			; DRIVE WAS 'SELECTED'  
+				lda #XNODRIVE 			;NO, A MISSING DRIVE!  
+				jmp EXIT   
+*     
+DSWITCH			lda #XDISKSW 			;USER PULLED A FAST ONE  
+				jmp EXIT 				; BUT HE CAN'T FOOL US.  
+*
+* PREPARE TO DO THE OPERATION:  
+*  
+DOIO			lda D.BUFL 				;COPY USER BUFFER  
+				sta BUFTEMP 			; AND BLOCK NUMBER  
+				lda D.BUFH 				; TO OUR WORKSPACE  
+				sta BUFTEMP+1   
+				lda $1400+D.BUFH   
+				sta $1400+BUFTEMP+1   
+				lda D.BLOCK   
+				sta BLKTEMP   
+				lda D.BLOCK+1   
+				sta BLKTEMP+1   
+*   
+* IF CALLER GAVE US A COUNT OF ZERO BYTES,   
+* THEN WE'RE ALL DONE!   
+*   
+				lda D.COMMAND 			;IS IT STATUS?  
+				cmp #2 					;IF SO, THEN BYTECOUNT  
+				bne DOIO2 				; IS MEANINGLESS  
+				jmp STATUS   
+
+DOIO2			ldy BLKCOUNT 			;BLKS=0?  
+				beq READOK				;=>YES, YOU GET GOOD RETURN  
+				cmp #0 					;READ COMMAND?  
+				beq READREQ 			;=>YES  
+				jmp WRITEREQ   
+* -- READ --   
+READREQ			lda #0 					;CLEAR COUNT OF  
+				ldy #0   
+				sta (D.BYTRD),Y 		; BYTES READ  
+				iny   
+				sta (D.BYTRD),Y   
+
+READREQ2		jsr BLK2SECT 			;COMPUTE TRK/SECTOR THIS BLOCK  
+				jsr SECTORIO 			;READ IT PLEASE  
+				bcs READERR 			;=>WE LOSE.  
+				inc SECTOR 				;BUMP TO NEXT  
+				inc SECTOR 				; LOGICAL SECTOR  
+				inc BUF+1 				;BUMP SECTOR BUFFER  
+				jsr SECTORIO 			;READ IT TOO  
+				bcs READERR 			;=>WE LOSE.  
+				ldy #1   
+				lda (D.BYTRD),Y 		;BUMP COUNT OF  
+				clc   
+				adc #2   
+				sta (D.BYTRD),Y 		; BYTES READ  
+*   
+* MORE BLOCKS TO GO?   
+*   
+				jsr MOREBLKS 			;SETUP FOR NEXT BLOCK  
+				bne READREQ2 			;=>MORE TO READ...  
+
+READOK			lda #0 					;GOOD RETURN  
+				jmp EXIT 				;TELL HAPPY USER  
+*   
+READERR			jmp EXIT 				;RETURN ERROR CODE  
+
+WRITEREQ		jsr BLK2SECT 			;COMPUTE TRK/SECTOR THIS BLOCK  
+				lda E.REG 				;SET 2 MHZ  
+				and #$7F  
+				sta E.REG  
+				jsr PRENIB 				;PRENIBBLIZE FOR WRITE  
+				jsr SECTORIO 			;WRITE IT OUT...  
+				bcs WRITERR 			;=>SOMETHING'S WRONG  
+*  
+				inc SECTOR 				;BUMP TO NEXT  
+				inc SECTOR 				; LOGICAL SECTOR  
+				inc BUF+1 				;BUMP SECTOR BUFFER ADDRESS  
+				lda E.REG 				;SET 2 MHZ  
+				and #$7F  
+				sta E.REG  
+				jsr PRENIB 				;PRENIBBLIZE FOR WRITE  
+				jsr SECTORIO 			;WRITE IT OUT  
+				bcs WRITERR 			;=>SOMETHING'S WRONG  
+*  
+* MORE BYTES TO DO?  
+*  
+				jsr MOREBLKS 			;SETUP FOR NEXT  
+				bne WRITEREQ 			;=>MORE TO DO  
+				lda #0 					;GOOD RETURN  
+				jmp EXIT  
+*  
+WRITERR			jmp EXIT 				;RETURN ERROR CODE  
+* --- STATUS ---  
+*  
+STATUS			ldx #$60 				;DUMMY SLOT  
+				lda Q6H,X 				;SENSE WRITE PROTECT  
+				lda Q7L,X  
+				asl  					;PRESERVE IT IN CARRY  
+				lda Q6L,X 				;BACK TO READ MODE  
+				lda #0 					;NOW MOVE BIT TO  
+				rol  					; PROPER POSITION  
+				rol  					; ($02)  
+				ldy #0  
+				sta (D.STATBUF),Y 		;RETURN IT  
+				lda #0 					;GOOD RETURN  
+				jmp EXIT 				;DONE  
+* --- INIT ---  
+*  
+INIT			lda INITFLAG 			;INIT'ED YET?  
+				bmi GOODINIT 			;=>YES, DONE  
+*  
+				lda #$60 				;SETUP SLOT FOR  
+				sta IBSLOT 				; CORE ROUTINES  
+				lda #$FF 				;PREVENT SECOND  
+				sta INITFLAG 			; INIT  
+				lda #0 					;CLEAR STUFF OUT  
+				sta PREVUNIT 			;SOSBOOT JUST USED .D1  
+				ldy #4  
+
+CLRDRVS			lda #0  
+				sta DRIVESEL-1,Y 		;NOBODY SELECTED  
+				sta UPTIME-1,Y 			;ALL OFF  
+				sta DRVTRACK-1,Y   
+				dey    
+				bne CLRDRVS   
+
+				.DO 1-TEST 				;ONLY IF NOT TESTING  
+*   
+* SET UP .D1 SINCE LOADER'S USING IT:   
+*   
+				lda E.REG 				;SET 1MHZ FOR THE  
+				ora #$80 				; STATEMACHINE I/O  
+				sta E.REG   
+				jsr CHKDRV 				;IS .D1 MOTOR SPINNING?  
+				beq INIT2 				;=>NO, MOTOR'S OFF  
+
+				lda #T200MS 			;UPTIME GOOD FOR READS  
+				sta UPTIME+0   
+
+INIT2			lda #1   
+				sta DRIVESEL+0 			;.D1 IS THE CURRENT DRIVE  
+				lda $0300+CURTRK 		;RETRIEVE CURRENT TRACK  
+				sta DRVTRACK+0 			;REMEMBER IT  
+				.FIN				   
+*   
+* SET UP JMP TABLE FOR CORRECT ROM:   
+*   
+				.DO	REV0ROM 			;ONLY IF SUPPORTING IT!  
+				lda	$F1B9 				;LOOK FOR START OF RDADR  
+				cmp	#$A0 				;IS IT RDADR (REV1)?  
+				beq	INITREV1 			;=>YES  
+				cmp	#$60 				;IS IT END OF READ (REV0)?  
+				bne	INITERR 			;=>NEITHER!  
+				ldy	#0 					;REV=0  
+				beq	INITVECT 			;(ALWAYS TAKEN)  
+
+INITREV1		ldy	#VSIZE   
+
+INITVECT		sty	ROMREV 				;SET ROM REVISION INDICATOR  
+				ldx	#VSIZE   
+
+MOVEVECT		lda	REV0,Y 				;GET A BYTE  
+				sta	JMPTAB,Y 			;MOVE IT  
+				iny	  
+				dex	  
+				bne	MOVEVECT   
+				.FIN	  
+
+GOODINIT		lda	#0 					;RETCODE=GOOD, IF YOU CARE  
+				clc						;SAY 'GOOD INIT'  
+				bcc	EXIT 				;(ALWAYS TAKEN)  
+
+				.DO	REV0ROM   
+INITERR			sec				 		;SAY 'BAD INIT'  
+* FALL THRU TO EXIT   
+				.FIN				   
+* -- EXIT PATH --   
+*   
+EXIT			pha				 		;SAVE RETURN CODE  
+*   
+* UPDATE UPTIME BY 50 MS (3 SECTOR-TIMES)   
+* TO ACCOUNT FOR READ/WRITE TIME:   
+*   
+				lda D.COMMAND 			;GET COMMAND  
+				cmp #2 					;SENSE OR INIT?  
+				bcs EXIT2 				;=>YES, NO TIME USED UP  
+				lda #2 					;TIME=50 MS (2 UNITS)  
+				jsr ADDTIME 			;BUMP UPTIME(S)  
+*   
+* RESTORE CALLER ENVIRONMENT:   
+*   
+EXIT2			lda E.REG 				;GET CURRENT STATE  
+				and #$20 				; OF THE SCREEN  
+				ora ESAVE 				;MERGE WITH CALLER STATE  
+				sta E.REG   
+				jsr FIXIRQ 				;RE-ENABLE IRQ IF OK  
+				lda MOTOROFF 			;START MOTOR-OFF TIMEOUT  
+				pla 					;RESTORE RETURN CODE  
+
+				.DO TEST 				;IF TEST, NO SYSERR  
+				rts				   
+				.ELSE   
+				bne GOERR 				;=>ERROR RETURN VIA SYSERR  
+				clc    
+				rts  					;GOOD RETURN W/CARRY CLEAR  
+
+GOERR			jsr SYSERR 				;RETURN VIA SYSERR  
+				.FIN    
+				    
+* NAME : SECTORIO  
+* FUNCTION: READ OR WRITE A SECTOR  
+* INPUT : IBSTRK, IBSECT, MONTIME,  
+* RETURNS : CARRY CLEAR IF OK (AC=00)  
+* : CARRY SET IF ERROR (AC=ERRCODE)  
+* : SEEKWAIT ALL SETUP  
+* DESTROYS: ALL REGISTERS  
+*  
+SECTORIO		lda #R.RECAL 			;SETUP THE  
+* R.RECAL MUST BE NON-ZERO!! (SEE BELOW)  
+				sta RECALCNT 			; RECAL TRIES  
+				nop 					; PAD ONE BYTE  
+				sta E1908 				; A-REG MUST BE NON-ZERO !!!  
+* E1908 = NON-ZERO LOCKOUT MOUSE  
+*  
+				ldy D.UNITNUM 			;ARE WE ON-TRACK?  
+				lda TRACK  
+				cmp DRVTRACK,Y  
+				beq SOUGHT 				;=>IF SO, FORGET SEEK & DELAY!  
+*  
+* WAIT BEFORE STEPPING:  
+*  
+				lda SEEKWAIT 			;SEEK DELAY NEEDED?  
+				beq GOSEEK 				;=>NAW...  
+
+				lda #0  
+				sta SEEKWAIT 			;CLEAR THE FLAG  
+				lda #4 					;ADD SEEKDELAY TO  
+				jsr ADDTIME 			; THE TOTAL UPTIME(S)  
+				tay 					;4*25 MS DELAY  
+
+SEEKDEL			lda #0  
+				jsr MSWAIT  
+				dey  
+				bne SEEKDEL  
+*  
+* ISSUE THE SEEK:  
+*  
+GOSEEK			lda TRACK 				;GET DESTINATION TRACK  
+				jsr MYSEEK 				;=>..AND YOU SHALL FIND...  
+*  
+SOUGHT			lda IRQMASK 			;SET IRQ MASK FOR  
+				sta IMASK 				; CORE ROUTINES  
+				lda #R.IRQ 				;SETUP IRQ RETRIES  
+				sta INTRTRY  
+				lda #R.IOERR 			; AND ERROR RETRIES  
+				sta RETRYCNT  
+*  
+* DELAY FOR ANY REMAINING MOTOR-UP TIME:  
+*  
+MDELAY			lda MONTIMEH 			;ANY TIME REMAINING?  
+				bpl FINDIT 				;=>NO, WE'RE UP TO SPEED.  
+
+				lda #1 					;YES, SO BUMP A SLICE OF  
+				jsr ADDTIME 			; UPTIME WHILE WE WAIT  
+				lda #0  
+				jsr MSWAIT  
+				jmp MDELAY 				;=>GO TILL ENOUGH  
+*  
+* FIND THE DESIRED SECTOR:  
+*  
+* NOTE: FINDSECT RETURNS WITH 
+* IRQ * INHIBITED!   
+FINDIT			php 					;INHIBIT IRQ WHILE  
+				sei  					; MESSING WITH VBL FLAGS  
+				lda E.IER 				;DISABLE VBL IRQ  
+				and #$18 				; DURING SECTOR I/O  
+				sta E.IER   
+				ora #$80 				;FOR 'SET' LATER  
+				sta VBLSAVE   
+				plp  					;RESTORE IRQ STATUS  
+				jsr FINDSECT 			;FIND ME PLEASE  
+				bcs TRYRECAL 			;=>NO? RECAL OR GIVE UP!  
+				ldx #$60 				;SET UP SLOT FOR CORE RTNS  
+				lda D.COMMAND 			;WHAT'S YOUR PLEASURE?  
+				bne SIOWRITE 			;=>WRITE  
+*     
+* READ A SECTOR:     
+*     
+				jsr READ 				;READ THAT SECTOR  
+				jsr FIXIRQ 				;ENABLE IRQ IF OK  
+				lda VBLSAVE 			;ALLOW VBL DURING  
+				sta E.IER 				; POSTNIB  
+				bcs BADIO 				;=>I/O ERR OR IRQ  
+				lda E.REG 				;SET 2MHZ FOR POSTNIB  
+				and #$7F   
+				sta E.REG   
+				jsr POSTNIB 			;POSTNIB/CHECKSUM  
+				bcs IORETRY 			;=>I/O ERR:BAD CHKSUM  
+				jmp SIOGOOD 			;=>GOOD READ  
+*     
+* WRITE A SECTOR:  
+*  
+SIOWRITE		jsr WRITE 				;WRITE THE DATA  
+				jsr FIXIRQ 				;RE-ENABLE IRQ IF OK  
+				lda VBLSAVE 			;RESTORE  
+				sta E.IER 				; VBL IRQ  
+				bcc SIOGOOD 			;=>GOOD WRITE  
+				bvc SIOWPROT 			;=>WRITE PROTECTED  
+*     
+* IT DIDN'T GO WELL FOR US:  
+*  
+BADIO			.DO 1-REV0ROM ;FOR REV1  
+				bvs FINDIT 				;=>IRQ. JUST RETRY IT.  
+				.ELSE  ;FOR REV0  
+*   
+* THE REV1 ROM TAKES CARE OF THE   
+* IRQ RETRY COUNT, BUT REV0 DOESN'T:   
+*   
+				bvc IORETRY 			;=>I/O ERROR. RETRY IT  
+				lda ROMREV 				;WHICH ROM?  
+				bne FINDIT 				;=>REV1. HE DOES IT.  
+				lda INTRTRY 			;REV0. OUT OF RETRIES?  
+				bpl BADIO2 				;=>NO.  
+				sta IMASK 				;SET HI BIT FOR IRQ MASK  
+
+BADIO2			dec INTRTRY 			;ONE LESS RETRY  
+				jmp FINDIT 				;=>RETRY AFTER IRQ  
+				.FIN				   
+*   
+* RETRY AFTER AN I/O ERROR:   
+*   
+IORETRY			dec	RETRYCNT 			;ANY RETRIES LEFT?  
+				bne	FINDIT 				;=>YEAH, RETRY AFTER ERROR  
+*   
+* RETRIES EXHAUSTED. RECALIBRATE:   
+*   
+TRYRECAL		lda	VBLSAVE 			;ALLOW VBL IF RECAL  
+				sta	E.IER 				; OR UNRECOVERABLE ERROR  
+				dec	RECALCNT 			;HAVE WE RECALIBRATED YET?  
+				bmi	SIOERR 				;=>YUP. WE'RE DEAD.  
+				jsr	RECAL 				;NO, TRY OUR LUCK  
+				ldy	D.UNITNUM 			;ARE WE ON-TRACK?  
+				lda	TRACK   
+				cmp	DRVTRACK,Y   
+				bne	NOTSAME   
+				jmp	SOUGHT 				;=>IF SO, FORGET RESEEK  
+
+NOTSAME			jmp GOSEEK 				;TRY AGAIN ON TARGET TRACK  
+*     
+SIOERR			lda #XIOERROR 			;RETURN CODE  
+				sec  					;INDICATE HARD ERROR  
+				bcs SIORET   
+
+SIOWPROT		lda #XNOWRITE			;RETURN CODE  
+				sec  					;INDICATE HARD ERROR  
+				bcs SIORET   
+
+SIOGOOD			lda #0   
+				clc  					;INDICATE GOOD COMPLETION  
+
+SIORET			ldx #0 					; SAY OK TO MOUSE  
+				stx E1908 				; WITH THIS GLOBAL $1908  
+				rts    
+
+* NAME : FINDSECT    
+* FUNCTION: LOCATE A DESIRED SECTOR  
+* INPUT : IBTRK, IBSECT SETUP  
+* RETURNS : CARRY CLEAR IF OK,  
+* : CARRY SET IF ERROR.  
+* DESTROYS: ALL REGISTERS & 'TEMP'  
+* NOTE : RETURNS WITH IRQ DISABLED IF NO ERROR!  
+*     
+FINDSECT		lda #R.FIND*16 			;SETUP NUMBER OF REVS  
+				sta RETRYADR 			; ALLOWED TO FIND SECTOR  
+				lsr TEMP 				;COMPUTE LATENCY FIRST TIME THRU  
+
+FINDSEC2		ldx #$60 				;FAKE SLOT FOR CORE ROUTINES  
+				jsr RDADR 				;GET NEXT ADDRESS FIELD  
+				bcs RDADERR 			;=>UGH! AN ERROR!  
+*  
+* MAKE SURE WE'RE ON THE CORRECT TRACK:  
+*  
+				lda	TRACK 				;IS IT  
+				cmp	CSSTV+2 			; CORRECT TRACK?  
+				bne	FINDERR 			;=>NO?!? IT'S USELESS!  
+				lda	SECTOR 				;IS IT  
+				cmp	CSSTV+1 			; DESIRED SECTOR?  
+				beq	FINDGOOD 			;=>YEAH. GOT IT!  
+*  
+* COMPUTE LATENCY. EACH TWO-SECTOR  
+* DISTANCE IS 25 MS OF UPTIME.  
+*  
+				lda	TEMP 				;LATENCY ALREADY COMPUTED?  
+				bmi	RDADERR 			;=>YES.  
+				lda	SECTOR 				;HOW FAR AWAY IS OUR  
+				sec	 					; DESIRED SECTOR?  
+				ror	TEMP 				;PREVENT RECOMPUTATION  
+				sbc	CSSTV+1   
+				and	#$0F   
+				lsr	A 					;EACH 2-SECTORS IS 25 MS  
+				jsr	ADDTIME   
+*  
+* KEEP LOOKING TILL WE FIND IT:  
+*  
+RDADERR			jsr FIXIRQ 				;ENABLE IRQ IF APPROPRIATE  
+				dec RETRYADR 			;ANY RETRIES LEFT?  
+				beq FINDERR 			;=>NO, WE CAN'T FIND IT.  
+*   
+* COMPENSATE FOR A BUG IN RDADR: IF WE TRY   
+* TO CALL RDADR AGAIN BEFORE THE DATA MARK   
+* GOES BY, THEN RDADR WILL ACCIDENTALLY CALL   
+* THAT AN ERROR. WE CAN AVOID THIS 'FAKE'   
+* ERROR BY DELAYING PAST THE DATA MARK.   
+
+				ldy #200 				;1 MS IS PLENTY  
+
+ADRDELAY		dey   
+				bne ADRDELAY   
+				jmp FINDSEC2 			;=>NOW TRY LOOKING AGAIN  
+*   
+FINDGOOD		lda #0 					;CLEAR VOLNUM OUT OF  
+				sta MONTIMEH 			; MOTORTIME!  
+				clc  					;INDICATE NO ERROR  
+				rts    
+*     
+FINDERR			jsr FIXIRQ 				;ENABLE IRQ IF APPROPRIATE  
+				lda #0 					;CLEAR VOLNUM OUT OF  
+				sta MONTIMEH 			; MOTORTIME!  
+				sec  					;INDICATE THE ERROR  
+				rts    
+				    
+* NAME : UNITSEL  
+* FUNCTION: SELECT & START A DRIVE,  
+* SET UP MOTOR & SEEK DELAYS  
+* INPUT : NONE  
+* OUTPUT : MONTIME,SEEKTIME  
+* DESTROYS: ALL REGISTERS  
+
+*  
+UNITSEL			ldy D.UNITNUM 			;GET DRIVENUM  
+				lda #0 					;ASSUME NO SEEKWAIT  
+				sta SEEKWAIT 			; WILL BE NEEDED  
+				sta MONTIMEL 			;CLEAR MONTIME  
+				sta MONTIMEH  
+*  
+* SEE IF MOTOR(S) STILL SPINNING:  
+*  
+				jsr CHKDRV 				;MOTOR(S) POWERED UP?  
+				bne SPINNING 			;=>YES. WHO IS IT?  
+*  
+* NO MOTOR(S) SPINNING. DESELECT  
+* ALL MOTORS AND START AFRESH:  
+*  
+				ldx MD.INT 				;DESELECT ALL  
+				lda #0 					;SHOW INTERNAL AS  
+				sta DRIVESEL+0 			; NOT SELECTED  
+				sta UPTIME+0 			;INDICATE DRIVE IS FULLY STOPPED  
+				jsr EXTDESEL 			;DESELECT ALL EXTERNALS TOO  
+				jmp SETTIME 			;GO SETUP MOTOR DELAY  
+
+* MOTOR(S) SPINNING: OURS?  
+*  
+SPINNING		lda DRIVESEL,Y 			;HAD WE BEEN SELECTED?  
+				bne GOFORIT 			;=>YES, GO FOR IT RIGHT AWAY.  
+*  
+* WE AREN'T SPINNING. SHUTDOWN ANOTHER  
+* DRIVE, IF NECESSARY, TO GET GOING:  
+*  
+				cpy #0 					;ARE WE THE INTERNAL DRIVE?  
+				beq SETTIME 			;=>YES, LEAVE EXT MOTOR ALONE  
+*  
+* WE'RE AN EXTERNAL DRIVE. STOP ALL EXTERNAL MOTORS  
+* UNCONDITIONALLY, BUT LEAVE THE INTERNAL MOTOR ALONE.  
+* IF WE *DID* HAVE TO STOP ANOTHER EXTERNAL, THEN  
+* MAKE SURE WE SET THE CORRECT PRE-SEEK DELAY!  
+*  
+				lda #0 					;SEE IF ANOTHER EXTERNAL  
+				ora DRIVESEL+3 			; HAD BEEN  
+				ora DRIVESEL+2 			; SELECTED  
+				ora DRIVESEL+1 			; BEFORE...  
+				beq SETTIME 			;=>NO, SEEK DELAY IS UNNECESSARY  
+				inc SEEKWAIT 			;YES, DELAY BEFORE STEPPING  
+				jsr EXTDESEL 			;DESELECT ALL EXTERNALS  
+				jmp SETTIME 			;=>GO SETUP MOTOR DELAY  
+
+* OUR DRIVE IS SPINNING. GO FOR IT!  
+* DEPENDING OF HOW LONG THE MOTOR'S BEEN ON,  
+* THIS COMMAND MAY REQUIRE A MOTOR DELAY.  
+*  
+GOFORIT			ldx D.COMMAND 			;GET CURRENT COMMAND  
+				lda MTIMES,X 			;GET REQUIRED UPTIME FOR IT  
+				sec  
+				sbc UPTIME,Y 			;DRIVE RUNNING LONG ENOUGH?  
+				bcs SELECT 				;=>NO, AC NOW HAS DELTA-T  
+				lda #0 					;OTHERWISE, WAIT=0  
+				jmp SELECT 				;SET MONTIME & SELECT DRIVE  
+*   
+* ALL MOTORS WERE OFF. CHOOSE THE   
+* APPROPRIATE MOTOR-ON TIME:   
+*   
+SETTIME			lda #0 					;INDICATE THAT  
+				sta UPTIME,Y 			; THE DRIVE WAS OFF  
+				ldx D.COMMAND 			;GET CURRENT COMMAND  
+				lda MTIMES,X 			;GET CORRECT DELAY TIME  
+*   
+* SELECT THE DRIVE & START IT:   
+*   
+SELECT			sta MONTIMEH 			;NEGATE IT BECAUSE  
+				lda #0 					; IT GETS INCREMENTED  
+				sec 					; INSTEAD OF  
+				sbc MONTIMEH 			; DECREMENTED  
+				sta MONTIMEH 			;STUFF MOTOR DELAY  
+				cpy #1 					;ARE WE THE INTERNAL DRIVE?  
+				bcs SELEXT 				;=>NO, AN EXTERNAL  
+				lda IS.INT 				;I/O SELECT INTERNAL  
+				lda MS.INT 				;MOTOR SELECT INTERNAL  
+				jmp UNITRET 			;=>ALL DONE!  
+*   
+SELEXT			lda IS.EXT 				;I/O SELECT EXTERNAL  
+				cpy #2 					;ARE WE 2, 3, OR 4 ?  
+				bcs NOTD2 				;=>DEFINITELY 3 OR 4  
+				lda MD.EXT1 			;MOTOR SELECT  
+				lda MS.EXT2 			; ONLY .D2  
+				jmp UNITRET 			;=>ALL DONE!  
+*   
+NOTD2			bne ISD4 				;=>DEFINITELY NOT 3  
+				lda MS.EXT1 			;MOTOR SELECT  
+				lda MD.EXT2 			; ONLY .D3  
+				jmp UNITRET 			;=>ALL DONE!  
+*   
+ISD4			lda MS.EXT1 			;MOTOR SELECT  
+				lda MS.EXT2 			; ONLY .D4  
+*   
+*   
+UNITRET			lda MOTORON 			;PROVIDE MOTOR POWER  
+				lda #1 					;SAY WE'VE SELECTED  
+				sta DRIVESEL,Y 			; THIS DRIVE  
+*   
+* IF WE HAVE MOTORTIME TO BURN,   
+* THEN DELAY 50 MS. THIS ENSURES   
+* A GOOD SOLID CHKDRV AFTER   
+* TURNING ON THE MOTOR.   
+*   
+				lda MONTIMEH 			;ANY MOTORTIME?  
+				bpl UNITRTS 			;=>NO, WE GO FOR IT.  
+				ldy #5 					;5*10 MS  
+
+UNITDEL			lda #100 				;100*100US IS 10MS  
+				jsr MSWAIT   
+				dey   
+				bne UNITDEL   
+				lda #2 					;INCLUDE THE 50MS  
+				jsr ADDTIME 			; IN MOTOR UPTIME(S)  
+
+UNITRTS			rts   
+				.BS 5   
+
+* NAME : EXTDESEL  
+* FUNCTION: DESELECT ALL EXTERNAL DRIVE MOTORS  
+* INPUT : NONE  
+* DESTROYS: AC,X  
+
+EXTDESEL		lda MD.EXT1 			;DESELECT ALL EXTERNAL  
+				lda MD.EXT2 			; DRIVE MOTORS  
+				ldx #3 					;SHOW THAT THEY ARE  
+				lda #0 					; ARE ALL DEAD DUCKS  
+
+EDS1			sta DRIVESEL,X   
+				sta	UPTIME,X 			;DRIVE MOTORS ARE OFF  
+				dex				    
+				bne	EDS1   
+
+				rts				    
+				   
+* NAME : CHKDRV  
+* FUNCTION: CHECK IF MOTOR(S) RUNNING  
+* INPUT : NONE  
+* RETURNS : 'BNE' IF RUNNING  
+* : 'BEQ' IF NOT  
+* DESTROYS: AC,X  
+  
+* NOTES: DUE TO A FLOATING PIN, THERE  
+* COULD BE A GLITCH WHICH CAUSES THE  
+* SHIFTER TO 'FLASH' ONTO THE BUS  
+* INSTEAD OF ALWAYS BEING TRISTATED.  
+* THIS COULD CAUSE CHKDRV TO THINK  
+* THAT THE MOTOR IS SPINNING WHEN IT  
+* IS NOT. THUS WE WILL SAMPLE THE SHIFTER  
+* FOR 40 US AT 6-US INTERVALS. IF, AFTER  
+* THREE (3) CONSECUTIVE PASSES, ANY OF  
+* THE PASSES SEES A 'LOCKED' SHIFTER,  
+* THEN WE SAY THE DRIVE IS STOPPED.  
+*  
+*  
+CHKDRV			ldx #3 					;CHECK SHIFTER SEVERAL TIMES  
+
+CHKD1			lda Q6L+$60 			;GET DATA  
+				cmp Q6L+$60 			;HAS IT CHANGED?  
+				bne CHANGED 			;=>YES  
+				cmp Q6L+$60 			;HAS IT CHANGED?  
+				bne CHANGED 			;=>YES  
+				cmp Q6L+$60 			;HAS IT CHANGED?  
+				bne CHANGED 			;=>YES  
+				cmp Q6L+$60 			;HAS IT CHANGED?  
+				bne CHANGED 			;=>YES  
+				cmp Q6L+$60 			;HAS IT CHANGED?  
+				bne CHANGED 			;=>YES  
+				cmp Q6L+$60 			;HAS IT CHANGED?  
+				bne CHANGED 			;=>YES  
+				cmp Q6L+$60 			;HAS IT CHANGED?  
+				bne CHANGED 			;=>YES  
+				rts 					;IF EVER LOCKED, IT'S STOPPED  
+*  
+CHANGED			dex  
+				bne CHKD1 				;TRY SEVERAL TIMES  
+
+				dex 					;SET CC=BNE  
+				rts 					;RETURN ZFLAG APPROPRIATELY  
+			  
+* ADDTIME FUNCTION: ADD TO MOTOR UPTIME(S)  
+* INPUT : AC=NO. OF 25 MS INCREMENTS  
+* DESTROYS: Y  
+     
+ADDTIME			pha  					;PRESERVE AC  
+				ldy #4 					;TABLE INDEX/COUNT  
+
+ADD2			lda DRIVESEL-1,Y 		;IS IT SELECTED?  
+				beq ADD3 				;=>NOPE  
+				pla    
+				pha  					;RECOVER DELTA-T  
+				clc    
+				adc UPTIME-1,Y 			;ADD TO MOTOR UPTIME  
+				cmp #T1SEC+2 			;IS IT AT MAX TIME?  
+				bcc ADD2A 				;=>NO, STORE NEW TIME  
+				lda #T1SEC+1 			;YES, SET TO >1 SEC  
+
+ADD2A			sta UPTIME-1,Y   
+
+ADD3			dey				    
+				bne	ADD2 				;=>DO ALL 4 DRIVES  
+*    
+				pla				  		;RESTORE AC  
+				rts				    
+
+* NAME : RECAL    
+* FUNCTION: RECALIBRATE DRIVE HEAD  
+* INPUT : NONE  
+* DESTROYS: ALL REGISTERS  
+* NOTE : A 'QUIET' RECALIBRATE IS DONE  
+* : USING TWO ITERATIONS. IF WE ARE  
+* : LOST, THEN SEEK 48-TRACKS  
+* : TOWARD TRACK ZERO. IF WE KNOW  
+* : WHAT TRACK WE'RE CURRENTLY  
+* : ON (+- 1/2 TRACK), THEN JUST  
+* : ADD A LITTLE EXTRA AND SEEK  
+* : TO TRACK ZERO. A 48-TRACK  
+* : SEEK WILL ALWAYS GET US BACK  
+* : ONTO THE MEDIA, EVEN IF WE  
+* : WERE "OFF THE CAM". FROM THAT  
+* : POINT, THE 2ND SEEK GETS US  
+* : BACK TO TRACK ZERO QUIETLY.  
+*     
+RECAL			lda #2 					;TWO ITERATIONS, PLEASE  
+
+RECAL1			pha  					;SAVE LOOPCOUNT  
+				ldx #$60 				;SETUP SLOT FOR CORE RTNS  
+				jsr RDADR 				;WHERE ARE WE?  
+				bcc RECAL2 				;=>NOW WE KNOW  
+				jsr RDADR 				;GIVE SECOND SHOT  
+				bcc RECAL2 				;=>THAT GOT IT  
+				lda #48 				;LOST? TRY 48-TRACK SEEK  
+				jmp RECAL3   
+
+RECAL2			lda CSSTV+2 			;HERE'S WHERE WE ARE  
+				clc  					;ADD SOME SO WE GET A  
+				adc #3 					; HARDER SEEK TO ZERO  
+
+RECAL3			ldy D.UNITNUM 			;THIS IS NOW WHERE  
+				sta DRVTRACK,Y 			; WE ARE  
+				jsr FIXIRQ 				;ENABLE IRQ IF OK  
+     
+				lda #0 					;DESTINATION TRACK IS 00  
+				sta MONTIMEH 			;CLEAR MOTOR-UP TIME SO  
+				sta MONTIMEL 			; SEEK KNOWS HOW LONG RECAL TAKES  
+				jsr MYSEEK 				;=>SLAM IT BACK!  
+				pla  					;HAVE WE DONE IT TWICE?  
+				tay    
+				dey    
+				tya    
+				bne RECAL1 ;=>DO TWO ITERATIONS  
+
+				rts    
+
+* NAME : SEEKDSK3    
+* FUNCTION: SEEK CURRENT DRIVE   
+* INPUT : AC=DESTINATION TRACK   
+* OUTPUT : NONE   
+* DESTROYS: ALL REGISTERS   
+* NOTE : MUST BE CALLED WHILE   
+* : MOTOR IS RUNNING, IN   
+* : 1MHZ+ROM+IO MODE   
+
+SEEKDSK3		ldy	PREVUNIT 			;GET DRIVENUM  
+				sty	D.UNITNUM 			;SET IT UP  
+				jsr	MYSEEK 				;MOVE IT!  
+				rts				   
+
+* NAME : MYSEEK   
+* FUNCTION: SEEK TO DESIRED TRACK   
+* INPUT : AC=DESTINATION TRACK   
+* DESTROYS: ALL REGISTERS   
+
+MYSEEK			sta TRKN 				;TEMP HOLD OF AC  
+				ldy D.UNITNUM 			;GET DRIVENUM  
+				lda DRVTRACK,Y 			;SETUP CURRENT TRACK  
+				asl A 					;SET IN HALFTRACKS FOR SEEK  
+				sta CURTRK 				; FOR SEEK ROUTINE  
+				ldx #$60 				;SET UP SLOT FOR CORE RTNS  
+				lda MONTIMEH 			;GET STARTING MOTOR TIME  
+				sta TEMP   
+*   
+* NOTE: IRQ'S WHICH SUSPEND SEEK MAY CAUSE A   
+* SEEK FAILURE. WE WILL HAVE TO RECALIBRATE   
+* SINCE WE WON'T BE ON-TRACK. WE CAN NOT GET   
+* ON A HALFTRACK SINCE SEEK ALLOWS SETTLING   
+* TIME OF THE PHASE. BECAUSE VBL IS A SERIOUS   
+* OFFENDER, WE INHIBIT HIM.   
+*   
+				php 					;INHIBIT IRQ WHILE  
+				sei 					; MESSING WITH VBL FLAGS  
+				lda E.IER   
+				and #$18   
+				sta VBLSAVE   
+				sta E.IER   
+				plp 					;RESTORE IRQ STATUS  
+				lda TRKN 				;RESTORE DESTINATION TRACK  
+				sta DRVTRACK,Y 			;DEST IS NOW CURRENT  
+				asl A 					;MAKE IT IN HALFTRACKS  
+				jsr SEEK 				;GO MOVE THE HEAD...  
+				lda VBLSAVE 			;NOW ALLOW THAT  
+				ora #$80 				; NASTY  
+				sta E.IER 				; VBL INTERRUPT  
+*   
+* COMPUTE THE TIME USED BY SEEK:   
+*   
+				lda	MONTIMEH 			;INCLUDE SEEKTIME IN  
+				sec				   
+				sbc	TEMP   
+				jsr	ADDTIME 			; TOTAL MOTOR UPTIME(S)  
+				rts				   
+
+* NAME : BLK2SECT  
+* FUNCTION: COMPUTE TRACK/SECTOR FOR A BLOCK   
+* AND ADJUST BUFFER ADDRESS   
+* INPUT : D.BLOCK, D.BUF   
+* OUTPUT : TRACK, SECTOR, D.BUF   
+* DESTROYS: AC,Y   
+*   
+BLK2SECT		lda	BLKTEMP+1 			;GET HI BLK HALF  
+				ror	 					;MOVE LO BIT TO CARRY  
+				lda	BLKTEMP 			;GET LO HALF  
+				ror	 					;COMBINE WITH HI BIT  
+				lsr	   
+				lsr	 					;FINISH OFF DIVIDE-BY-8  
+				sta	TRACK 				;THAT'S THE TRACK  
+				lda	BLKTEMP 			;GET LO HALF AGAIN  
+				and	#7   
+				tay	  
+				lda	SECTABLE,Y 			;GET START SECTOR  
+				sta	SECTOR   
+*   
+* ADJUST BUFFER ADDRESS SO THAT I/O   
+* WON'T WRAPAROUND IN THE BANK:   
+* (THIS ALGORITHM RIPPED OFF FROM 1.0)   
+*   
+				lda BUFTEMP+1 			;GET BUFFER HI ADDRESS  
+				ldy $1400+BUFTEMP+1 	; AND XTND BYTE  
+				cmp #$82 				;IF RAM ADDR >=8200 THEN BUMP TO  
+				bcc NOADJ 				; NEXT BANK PAIR  
+				cpy #$80   
+				bcc NOADJ 				;=>NOT USING BANKPAIR  
+				cpy #$8F 				;SPECIAL BANK 0?  
+				beq NOADJ 				;=>YES  
+				and #$7F 				;DROP HI ADDRESS AND  
+				sta BUFTEMP+1 			; BUMP BANK NUMBER  
+				inc $1400+BUFTEMP+1   
+   
+NOADJ			lda BUFTEMP+1 			;COPY BUFFER ADDRESS  
+				sta BUF+1 				; FOR PRE & POSTNIB  
+				lda BUFTEMP   
+				sta BUF   
+				lda $1400+BUFTEMP+1  
+				sta $1400+BUF+1  
+				rts   
+    
+SECTABLE		.HS 00,04,08,0C,01,05,09,0D  
+
+* NAME : MOREBLKS FUNCTION: SETUP TO DO NEXT BLOCK  
+* INPUT : NONE  
+* RETURNS : 'BNE' IF MORE TO DO  
+* : 'BEQ' IF NO MORE TO DO  
+* DESTROYS:NOTHING  
+
+*  
+MOREBLKS		inc BUFTEMP+1 			;BUMP BUFFER ADDRESS  
+				inc BUFTEMP+1   
+				inc BLKTEMP 			;BUMP BLOCK NUMBER  
+				bne MORE2   
+				inc BLKTEMP+1   
+
+MORE2			dec BLKCOUNT 			;MORE BLOCKS TO GO?  
+				rts  					;RETURN RESULT OF DEC  
+				.BS 4   
+
+* NAME : FIXIRQ    
+* FUNCTION: ENABLE IRQ IF APPROPRIATE  
+* INPUT : NONE  
+* DESTROYS: NOTHING  
+
+*     
+FIXIRQ			pha    
+				lda IRQMASK 			;SHOULD IRQ BE ENABLED?  
+				bmi FIXRET 				;=>NO, LEAVE IT ALONE  
+				cli  					;ENABLE IRQ  
+
+FIXRET			pla    
+				rts    
+				    
+* GENERAL DATA:     
+*     
+PREVUNIT		 .BS 1 					;PRIOR UNIT ACCESSED (FOR REPEAT)  
+PREVCMD			 .BS 1 					;PRIOR CMD (FOR REPEAT)  
+*     
+ESAVE			 .BS 1 					;SAVED E.REG  
+VBLSAVE			 .BS 1 					;SAVED E.IER  
+INITFLAG		 .BS 1					;<0 IS INITTED  
+				.DO REV0ROM   
+ROMREV			 .BS 1 					;0=REV0, <>0=REV1  
+				.FIN    
+*  
+* MOTOR-UP TIMES PER COMMAND  
+T50MS			.EQ $02 				; 50MS FOR MONTIMEH  
+T200MS			.EQ $08 				;200 MS FOR MONTIMEH  
+T1SEC			.EQ $27 				;1-SEC FOR MONTIMEH  
+*     
+MTIMES			 .DA #T200MS,#T1SEC,#T50MS ;READ,WRITE,SENSE  
+*     
+* DRIVE TABLES:     
+*     
+DRIVESEL		 .BS 4 					;NONZERO IF SELECTED  
+*     
+UPTIME			 .BS 4 					;MOTOR RUNTIME SINCE STARTED  
+DRVTRACK		 .BS 4 					;CURRENT HEAD POSITION  
+
+				.DO REV0ROM 			;ONLY IF SUPPORTING IT!  
+* JUMP TABLE TO MONITOR ROUTINES.   
+* THIS TABLE FILLED IN BY 'INIT'.   
+*    
+JMPTAB			.EQ *   
+RDADR			jmp *   
+READ			jmp *   
+WRITE			jmp *   
+SEEK			jmp *   
+MSWAIT			jmp *   
+PRENIB			jmp *   
+POSTNIB			jmp *   
+*    
+REV0			.EQ * 					;REV0 ADDRESSES  
+				jmp	$F1BD 				;RDADR  
+				jmp	$F148 				;READ  
+				jmp	$F219 				;WRITE  
+				jmp	$F400 				;SEEK  
+				jmp	$F456 				;MSWAIT  
+				jmp	$F2C6 				;PRENIB  
+				jmp	$F311 				;POSTNIB  
+VSIZE			.EQ *-REV0 				;TABLE SIZE  
+    
+REV1			.EQ *					;REV1 ADDRESSES  
+				jmp	$F1B9 				;RDADR  
+				jmp	$F148 				;READ  
+				jmp	$F216 				;WRITE  
+				jmp	$F400 				;SEEK  
+				jmp	$F456 				;MSWAIT  
+				jmp	$F2C4 				;PRENIB  
+				jmp	$F30F 				;POSTNIB  
+				.ELSE			  		;FOR REV1 WE USE EQUATES  
+RDADR			.EQ $F1B9 				;RDADR  
+READ			.EQ $F148 				;READ  
+WRITE			.EQ $F216 				;WRITE  
+SEEK			.EQ $F400 				;SEEK  
+MSWAIT			.EQ $F456 				;MSWAIT  
+PRENIB			.EQ $F2C4 				;PRENIB  
+POSTNIB			.EQ $F30F 				;POSTNIB  
+				.FIN				    
+				   
+ZZEND			.EQ *   
+ZZLEN			.EQ *-ZZORG   
+				.DO	ZZLEN-LENDISK3   
+				FAIL 2,"SOSORG FILE IS INCORRECT FOR DISK3"  
+				.FIN				      
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.disk3.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.disk3
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

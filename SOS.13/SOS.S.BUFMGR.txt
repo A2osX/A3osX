@@ -791,6 +791,6 @@ IN
 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.bufmgr.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.bufmgr
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

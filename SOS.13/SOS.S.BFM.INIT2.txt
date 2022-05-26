@@ -1,21 +1,6 @@
 NEW
   AUTO 3,1
 *--------------------------------------
-*************************************************************************  
-* APPLE /// SOS 1.3 SOURCE CODE FILE: BFM.INIT2.SRC  
-*************************************************************************  
-* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT  
-				 
-SBTL			 "SOS 1.1 BFM.INIT2"  
-REL				  
-INCLUDE			 SOSORG,6,1,254  
-ORG				 ORGBFMI  
-MSB				 OFF  
-REP				 60  
-* COPYRIGHT (C) APPLE COMPUTER INC. 1980  
-* ALL RIGHTS RESERVED  
-REP				 60  
-*  
 * BLOCK FILE MANAGER INIT2  
 *  
 * SECONDARY INITIALIZATION ROUTINE FOR BLOCK FILE MANAGER  
@@ -26,74 +11,53 @@ REP				 60
 *  
 * MODIFIED: 08/19/81 TO WORK WITH NEW  
 * SOSLDR MODULE.  
-REP				 60  
+				.OR ORGBFMI  
 *  
-ENTRY			 BFM.INIT2  
-*  
-*EXTRN I.BASE.P ; ENTRY IN SOSLDR  
-EXTRN			 SYSBANK  
-EXTRN			 SXPAGE  
-EXTRN			 CZPAGE  
-EXTRN			 SEEKDSK3 ;IN DISKDH/D3RRA81084  
-EXTRN			 NMIDSBL ;/D3RRA81084  
-I.BASE.P		 EQU $2  
-PAGE			  
+I.BASE.P		.EQ $2  
 *  
 * CONSTANTS  
 *  
-KERNEL.BASE		 EQU $B800 ; BASE ADDRESS OF SOS KERNEL  
-ROMID			 EQU $A0 ;$F1B9 OF NEW ROM/D3RRA81084  
-SLOT			 EQU $60  
-BEGTRK			 EQU $9  
-BEGSECT			 EQU $2  
-ENDSECT			 EQU $6  
+KERNEL.BASE		.EQ $B800 				; BASE ADDRESS OF SOS KERNEL  
+ROMID			.EQ $A0 				;$F1B9 OF NEW ROM/D3RRA81084  
+SLOT			.EQ $60  
+BEGTRK			.EQ $9  
+BEGSECT			.EQ $2  
+ENDSECT			.EQ $6  
 *  
 * ZERO PAGE  
 *  
-TRACK			 EQU $99  
-SECTOR			 EQU $98  
-VOLUME			 EQU $9A  
-KEY				 EQU $E0 ; THRU $E7  
-PREV.K			 EQU KEY+$8  
-XIDX			 EQU KEY+$9  
-I				 EQU KEY+$A ; & $B  
+TRACK			.EQ $99  
+SECTOR			.EQ $98  
+VOLUME			.EQ $9A  
+KEY				.EQ $E0 ; THRU $E7  
+PREV.K			.EQ KEY+$8  
+XIDX			.EQ KEY+$9  
+I				.EQ KEY+$A ; & $B  
 *  
 * ROM ROUTINES  
 *  
-RDADR			 EQU $F1B9 ;REV1  
-RDADRX			 EQU $F1BD ;REV0  
-*  
-* HARDWARE LOCATIONS  
-*  
-E.REG			 EQU $FFDF  
-B.REG			 EQU $FFEF  
-MOTORON			 EQU $C089  
-MOTOROFF		 EQU $C088  
-PAGE			  
-REP				 60  
+RDADR			.EQ $F1B9 ;REV1  
+RDADRX			.EQ $F1BD ;REV0  
 *  
 * BFM.INIT2 ENTRY POINT  
 *  
-REP				 60  
+STATE			.DA #$FE 				; FF=1ST ENTRY, 0=2ND ENTRY, 1=PROT  
 *  
-STATE			 DFB $FE ; FF=1ST ENTRY, 0=2ND ENTRY, 1=PROT  
-*  
-BFM.INIT2		 EQU *  
-INC				 STATE  
-BMI				 BFMI050  
-JSR				 GETK  
-LDA				 RETRY  
-BEQ				 BADNEWS  
-BCC				 BFMI050  
-JSR				 NMIDSBL  
-JSR				 DC  
-INC				 STATE  
-BFMI050			 CLC  
-RTS				  
-BADNEWS			 SEC ; I/O ERROR  
-RTS				  
-PAGE			  
-REP				 60  
+BFM.INIT2		inc STATE  
+				bmi BFMI050  
+				jsr GETK  
+				lda RETRY  
+				beq BADNEWS  
+				bcc BFMI050  
+				jsr NMIDSBL  
+				jsr DC  
+				inc STATE  
+
+BFMI050			clc  
+				rts				  
+
+BADNEWS			sec 					; I/O ERROR  
+				rts				  
 *  
 * DECODE SUBROUTINE  
 *  
@@ -103,198 +67,183 @@ REP				 60
 * 1A02.1A03: - NEW INTERP'S LOAD ADR (LO,HII)  
 * B81DG: - JSR FROM MONITOR  
 *  
-REP				 60  
-DC				 EQU *  
-LDA				 B.REG ; SAVE BANK REGISTER  
-PHA				  
-LDA				 SYSBANK ; AND SWITCH TO SYSTEM BANK  
-STA				 B.REG  
-				CLC  ; FETCH LOADER'S INTERPRETER POINTER  
-				LDA CZPAGE+I.BASE.P   
-				ADC #3   
-				STA I   
-				PHA    
-				LDA CZPAGE+I.BASE.P+1   
-				ADC #0   
-				STA I+1   
-				PHA    
-				LDA #0   
-				STA SXPAGE+I+1   
+DC				lda B.REG 				; SAVE BANK REGISTER  
+				pha				  
+				lda SYSBANK 			; AND SWITCH TO SYSTEM BANK  
+				sta	B.REG  
+				clc  					; FETCH LOADER'S INTERPRETER POINTER  
+				lda CZPAGE+I.BASE.P   
+				adc #3   
+				sta I   
+				pha    
+				lda CZPAGE+I.BASE.P+1   
+				adc #0   
+				sta I+1   
+				pha    
+				lda #0   
+				sta SXPAGE+I+1   
 *     
-				LDY I ; ALIGN I PTR TO PAGE BOUNDARY  
-				LDA #0   
-				STA I   
-				STA PREV.K   
+				ldy I 					; ALIGN I PTR TO PAGE BOUNDARY  
+				lda #0   
+				sta I   
+				sta PREV.K   
 *     
-				JSR DCLOOP ; DECODE  
+				jsr DCLOOP 				; DECODE  
 *     
-				PLA  ; RETRIEVE LOADER'S INTERPRETER POINTER  
-				STA I+1   
-				PLA    
-				STA I   
+				pla  					; RETRIEVE LOADER'S INTERPRETER POINTER  
+				sta I+1   
+				pla    
+				sta I   
 *     
-				LDY #1 ; REPOSITION LOADER'S INTERPRETER POINTER (PUT ENCODE JMP HERE)  
-				LDA (I),Y   
-				STA CZPAGE+I.BASE.P   
-				INY    
-				LDA (I),Y   
-				STA CZPAGE+I.BASE.P+1   
+				ldy #1 					; REPOSITION LOADER'S INTERPRETER POINTER (PUT ENCODE JMP HERE)  
+				lda (I),Y   
+				sta CZPAGE+I.BASE.P   
+				iny    
+				lda (I),Y   
+				sta CZPAGE+I.BASE.P+1   
 *     
-				LDY #2 ; WALK ON INTERPRETER'S FIRST INSTRUCTION (3 BYTES)  
-				LDA #0   
-DCA				 STA (I),Y   
-				DEY    
-				BPL DCA   
-				PLA  ; RESTORE BANK REGISTER (ENCODE JMP JUMPS TO HERE)  
-				STA B.REG   
-				RTS    
-				PAGE    
-				REP 60   
+				ldy #2 					; WALK ON INTERPRETER'S FIRST INSTRUCTION (3 BYTES)  
+				lda #0   
+
+DCA				sta (I),Y   
+				dey    
+				bpl DCA   
+				pla  					; RESTORE BANK REGISTER (ENCODE JMP JUMPS TO HERE)  
+				sta B.REG   
+				rts    
 *    
 * DECODE LOOP SUBROUTINE    
 *    
-REP				 60   
-DCLOOP			 EQU *   
-LDX				 #7 ; SHIFT LEFT ONE BIT  
-CLC				    
-LDA				 KEY   
-				BPL DC1   
-				SEC    
-DC1				 ROL KEY,X   
-				DEX    
-				BPL DC1   
-*     
-DC2				 TYA    
-				AND #7   
-				EOR #2   
-				TAX    
-				LDA KEY,X   
-				PHA    
-				AND #7   
-				TAX    
-				PLA    
-				CLC    
-				ADC PREV.K   
-				CLC    
-				ADC KEY,X   
-				STA PREV.K   
-				EOR (I),Y ; DECODE BYTE  
-				STA (I),Y ; AND PUT IT BACK  
-				INY    
-				BNE DC2   
-				INC I+1   
-				LDA I+1   
-				CMP #<KERNEL.BASE   
-				BCC DCLOOP   
-				RTS    
-				PAGE    
-				REP 60   
+DCLOOP			ldx #7 					; SHIFT LEFT ONE BIT  
+				clc				    
+				lda KEY   
+				bpl DC1   
+
+				sec    
+
+DC1				rol KEY,X   
+				dex    
+				bpl DC1   
+     
+DC2				tya    
+				and #7   
+				eor #2   
+				tax    
+				lda KEY,X   
+				pha    
+				and #7   
+				tax    
+				pla    
+				clc    
+				adc PREV.K   
+				clc    
+				adc KEY,X   
+				sta PREV.K   
+				eor (I),Y 				; DECODE BYTE  
+				sta (I),Y 				; AND PUT IT BACK  
+				iny    
+				bne DC2   
+				inc I+1   
+				lda I+1   
+				cmp #<KERNEL.BASE   
+				bcc DCLOOP   
+				rts    
 *     
 * GETKEY SUBROUTINE    
 *     
-				REP 60   
+RETRY			.DA #10+1 				;TEN RETRIES  
+
+OURTRACK		.BS 1 					;CURRENT TRACK/D3RRA81084  
 *     
-RETRY			 DFB 10+1 ;TEN RETRIES  
-OURTRACK		 DS 1 ;CURRENT TRACK/D3RRA81084  
-*     
-GETK			 EQU *   
-				LDX #7   
-				STX XIDX   
-				LDX #SLOT   
-				LDA MOTORON,X ;ENSURE MOTOR STAYS ON  
-				LDA E.REG ; SELECT 1MHZ, ROM  
-				ORA #$83   
-				STA E.REG   
+GETK			ldx #7   
+				stx XIDX   
+				ldx #SLOT   
+				lda MOTORON,X 			;ENSURE MOTOR STAYS ON  
+				lda E.REG 				; SELECT 1MHZ, ROM  
+				ora #$83   
+				sta E.REG   
 *  
 * NOTE: THE SEEKDSK3 ROUTINE HAS THESE /D3RRA81084  
 * CAVEATS: 1MHZ MODE, MOTOR IS ON, /D3RRA81084  
 * DRIVE CURRENTLY SELECTED, ROM+I/O ENABLED! /D3RRA81084  
 *  
-GETK010			 LDA #BEGTRK  
-STA				 OURTRACK ;WHERE WE SEEK TO /D3RRA81084  
-JSR				 SEEKDSK3 ;HAVE DISKDH SEEK FOR US /D3RRA81084  
-GETK020			 LDX #SLOT  
-JSR				 DOREAD ;FIND A SECTOR HEADER  
-BCS				 IOERROR ;=>RETRY IF BAD  
-LDA				 SECTOR ;WHERE ARE WE?  
-CMP				 #BEGSECT ;AT THE RIGHT PLACE?  
-BNE				 GETK020 ;=>NO, GET THERE  
-*  
-GETK100			 LDX #1  
-JSR				 WAIT ; (X * 1284) + 15 MILISECONDS  
-LDX				 XIDX  
-LDA				 VOLUME  
-STA				 KEY,X  
-DEC				 XIDX  
-BMI				 ENUFF  
-INC				 OURTRACK ;BUMP FOR NEXT TRACK /D3RRA81084  
-LDA				 OURTRACK ;WHERE TO GO /D3RRA81084  
-LDX				 #SLOT  
-JSR				 SEEKDSK3 ;DISKDH, PLEASE SEEK ME /D3RRA81084  
-LDX				 #SLOT  
-JSR				 DOREAD  
-BCC				 GETK100  
-BCS				 IOERROR  
-*  
-ENUFF			 LDX #SLOT  
-LDA				 MOTOROFF,X  
-LDA				 E.REG ; SELECT 2MHZ, RAM  
-				AND #$7C   
-				STA E.REG   
-				PAGE    
-				LDA SECTOR   
-				CMP #ENDSECT ;TRACKS SYNC'ED?  
-				BNE NOTPROT   
-				LDA KEY   
-				EOR KEY+1   
-				BEQ NOTPROT ;IF FIRST 2 VOLS ARE EQUAL  
-				SEC    
-				RTS    
-*     
-NOTPROT			 LDA #0   
-				CLC    
-				RTS    
-*     
-*     
-DOREAD			 JSR WHICHROM   
-				BCS OLDREAD   
-				JMP RDADR   
-OLDREAD			 JMP RDADRX   
-*     
-*     
-WHICHROM		 LDA RDADR   
-				CMP #ROMID   
-				CLC    
-				BEQ NEWROM   
-				SEC    
-NEWROM			 RTS    
-*     
-*     
-IOERROR			 DEC RETRY   
-				BEQ ERR1   
-				JMP GETK ; TRY, TRY AGAIN  
-ERR1			 JMP ENUFF ; I/O ERROR, CLEANUP AND EXIT  
-*     
-*     
-WAIT			 LDY #0   
-W1				 DEY    
-				BNE W1   
-				DEX    
-				BNE W1   
-				RTS    
+GETK010			lda #BEGTRK  
+				sta	OURTRACK 			;WHERE WE SEEK TO /D3RRA81084  
+				jsr	SEEKDSK3 			;HAVE DISKDH SEEK FOR US /D3RRA81084  
+
+GETK020			ldx #SLOT  
+				jsr	DOREAD 				;FIND A SECTOR HEADER  
+				bcs	IOERROR 			;=>RETRY IF BAD  
+				lda	SECTOR 				;WHERE ARE WE?  
+				cmp	#BEGSECT 			;AT THE RIGHT PLACE?  
+				bne	GETK020 			;=>NO, GET THERE  
+  
+GETK100			ldx #1  
+				jsr	WAIT 				; (X * 1284) + 15 MILISECONDS  
+				ldx	XIDX  
+				lda	VOLUME  
+				sta	KEY,X  
+				dec	XIDX  
+				bmi	ENUFF  
+				inc	OURTRACK 			;BUMP FOR NEXT TRACK /D3RRA81084  
+				lda	OURTRACK 			;WHERE TO GO /D3RRA81084  
+				ldx	#SLOT  
+				jsr	SEEKDSK3 			;DISKDH, PLEASE SEEK ME /D3RRA81084  
+				ldx	#SLOT  
+				jsr	DOREAD  
+				bcc	GETK100  
+				bcs	IOERROR  
+  
+ENUFF			ldx #SLOT  
+				lda	MOTOROFF,X  
+				lda	E.REG 				; SELECT 2MHZ, RAM  
+				and #$7C   
+				sta E.REG   
+ 
+				lda SECTOR   
+				cmp #ENDSECT 			;TRACKS SYNC'ED?  
+				bne NOTPROT   
+				lda KEY   
+				eor KEY+1   
+				beq NOTPROT 			;IF FIRST 2 VOLS ARE EQUAL  
+				sec    
+				rts    
+     
+NOTPROT			lda #0   
+				clc    
+				rts    
+     
+DOREAD			jsr WHICHROM   
+				bcs OLDREAD   
+				jmp RDADR   
+OLDREAD			jmp RDADRX   
+     
+WHICHROM		lda RDADR   
+				cmp #ROMID   
+				clc    
+				beq NEWROM   
+				sec    
+NEWROM			rts    
+     
+IOERROR			dec RETRY   
+				beq ERR1   
+				jmp GETK 				; TRY, TRY AGAIN  
+ERR1			jmp ENUFF 				; I/O ERROR, CLEANUP AND EXIT  
+     
+WAIT			ldy #0   
+
+W1				dey    
+				bne W1   
+				dex    
+				bne W1   
+				rts    
 				    
-ZZLEN			 EQU $400   
-				IFNE ZZLEN-LENBFMI   
+ZZLEN			.EQ $400   
+				.DO ZZLEN-LENBFMI   
 				FAIL 2,"SOSORG FILE IS INCORRECT FOR BFM.INIT2"  
-				FIN    
-				    
-*************************************************************************  
-* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: BFM.INIT2.SRC  
-*************************************************************************  
-				 
-				 
+				.FIN    
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.bfm.init2.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.bfm.init2
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM

@@ -610,6 +610,6 @@ ZZLEN			 EQU ZZEND-ZZORG
 				 
 *--------------------------------------
 MAN
-SAVE /A3OSX.BUILD/SOS.13\sos.s.scmgr.txt
+SAVE /A3OSX.BUILD/SOS.13/sos.s.scmgr
 LOAD /A3OSX.BUILD/SOS.13/sos.s
 ASM
