@@ -1,125 +1,79 @@
 NEW
   AUTO 3,1
 *--------------------------------------
-*************************************************************************  
-* APPLE /// SOS 1.3 SOURCE CODE FILE: FMGR.SRC  
-*************************************************************************  
-* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT  
-				 
-SBTL			 "SOS 1.1 FILE MANAGER"  
-REL				  
-INCLUDE			 SOSORG,6,1,254  
-ORG				 ORGFMGR  
-ZZORG			 EQU *  
-MSB				 OFF  
-REP				 60  
-* COPYRIGHT (C) APPLE COMPUTER INC. 1980  
-* ALL RIGHTS RESERVED  
-REP				 60  
-*  
-* FILE MANAGER (VERSION = 1.1O )  
-* (DATE = 8/04/81)  
-*  
-* THIS MODULE IS ENTERED FROM THE SYSTEM CALL MANAGER, AND  
-* IS RESPONSIBLE FOR SWITCHING TO EITHER THE BLOCK FILE  
-* MANAGER, OR THE CHARACTER FILE MANAGER.  
-*  
-REP				 60  
-*  
-ENTRY			 FMGR  
-ENTRY			 LEVEL  
-*  
-EXTRN			 BFMGR  
-EXTRN			 CFMGR  
-EXTRN			 SYSERR  
-EXTRN			 SERR  
-EXTRN			 BADPATH  
-EXTRN			 FNFERR  
-EXTRN			 LVLERR  
-*  
-F.TPARMX		 EQU $A0 ; LOC OF FILE SYSTEM CALL PARMS  
-OPEN			 EQU $8  
-CLOSE			 EQU $C  
-SETLEVEL		 EQU $12  
-GETLEVEL		 EQU $13  
-F.REQCODE		 EQU F.TPARMX  
-F.LEVEL			 EQU F.TPARMX+$1  
-PATHNAME		 EQU F.TPARMX+$1  
-REFNUM			 EQU F.TPARMX+$1  
-PERIOD			 EQU $2E  
-LEVEL			 DFB $1  
-PAGE			  
-REP				 60  
-*  
-* FILE MANAGER  
-*  
-REP				 60  
-FMGR			 EQU *  
-*  
-LDA				 F.REQCODE  
-CMP				 #OPEN  
-BCC				 FMGR010  
-BEQ				 FMGR020  
-CMP				 #CLOSE  
-BCC				 FMGR030  
-BEQ				 FMGR040  
-CMP				 #SETLEVEL  
-BEQ				 SLEVEL  
-CMP				 #GETLEVEL  
-BEQ				 GLEVEL  
-*  
-FMGR010			 JMP BFMGR ; EXIT  
-*  
-FMGR020			 LDY #1  
-LDA				 (PATHNAME),Y  
-CMP				 #PERIOD  
-BNE				 FMGR010  
-JSR				 CFMGR  
-BCC				 FMGR024  
-LDA				 SERR  
-				CMP #FNFERR   
-				BEQ FMGR026   
-FMGR024			 RTS  ; EXIT  
-*     
-FMGR026			 LDA #0   
-				STA SERR   
-				JMP BFMGR ; EXIT  
-*     
-FMGR030			 LDA REFNUM   
-FMGR031			 BPL FMGR010   
-				JMP CFMGR ; EXIT  
-*     
-FMGR040			 LDA REFNUM   
-				BNE FMGR031   
-				JSR BFMGR ; CLOSE (0)  
-				JMP CFMGR ; EXIT  
-*     
-SLEVEL			 LDA F.LEVEL   
-				BEQ LVL.ERR   
-				CMP #4   
-				BCS LVL.ERR   
-				STA LEVEL   
-				RTS    
-LVL.ERR			 LDA #LVLERR   
-				JSR SYSERR   
-*     
-GLEVEL			 LDY #0   
-				LDA LEVEL   
-				STA (F.LEVEL),Y   
-				RTS    
-*     
-				LST ON   
-ZZEND			 EQU *   
-ZZLEN			 EQU ZZEND-ZZORG   
-				IFNE ZZLEN-LENFMGR   
-				FAIL 2,"SOSORG FILE IS INCORRECT FOR FMGR"  
-				FIN    
-				    
-*************************************************************************  
-* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: FMGR.SRC  
-*************************************************************************  
-				 
-				 
+*
+* FILE MANAGER (VERSION = 1.1O )
+* (DATE = 8/04/81)
+*
+* THIS MODULE IS ENTERED FROM THE SYSTEM CALL MANAGER, AND
+* IS RESPONSIBLE FOR SWITCHING TO EITHER THE BLOCK FILE
+* MANAGER, OR THE CHARACTER FILE MANAGER.
+*
+F.TPARMX		.EQ $A0 ; LOC OF FILE SYSTEM CALL PARMS
+OPEN			.EQ $8
+CLOSE			.EQ $C
+SETLEVEL		.EQ $12
+GETLEVEL		.EQ $13
+F.REQCODE		.EQ F.TPARMX
+F.LEVEL			.EQ F.TPARMX+$1
+PATHNAME		.EQ F.TPARMX+$1
+REFNUM			.EQ F.TPARMX+$1
+PERIOD			.EQ $2E
+LEVEL			.DA #1
+*
+* FILE MANAGER
+*
+FMGR			lda F.REQCODE
+				cmp #OPEN
+				bcc FMGR010
+				beq FMGR020
+				cmp #CLOSE
+				bcc FMGR030
+				beq FMGR040
+				cmp #SETLEVEL
+				beq SLEVEL
+				cmp #GETLEVEL
+				beq GLEVEL
+*
+FMGR010			jmp BFMGR ; EXIT
+*
+FMGR020			ldy #1
+				lda (PATHNAME),Y
+				cmp #PERIOD
+				bne FMGR010
+				jsr CFMGR
+				bcc FMGR024
+				lda SERR
+				cmp #FNFERR
+				beq FMGR026
+FMGR024			rts  ; EXIT
+*
+FMGR026			lda #0
+				sta SERR
+				jmp BFMGR ; EXIT
+*
+FMGR030			lda REFNUM
+FMGR031			bpl FMGR010
+				jmp CFMGR ; EXIT
+*
+FMGR040			lda REFNUM
+				bne FMGR031
+				jsr BFMGR ; CLOSE (0)
+				jmp CFMGR ; EXIT
+*
+SLEVEL			lda F.LEVEL
+				beq LVL.ERR
+				cmp #4
+				bcs LVL.ERR
+				sta LEVEL
+				rts
+LVL.ERR			lda #LVLERR
+				jsr SYSERR
+*
+GLEVEL			ldy #0
+				lda LEVEL
+				sta (F.LEVEL),Y
+				rts
 *--------------------------------------
 MAN
 SAVE /A3OSX.BUILD/SOS.13/sos.s.fmgr

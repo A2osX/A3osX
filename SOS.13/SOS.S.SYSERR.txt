@@ -1,212 +1,156 @@
 NEW
   AUTO 3,1
 *--------------------------------------
-*************************************************************************  
-* APPLE /// SOS 1.3 SOURCE CODE FILE: SYSERR.SRC  
-*************************************************************************  
-* ASSEMBLER: APPLE ][ 6502 ASSEMBLER from APPLE COMPUTER TOOLKIT  
-				 
-SBTL			 "SOS 1.1 SYSTEM ERROR ROUTINES"  
-REL				  
-INCLUDE			 SOSORG,6,1,254  
-ORG				 ORGSERR  
-ZZORG			 EQU *  
-MSB				 OFF  
-REP				 60  
-* COPYRIGHT (C) APPLE COMPUTER INC. 1980  
-* ALL RIGHTS RESERVED  
-REP				 60  
-*  
-* SYSTEM ERROR ROUTINES (VERSION = 1.1O )  
-* (DATE = 12/02/81)  
-*  
-* THIS MODULE CONTAINS THE SYSTEM ERROR AND SYSTEM FAILURE ROUTINES.  
-*  
-REP				 60  
-*  
-ENTRY			 SYSERR  
-ENTRY			 SYSDEATH  
-*  
-EXTRN			 SERR  
-EXTRN			 SDEATH.REGS  
-EXTRN			 SCRNMODE  
-PAGE			  
-REP				 60  
-*  
-* DATA DECLARATIONS  
-*  
-REP				 60  
-*  
-E.REG			 EQU $FFDF  
-Z.REG			 EQU $FFD0  
-B.REG			 EQU $FFEF  
-*  
-S.SAVE			 EQU $09 ; REGISTER SAVE AREA  
-PCH.SAVE		 EQU $08  
-PCL.SAVE		 EQU $07  
-P.SAVE			 EQU $06  
-A.SAVE			 EQU $05  
-X.SAVE			 EQU $04  
-Y.SAVE			 EQU $03  
-E.SAVE			 EQU $02  
-Z.SAVE			 EQU $01  
-B.SAVE			 EQU $00  
-*  
-NMI.VECTOR		 EQU $FFFA  
-*  
-TXT.CLR			 EQU $C050  
-MIX.CLR			 EQU $C052  
-HIRES.CLR		 EQU $C056  
-*  
-PG2.CLR			 EQU $C054  
-*  
-MSGBASE			 EQU $7E4  
-MSGBASE2		 EQU $BE4  
-MSG				 ASC ' SYSTEM FAILURE = $'  
-MSGLEN			 EQU *-MSG  
-PAGE			  
-REP				 60  
-*  
-* SYSTEM ERROR ROUTINE  
-*  
-* THIS ROUTINE IS CALLED WHEN AN ERROR CONDITION HAS BEEN  
-* ENCOUNTERED. THE ERROR NUMBER IS PASSED IN THE A REG  
-* AND THE CALL TO THIS ROUTINE MUST ALWAYS BE A JSR.  
-*  
-REP				 60  
-SYSERR			 EQU *  
-*  
-STA				 SERR  
-				PLA    
-				STA SDEATH.REGS+PCL.SAVE   
-				PLA    
-				STA SDEATH.REGS+PCH.SAVE   
-				SEC    
-				LDA SERR   
-				BNE SERR.EXIT   
-				CLC    
-SERR.EXIT		 RTS  ; RETURNS ONE LEVEL BEYOND CALLER  
-				PAGE    
-				REP 60   
-*  
-* SYSTEM DEATH ROUTINE  
-*  
-* CALLED TO IMMEDIATELY TERMINATE EXECUTION OF THE MACHINE  
-* BECAUSE A FATAL ERROR HAS BEEN DETECTED BY THE OPERATING  
-* SYSTEM. THE ERROR CODE IS PASSED IN THE A REG. THE  
-* CALL TO THIS ROUTINE MUST ALWAYS BE A JSR.  
-*  
-REP				 60  
-SYSDEATH		 EQU *  
-*  
-STA				 SDEATH.REGS+A.SAVE ; SAVE REGISTERS  
-STX				 SDEATH.REGS+X.SAVE  
-STY				 SDEATH.REGS+Y.SAVE  
-PHP				  
-PLA				  
-STA				 SDEATH.REGS+P.SAVE  
-TSX				  
-STX				 SDEATH.REGS+S.SAVE  
-LDA				 E.REG  
-STA				 SDEATH.REGS+E.SAVE  
-LDA				 Z.REG  
-STA				 SDEATH.REGS+Z.SAVE  
-LDA				 B.REG  
-STA				 SDEATH.REGS+B.SAVE  
-PLA				  
-STA				 SDEATH.REGS+PCL.SAVE  
-PLA				  
-STA				 SDEATH.REGS+PCH.SAVE  
-*  
-SEI				 ; TURN OFF INTERRUPTS  
-CLD				  
-*  
-LDX				 #0 ; SAVE SYSTEM STACK PAGE IN PAGE $17  
-SD005			 LDA $100,X  
-STA				 $1700,X  
-DEX				  
-BNE				 SD005  
-*  
-LDA				 $C059 ; ENSURE SILENTYPE PORT SHUT DOWN  
-LDA				 $C0DD  
-LDA				 $C0DF  
-LDA				 $C05F  
-LDA				 $C05A  
-*  
-LDA				 $C040 ; SOUND BELL  
-*  
-LDA				 #$74 ; ENSURE RESET LOCK OFF & RAM SWITCHED IN.  
-STA				 E.REG  
-*  
-LDA				 TXT.CLR ; SWITCH TO 40 COL B&W DISPLAY MODE  
-LDA				 MIX.CLR  
-LDA				 HIRES.CLR  
-LDA				 PG2.CLR ; & SELECT PAGE 1  
-*  
-LDA				 #$02  
-BIT				 SCRNMODE  
-BVS				 SD015 ; IF GRAPHICS MODE THEN KEEP 40 COL MODE  
-BEQ				 SD015 ; IF 40 COL MODE THEN KEEP  
-LDA				 MIX.CLR+1 ; ELSE SWITCH TO 80 COL DISPLAY MODE  
-*  
-LDX				 #MSGLEN+1 ; ENSURE BKGRND SET TO INVERSE SPACES  
-LDA				 #$20 ; SPACE CHAR W/INVERSE  
-SD010			 STA MSGBASE2-1,X  
-DEX				  
-BPL				 SD010  
-*  
-SD015			 LDX #0 ; MOVE MSG TO TEXT SCREEN  
-SD020			 LDA MSG,X  
-STA				 MSGBASE-1,X  
-				INX    
-				CPX #MSGLEN   
-				BNE SD020   
-*     
-				LDA SDEATH.REGS+A.SAVE ; DISPLAY ERROR CODE (2 HEX DIGITS)  
-				CLC    
-				LSR A   
-				LSR A   
-				LSR A   
-				LSR A   
-				JSR PRINT ; FIRST DIGIT  
-				INX    
-				LDA SDEATH.REGS+A.SAVE   
-				AND #$0F   
-				JSR PRINT ; SECOND DIGIT  
-*     
-				LDA #>SD100   
-				STA NMI.VECTOR   
-				LDA #<SD100   
-				STA NMI.VECTOR+1   
-*     
-*     
-				JMP * ; HANG UNTIL REBOOT (CTRL/RESET)  
-				REP 60   
-SD100			 RTI  ; NMI VECTOR POINT HERE TO MASK THEM OUT  
-*     
-*     
-* PRINT SUBROUTINE  
-*  
-PRINT			 EQU *   
-				CMP #$A   
-				BCS PRNT100   
-				ADC #$30 ; "0"-"9"  
-				BCC PRNT110 ; ALWAYS TAKEN  
-PRNT100			 ADC #$36 ; "A"-"F"  
-PRNT110			 STA MSGBASE-1,X   
-				RTS    
-*     
-				LST ON   
-ZZEND			 EQU *   
-ZZLEN			 EQU ZZEND-ZZORG   
-				IFNE ZZLEN-LENSERR   
-				FAIL 2,"SOSORG FILE IS INCORRECT FOR SYSERR"  
-				FIN    
-				    
-*************************************************************************  
-* END OF APPLE /// SOS 1.3 SOURCE CODE FILE: SYSERR.SRC  
-*************************************************************************  
-				 
+* SYSTEM ERROR ROUTINES (VERSION = 1.1O )
+* (DATE = 12/02/81)
+*
+* THIS MODULE CONTAINS THE SYSTEM ERROR AND SYSTEM FAILURE ROUTINES.
+*
+* DATA DECLARATIONS
+*
+S.SAVE			.EQ $09 				; REGISTER SAVE AREA
+PCH.SAVE		.EQ $08
+PCL.SAVE		.EQ $07
+P.SAVE			.EQ $06
+A.SAVE			.EQ $05
+X.SAVE			.EQ $04
+Y.SAVE			.EQ $03
+E.SAVE			.EQ $02
+Z.SAVE			.EQ $01
+B.SAVE			.EQ $00
+*
+NMI.VECTOR		.EQ $FFFA
+*
+TXT.CLR			.EQ $C050
+MIX.CLR			.EQ $C052
+HIRES.CLR		.EQ $C056
+*
+PG2.CLR			.EQ $C054
+*
+MSGBASE			.EQ $7E4
+MSGBASE2		.EQ $BE4
+MSG				.AS ' SYSTEM FAILURE = $'
+MSGLEN			.EQ *-MSG
+*
+* SYSTEM ERROR ROUTINE
+*
+* THIS ROUTINE IS CALLED WHEN AN ERROR CONDITION HAS BEEN
+* ENCOUNTERED. THE ERROR NUMBER IS PASSED IN THE A REG
+* AND THE CALL TO THIS ROUTINE MUST ALWAYS BE A JSR.
+*
+SYSERR			sta	SERR
+				pla
+				sta SDEATH.REGS+PCL.SAVE
+				pla
+				sta SDEATH.REGS+PCH.SAVE
+				sec
+				lda SERR
+				bne SERR.EXIT
+				clc
+SERR.EXIT		rts  					; RETURNS ONE LEVEL BEYOND CALLER
+*
+* SYSTEM DEATH ROUTINE
+*
+* CALLED TO IMMEDIATELY TERMINATE EXECUTION OF THE MACHINE
+* BECAUSE A FATAL ERROR HAS BEEN DETECTED BY THE OPERATING
+* SYSTEM. THE ERROR CODE IS PASSED IN THE A REG. THE
+* CALL TO THIS ROUTINE MUST ALWAYS BE A JSR.
+*
+SYSDEATH		sta	SDEATH.REGS+A.SAVE 	; SAVE REGISTERS
+				stx	SDEATH.REGS+X.SAVE
+				sty	SDEATH.REGS+Y.SAVE
+				php
+				pla
+				sta	SDEATH.REGS+P.SAVE
+				tsx
+				stx	SDEATH.REGS+S.SAVE
+				lda	E.REG
+				sta	SDEATH.REGS+E.SAVE
+				lda	Z.REG
+				sta	SDEATH.REGS+Z.SAVE
+				lda	B.REG
+				sta	SDEATH.REGS+B.SAVE
+				pla
+				sta	SDEATH.REGS+PCL.SAVE
+				pla
+				sta	SDEATH.REGS+PCH.SAVE
+
+				sei				 		; TURN OFF INTERRUPTS
+				cld
+*
+				ldx	#0 					; SAVE SYSTEM STACK PAGE IN PAGE $17
+SD005			lda $100,X
+				sta	$1700,X
+				dex
+				bne	SD005
+*
+				lda	$C059 				; ENSURE SILENTYPE PORT SHUT DOWN
+				lda	$C0DD
+				lda	$C0DF
+				lda	$C05F
+				lda	$C05A
+*
+				lda	$C040 				; SOUND BELL
+*
+				lda	#$74 				; ENSURE RESET LOCK OFF & RAM SWITCHED IN.
+				sta	E.REG
+*
+				lda	TXT.CLR 			; SWITCH TO 40 COL B&W DISPLAY MODE
+				lda	MIX.CLR
+				lda	HIRES.CLR
+				lda	PG2.CLR 			; & SELECT PAGE 1
+*
+				lda	#$02
+				bit	SCRNMODE
+				bvs	SD015 				; IF GRAPHICS MODE THEN KEEP 40 COL MODE
+				beq	SD015 				; IF 40 COL MODE THEN KEEP
+				lda	MIX.CLR+1 			; ELSE SWITCH TO 80 COL DISPLAY MODE
+*
+				ldx	#MSGLEN+1 			; ENSURE BKGRND SET TO INVERSE SPACES
+				lda	#$20 				; SPACE CHAR W/INVERSE
+SD010			sta MSGBASE2-1,X
+				dex
+				bpl	SD010
+*
+SD015			ldx #0 					; MOVE MSG TO TEXT SCREEN
+SD020			lda MSG,X
+				sta	MSGBASE-1,X
+				inx
+				cpx #MSGLEN
+				bne SD020
+*
+				lda SDEATH.REGS+A.SAVE 	; DISPLAY ERROR CODE (2 HEX DIGITS)
+				clc
+				lsr
+				lsr
+				lsr
+				lsr
+				jsr PRINT 				; FIRST DIGIT
+				inx
+				lda SDEATH.REGS+A.SAVE
+				and #$0F
+				jsr PRINT 				; SECOND DIGIT
+*
+				lda #SD100
+				sta NMI.VECTOR
+				lda /SD100
+				sta NMI.VECTOR+1
+*
+*
+				jmp * 					; HANG UNTIL REBOOT (CTRL/RESET)
+
+SD100			rti  					; NMI VECTOR POINT HERE TO MASK THEM OUT
+*
+*
+* PRINT SUBROUTINE
+*
+PRINT			cmp #$A
+				bcs PRNT100
+				adc #$30 				; "0"-"9"
+				bcc PRNT110 			; ALWAYS TAKEN
+PRNT100			adc #$36 				; "A"-"F"
+PRNT110			sta MSGBASE-1,X
+				rts
 *--------------------------------------
 MAN
 SAVE /A3OSX.BUILD/SOS.13/sos.s.syserr

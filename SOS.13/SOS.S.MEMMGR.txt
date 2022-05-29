@@ -58,8 +58,7 @@ F.BASE			 .EQ M.TPARMX+5 ; BASE.BANK/PAGE
 F.LIM			 .EQ M.TPARMX+7 ; LIMIT.BANK/PAGE
 F.NUM			 .EQ M.TPARMX+9 ; SEG NUM
 F.ERR			 .EQ ZPAGE+$5 ; ERROR FLAG
-TRUE			 .EQ $80
-FALSE			 .EQ $0
+
 CFS.PGCT		 .EQ ZPAGE+$6 ; &7, CURRENT FREE SEGMENT'S PAGE COUNT
 CFS.BASE		 .EQ ZPAGE+$8 ; &9, " BASE.BANK/PAGE
 CFS.LIM			 .EQ ZPAGE+$A ; &$B, " LIMIT.BANK/PAGE
@@ -839,8 +838,8 @@ CHGS052			lda CHG.MODE
 				cmp #1
 				bne CHGS054
 
-				ldx #>VRT.BASE
-				ldy #<VRT.BASE
+				ldx #VRT.BASE
+				ldy /VRT.BASE
 				jmp CHGS056
 
 CHGS054			ldx >VRT.LIM
@@ -1123,7 +1122,7 @@ RELEASE.SEG		ldx RLS.NUM
 				bcs RLS.ERR ; ERR - SEG# TOO LARGE
 				lda ST.FLINK,X
 				bmi RLS.ERR ; ERR - INVALID SEGNUM
-				bpl REL.SEG ; RELEASE.SEG(SEG#>0)
+				bpl REL.SEG ; RELEASE.SEG(SEG#0)
 *
 * RELEASE ALL
 *
@@ -1231,7 +1230,7 @@ CNVI020			cpx #$10 ; BANK = "10"
 
 CNVI030			tay ; SHIFT BANK RIGHT ONE BIT
 				txa ; INTO HIGH BIT OF PAGE BYTE.
-				lsr A
+				lsr
 				tax
 				tya
 				bcc CNVI040
@@ -1312,36 +1311,36 @@ REGION			stx RGN.BKPG
 *
 * IF BANKPAGE>PHY2LIM THEN ERR
 *
-				lda #>PHY2LIM
+				lda #PHY2LIM
 				cmp RGN.BKPG
-				lda #<PHY2LIM
+				lda /PHY2LIM
 				sbc RGN.BKPG+1
 				bcc RGN.ERR ; ERR - INVALID BANK PAGE
 *
 * IF BANKPAGE>=PHY2BASE THEN REGION:=2
 *
 				lda RGN.BKPG
-				cmp #>PHY2BASE
+				cmp #PHY2BASE
 				lda RGN.BKPG+1
-				sbc #<PHY2BASE
+				sbc /PHY2BASE
 				bcc RGN010
 				lda #2
 				bne RGN040
 *
 * IF BANKPAGE>PHY1LIMIT THEN ERR
 *
-RGN010			lda #>PHY1LIM
+RGN010			lda #PHY1LIM
 				cmp RGN.BKPG
-				lda #<PHY1LIM
+				lda /PHY1LIM
 				sbc RGN.BKPG+1
 				bcc RGN.ERR ; ERR - INVALID BANK PAGE
 *
 * IF BANKPAGE>=PHY1BASE THEN REGION:=1
 *
 				lda RGN.BKPG
-				cmp #>PHY1BASE
+				cmp #PHY1BASE
 				lda RGN.BKPG+1
-				sbc #<PHY1BASE
+				sbc /PHY1BASE
 				bcc RGN020
 				lda #1
 				bne RGN040
@@ -1424,15 +1423,6 @@ GTFR030			tya
 *
 GTFR.ERR		lda #SEGTBLFULL
 				jsr SYSERR
-*
-				.LIST ON
-ZZEND			.EQ *
-ZZLEN			.EQ ZZEND-ZZORG
-
-				.DO ZZLEN=LENMEMMG
-				.ELSE
-				FAIL 2,"SOSORG FILE IS INCORRECT FOR MEMMGR"
-				.FIN
 *--------------------------------------
 MAN
 SAVE /A3OSX.BUILD/SOS.13/sos.s.memmgr

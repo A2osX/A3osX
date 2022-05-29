@@ -6,36 +6,36 @@ NEW
 				.OR $2000
 				.TF /A3OSX.BUILD/SOS.KERNEL
 *--------------------------------------
-				.INB /A3OSX.BUILD/inc/io.i
-				.INB /A3OSX.BUILD/inc/mon.i
-				.INB /A3OSX.BUILD/inc/sos.i
+		.INB /A3OSX.BUILD/inc/io.i
+		.INB /A3OSX.BUILD/inc/mon.i
+		.INB /A3OSX.BUILD/inc/sos.i
 *--------------------------------------
-				.INB /A3OSX.BUILD/SOS.13/sos.s.sosldr
-				.INB /A3OSX.BUILD/SOS.13/sos.s.init
-				.INB /A3OSX.BUILD/SOS.13/sos.s.sysglob
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfminit2
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.e
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.p
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.v
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.c
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.f
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.a
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.po
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.rw
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.ce
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.d
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.sw
-				.INB /A3OSX.BUILD/SOS.13/sos.s.oprmsg
-				.INB /A3OSX.BUILD/SOS.13/sos.s.ipl
-				.INB /A3OSX.BUILD/SOS.13/sos.s.umgr
-				.INB /A3OSX.BUILD/SOS.13/sos.s.disk3
-				.INB /A3OSX.BUILD/SOS.13/sos.s.syserr
-				.INB /A3OSX.BUILD/SOS.13/sos.s.devmgr
-				.INB /A3OSX.BUILD/SOS.13/sos.s.scmgr
-				.INB /A3OSX.BUILD/SOS.13/sos.s.fmgr
-				.INB /A3OSX.BUILD/SOS.13/sos.s.cfmgr
-				.INB /A3OSX.BUILD/SOS.13/sos.s.bufmgr
-				.INB /A3OSX.BUILD/SOS.13/sos.s.memmgr
+		.INB /A3OSX.BUILD/SOS.13/sos.s.sosldr
+		.INB /A3OSX.BUILD/SOS.13/sos.s.init
+		.INB /A3OSX.BUILD/SOS.13/sos.s.sysglob
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.init2
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.e
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.p
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.v
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.c
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.f
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.a
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.po
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.rw
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.ce
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.d
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bfm.sw
+		.INB /A3OSX.BUILD/SOS.13/sos.s.oprmsg
+		.INB /A3OSX.BUILD/SOS.13/sos.s.ipl
+		.INB /A3OSX.BUILD/SOS.13/sos.s.umgr
+		.INB /A3OSX.BUILD/SOS.13/sos.s.disk3
+		.INB /A3OSX.BUILD/SOS.13/sos.s.syserr
+		.INB /A3OSX.BUILD/SOS.13/sos.s.devmgr
+		.INB /A3OSX.BUILD/SOS.13/sos.s.scmgr
+		.INB /A3OSX.BUILD/SOS.13/sos.s.fmgr
+		.INB /A3OSX.BUILD/SOS.13/sos.s.cfmgr
+		.INB /A3OSX.BUILD/SOS.13/sos.s.bufmgr
+		.INB /A3OSX.BUILD/SOS.13/sos.s.memmgr
 *--------------------------------------
 MAN
 SAVE /A3OSX.BUILD/SOS.13/sos.s
