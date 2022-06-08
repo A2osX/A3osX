@@ -2,10 +2,10 @@ NEW
   AUTO 3,1
 *--------------------------------------
 SOSLDR.ORG		.PH $1E00
-K.FILE			.AS "SOS KRNL"
+				.AS "SOS KRNL"
 K.HDR.CNT		.DA LDR.ADR-K.DRIVES
 K.DRIVES		.HS 01
-K.FLAGS			.HS 00		 ; RESERVED FOR FUTURE USE
+K.FLAGS			.HS 00		 			RESERVED FOR FUTURE USE
 I.PATH			.DA #14
 				.AS ".D1/SOS.INTERP"
 				.BS 33
@@ -13,174 +13,100 @@ D.PATH			.DA #14
 				.AS ".D1/SOS.DRIVER"
 				.BS 33
 LDR.ADR			.DA 0
-LDR.CNT			.DA ZZEND-SOSLDR
+LDR.CNT			.DA SOSLDR.END-SOSLDR
 *--------------------------------------
-* INTERPRETER/DRIVER FILES<--+
-* ERROR MESSAGES!DEFINED IN BACK OF THIS LISTING
-* WELCOME MESSAGES<--+
-*
-* SOSLDR - DATA DECLARATIONS (1)
-
-*CZPAGE			 .EQ $1A00
-*CSPAGE			 .EQ $1B00
-*CXPAGE			 .EQ $1600
-*SZPAGE			 .EQ $1800
-*SXPAGE			 .EQ $1400
-*SSPAGE			 .EQ $0100
-*
-ROM.ADR			 .EQ $F1B9
-ROM.ID			 .EQ $A0
-*
-* SOSLDR - DATA DECLARATIONS (2)
-
-ZPAGE			 .EQ $00
-*
-K.BASE			 .EQ ZPAGE+$0 ; SOSLDR1 SUBROUTINE +--------------------------------------+
-I.BASE.P		 .EQ ZPAGE+$2 ; ! <VARNAME>.P ::= 3 BYTE ZPAGE POINTER !
-RDBUF.P			 .EQ ZPAGE+$4 ; +--------------------------------------+
-SYSBUF.P		 .EQ ZPAGE+$6
-TEMP.BANK		 .EQ ZPAGE+$8
-TEMP.ADRH		 .EQ ZPAGE+$9
-WORK.P			 .EQ ZPAGE+$A
-*
-REV.SAVE		 .EQ ZPAGE+$C ; REVERSE SUBROUTINE
-*
-FIRST.ADIB		 .EQ ZPAGE+$10 ; FLAGS SUBROUTINE
-PREV.ADIB.P		 .EQ ZPAGE+$12
-DIB.P			 .EQ ZPAGE+$14
-PG.ALIGN		 .EQ ZPAGE+$16
-DIB.FLAGS		 .EQ $14
-DIB.DCB			 .EQ $20
-*
-PREVBANK		 .EQ ZPAGE+$18 ; GETMEM SUBROUTINE
-PREVDST			 .EQ ZPAGE+$19
-*
-CODE.P			 .EQ ZPAGE+$1C ; RELOCATION SUBROUTINE
-REL.P			 .EQ ZPAGE+$1E
-REL.END			 .EQ ZPAGE+$20
-*
-SRC.P			 .EQ ZPAGE+$22 ; MOVE SUBROUTINE
-DST.P			 .EQ ZPAGE+$24
-CNT				 .EQ ZPAGE+$26
-*
-DSTBANK			 .EQ ZPAGE+$2A ; LINK SUBROUTINE
-LINK.P			 .EQ ZPAGE+$2C
-DIB.ENTRY		 .EQ 2 ; ALLOC.DEV SUBROUTINE
-DIB.UNIT		 .EQ 4+16+2
-DIB.DTYPE		 .EQ 4+16+3
-*
-ETEMP			 .EQ ZPAGE+$2E ; ERROR SUBROUTINE
-*
-WTEMP			 .EQ ZPAGE+$2F ; WELCOME SUBROUTINE
-*
-* SOS LOADER -
-*
-* (MAIN PROGRAM)
-
-SOSLDR			.EQ *
-				lda	#0		; ZERO SOS/USER X, Z AND STACK PAGES
+SOSLDR			lda	#0					ZERO SOS/USER X, Z AND STACK PAGES
 				tax
 
-SLDR010			sta CZPAGE,X
+.1				sta CZPAGE,X
 				sta CXPAGE,X
 				sta CSPAGE,X
 				sta SZPAGE,X
 				sta SXPAGE,X
 				sta SSPAGE,X
 				dex
-				bne SLDR010
-*; SETUP SOS CALL ENVIRONMENT (WRITE PROTECT=OFF)
-				lda #$30			 E:=( 0.0.1.1:0.0.0.0 )
-				sta E.REG				( 1.I.S.R:W.P.R.R )
-*
-				ldx #$FB			 CONSOLE 1.0 MODIFIES STACK DURING D.INIT CALL
+				bne .1
+* SETUP SOS CALL ENVIRONMENT (WRITE PROTECT=OFF)
+				lda #$30			E:=( 0.0.1.1:0.0.0.0 )
+				sta E.REG			( 1.I.S.R:W.P.R.R )
+
+				ldx #$FB			CONSOLE 1.0 MODIFIES STACK DURING D.INIT CALL
 				txs
-				lda	/CZPAGE				; ZREG:=CALLER'S Z PAGE
+				lda	/CZPAGE			ZREG:=CALLER'S Z PAGE
 				sta Z.REG
 
-				jsr SOSLDR1				; ! PROCESS KRNL/INTERP/DRVR FILES !
+				jsr SOSLDR1			PROCESS KRNL/INTERP/DRVR FILES
 
 				lda	E.REG
-				and #$10			 SETUP SOS CALL ENVIRONMENT (WRITE PROTECT=ON)
-				ora	#$28			 E:=( 0.0.1.X:1.0.0.0 )
-				staE.REG				( 1.I.S.R:W.P.R.R )
-*
-				ldx	#$FF			 STACK.REG:=$FF
+				and #$10			SETUP SOS CALL ENVIRONMENT (WRITE PROTECT=ON)
+				ora	#$28			E:=( 0.0.1.X:1.0.0.0 )
+				sta E.REG			   ( 1.I.S.R:W.P.R.R )
+
+				ldx	#$FF			STACK.REG:=$FF
 				txs
-				lda /CZPAGE		 ZREG:=CALLER'S Z PAGE
+				lda /CZPAGE			ZREG:=CALLER'S Z PAGE
 				sta	Z.REG
 
-				lda	SYSBANK			 BREG:=SYSBANK
+				lda	SYSBANK
 				sta	B.REG
 				jmp (I.BASE.P) 		SOS LOAD COMPLETE - JMP TO INTERPRETER
 
-
-* MOVE ( IN: SRC.P
-* IN: DST.P
-* IN: A="BANK"
-* IN: CNT )
-*
+* MOVE IN: SRC.P,DST.P,A="BANK",CNT
 * LOCAL: END
 * (MOVES SRC.P..SRC.P+CNT-1 TO DST.P..DST.P+CNT-1) "CNT PARM IS DESTROYED"
 
-
 MOVE			tax
-				lda B.REG 			; SAVE BANK REGISTER
+				lda B.REG 			SAVE BANK REGISTER
 				pha
-				stx B.REG 			; BREG:=A
-				lda CNT+1 			; IF CNT <> 0
-				ora CNT 			; THEN
-				beq MOVE.EXIT
+				stx B.REG 			BREG:=A
+				lda CNT+1 			IF CNT <> 0
+				ora CNT 			THEN
+				beq .4
 
-				lda CNT 			; CNT:=CNT-1
-				bne MOVE010
+				lda CNT 			CNT:=CNT-1
+				bne .1
 
 				dec CNT+1
 
-MOVE010			dec CNT
-				clc  				; SRC.P:=SRC.P+PAGE.CNT
+.1				dec CNT
+				clc  				SRC.P:=SRC.P+PAGE.CNT
 				lda SRC.P+1
 				adc CNT+1
 				sta SRC.P+1
-				lda DST.P+1 		; DST.P:=DST.P+PAGE.CNT
+				lda DST.P+1 		DST.P:=DST.P+PAGE.CNT
 				adc CNT+1
 				sta DST.P+1
-				inc CNT+1 			; PAGE.CNT:=PAGE.CNT+1
-				ldy CNT 			; Y:=BYTE.CNT
-				beq MOVE020 		; IF Y=0 THEN M2
-*
-MOVE.PAGE		lda (SRC.P),Y 		;M1: DO
-				sta (DST.P),Y 		; (DST.P),Y:=(SRC.P),Y
-				dey  ; Y:=Y-1
-				bne MOVE.PAGE 		; UNTIL Y=0
+				inc CNT+1 			PAGE.CNT:=PAGE.CNT+1
+				ldy CNT 			Y:=BYTE.CNT
+				beq .3		 		IF Y=0 THEN M2
 
-MOVE020			lda (SRC.P),Y 		;M2: (DST.P),Y:=(SRC.P),Y
+.2				lda (SRC.P),Y 		M1: DO
+				sta (DST.P),Y 		(DST.P),Y:=(SRC.P),Y
+				dey 				Y:=Y-1
+				bne .2		 		UNTIL Y=0
+
+.3				lda (SRC.P),Y 		M2: (DST.P),Y:=(SRC.P),Y
 				sta (DST.P),Y
-				dey  				; Y:=Y-1
-				dec SRC.P+1 		; SRC.P:=SRC.P-256
-				dec DST.P+1 		; DST.P:=DST.P-256
-				dec CNT+1 			; PAGE.CNT:=PAGE.CNT-1
-				bne MOVE.PAGE 		; IF PAGE.CNT <> 0 THEN M1
+				dey  				Y:=Y-1
+				dec SRC.P+1 		SRC.P:=SRC.P-256
+				dec DST.P+1 		DST.P:=DST.P-256
+				dec CNT+1 			PAGE.CNT:=PAGE.CNT-1
+				bne .2		 		IF PAGE.CNT <> 0 THEN M1
 
-				inc	SRC.P+1 		; RESTORE SRC.P
-				inc DST.P+1 		; " DST.P
-*
-MOVE.EXIT		pla  				; RESTORE BANK REGISTER
+				inc	SRC.P+1 		RESTORE SRC.P
+				inc DST.P+1 		" DST.P
+
+.4				pla  				RESTORE BANK REGISTER
 				sta B.REG
 				rts
-*
-* LINK ( IN: DST.P
-* IN: DSTBANK
-* IN: PREVBANK
-* IN: FIRST.ADIB
-* I/O: SDT.TBL
-* I/O: BLKDLST
-* OUT: LINKED DRIVER MODULE )
-*
-* OWN: LINK.P
-* (LINKS FIRST DIB TO PREVIOUS DRIVER'S LAST "ACTIVE" DIB, AND ADDS SDT ENTRY)
 
-LINK			clc  				; FIRST.ADIB:=0:DST.P+FIRST.ADIB
+* LINK 	IN: DST.P,DSTBANK,PREVBANK,FIRST.ADIB,
+*		I/O: SDT.TBL,BLKDLST
+* 		OUT: LINKED DRIVER MODULE
+* OWN: LINK.P
+* LINKS FIRST DIB TO PREVIOUS DRIVER'S LAST "ACTIVE" DIB, AND ADDS SDT ENTRY
+
+LINK			clc  				FIRST.ADIB:=0:DST.P+FIRST.ADIB
 				lda DST.P
 				adc FIRST.ADIB
 				sta FIRST.ADIB
@@ -189,34 +115,36 @@ LINK			clc  				; FIRST.ADIB:=0:DST.P+FIRST.ADIB
 				sta FIRST.ADIB+1
 				lda #0
 				sta CXPAGE+FIRST.ADIB+1
-				lda PREVBANK 		; BREG:=PREVBANK
+				lda PREVBANK 		BREG:=PREVBANK
 				sta B.REG
-				ldy #0 				; (LINK.P):=FIRST.ADIB
+				ldy #0 				(LINK.P):=FIRST.ADIB
 				lda FIRST.ADIB
 				sta (LINK.P),Y
 				iny
 				lda FIRST.ADIB+1
 				sta (LINK.P),Y
-				lda DSTBANK 		; BREG:=DSTBANK
+				lda DSTBANK 		BREG:=DSTBANK
 				sta B.REG
-				lda FIRST.ADIB 		; LINK.P:=FIRST.ADIB
+				lda FIRST.ADIB 		LINK.P:=FIRST.ADIB
 				sta LINK.P
 				lda FIRST.ADIB+1
 				sta LINK.P+1
-WALKLINKS		jsr ALLOC.DEV 			; ALLOC.DEV(LINK.P BREG.IN, SDT.TBL BLKDLST.IO)
-LINK010			ldy #0 					; WHILE (LINK.P) <> 0 AND (LINK.P) <> LINK.P
+
+WALKLINKS		jsr ALLOC.DEV 		ALLOC.DEV(LINK.P BREG.IN, SDT.TBL BLKDLST.IO)
+
+.1				ldy #0 				WHILE (LINK.P) <> 0 AND (LINK.P) <> LINK.P
 				lda (LINK.P),Y
 				iny
 				ora (LINK.P),Y
-				beq LINK100
+				beq .3
 				lda (LINK.P),Y
 				cmp LINK.P+1
-				bne LINK030
+				bne .2
 				dey
 				lda (LINK.P),Y
 				cmp LINK.P
-				beq LINK100
-LINK030			ldy #0 					; DO LINK.P:=(LINK.P)
+				beq .3
+.2				ldy #0 				DO LINK.P:=(LINK.P)
 				lda (LINK.P),Y
 				tax
 				iny
@@ -225,68 +153,67 @@ LINK030			ldy #0 					; DO LINK.P:=(LINK.P)
 				lda (LINK.P),Y
 				stx LINK.P
 				sta LINK.P+1
-				jsr ALLOC.DEV 			; " ALLOC.DEV(LINK.P BREG.IN, SDT.TBL BLKDLST.IO)
-				jmp LINK010
+				jsr ALLOC.DEV 		ALLOC.DEV(LINK.P BREG.IN, SDT.TBL BLKDLST.IO)
+				jmp .1
 
-LINK100 		ldy #0 					; (LINK.P):=0
+.3		 		ldy #0 				(LINK.P):=0
 				tya
 				sta (LINK.P),Y
 				iny
 				sta (LINK.P),Y
-				dey 				; BREG:=0
+				dey 				BREG:=0
 				sty B.REG
 				rts
-*
+
 * LINK.INIT ( 	IN: A=# DRIVES
 * 				IN: DIB1..4
 * 				I/O: SDT.TBL
 * 				I/O: BLKDLST )
-*
-LINK.INIT		jsr SET.DRIVES 		; SET.DRIVES(A=#DRIVES.IN, DIB1..4.IN)
+
+LINK.INIT		jsr SET.DRIVES 			SET.DRIVES(A=#DRIVES.IN, DIB1..4.IN)
 				lda #0
-				sta MAX.DNUM 		; MAXDNUM:=0
-				sta BLKDLST 		; BLKDLST:=0
-				sta CXPAGE+LINK.P+1 ; LINK.P:=0:DIB1
+				sta MAX.DNUM 			MAXDNUM:=0
+				sta BLKDLST 			BLKDLST:=0
+				sta CXPAGE+LINK.P+1 	LINK.P:=0:DIB1
 				lda #DIB1
 				sta LINK.P
 				lda /DIB1
 				sta LINK.P+1
 				jmp WALKLINKS
 
-* ALLOC.DEV ( 	IN: LINK.P
-* 				IN: B.REG
-* 				I/O: SDT.TBL (SYSTEM DEVICE TABLE)
-* 				IN: SDT.SIZE = CONSTANT
-* 				IN: DIB.ENTRY = CONSTANT DEV DIB ADR BANK UNIT
-* 				IN: DIB.UNIT = CONSTANT !-----!-----!-----!-----!
-* 				IN: DIB.DTYPE = CONSTANT 1 ! ! ! ! !
-* 				I/O: MAX.DNUM 2 ! ! ! ! !
-* 				OUT: SDT.BANK . ! ! ! ! !
-* 				OUT: SDT.DIB . ! ! ! ! !
-* 				OUT: SDT.ADR . !-----!-----!-----!-----!
-* 				OUT: SDT.UNIT MAX.DNUM
-* 				I/O: BLKDLST
-* 				IN: BLKD.SIZE = CONSTANT
+* ALLOC.DEV IN: LINK.P,B.REG
+* 			I/O: SDT.TBL (SYSTEM DEVICE TABLE)
+* 			IN: SDT.SIZE = CONSTANT
+* 			IN: DIB.ENTRY = CONSTANT
+* 			IN: DIB.UNIT = CONSTANT
+* 			IN: DIB.DTYPE = CONSTANT
+* 			I/O: MAX.DNUM
+* 			OUT: SDT.BANK
+* 			OUT: SDT.DIB
+* 			OUT: SDT.ADR
+* 			OUT: SDT.UNIT MAX.DNUM
+* 			I/O: BLKDLST
+* 			IN: BLKD.SIZE = CONSTANT
 * (ADDS A NEW ENTRY TO THE DEVICE MANAGER'S SYSTEM DEVICE TABLE (SDT))
 
-ALLOC.DEV		inc MAX.DNUM 		; MAX.DNUM:=MAX.DNUM+1
-				ldx MAX.DNUM 		; IF MAX.DNUM >= SDT.SIZE
-				cpx	 #SDT.SIZE 	; THEN
-				bcc	 ADEV010
-				ldx	 #ERR8X 		; ERROR("TOO MANY DEVICES")
+ALLOC.DEV		inc MAX.DNUM 			MAX.DNUM:=MAX.DNUM+1
+				ldx MAX.DNUM 			IF MAX.DNUM >= SDT.SIZE
+				cpx	 #SDT.SIZE 			THEN
+				bcc	 .1
+				ldx	 #ERR8X 			ERROR("TOO MANY DEVICES")
 				ldy	 #ERR8L
 				jsr	 ERROR
 
-ADEV010			lda B.REG 			; SDT.BANK,X:=BREG
+.1				lda B.REG 				SDT.BANK,X:=BREG
 				sta SDT.BANK,X
-				clc  ; SDT.DIB,X:=LINK.P+4
+				clc  					SDT.DIB,X:=LINK.P+4
 				lda LINK.P
 				adc #4
 				sta SDT.DIBL,X
 				lda LINK.P+1
 				adc #0
 				sta SDT.DIBH,X
-				sec  ; SDT.ADR,X:=(LINK.P),DIB.ENTRY-1
+				sec  					SDT.ADR,X:=(LINK.P),DIB.ENTRY-1
 				ldy #DIB.ENTRY
 				lda (LINK.P),Y
 				sbc #1
@@ -295,67 +222,67 @@ ADEV010			lda B.REG 			; SDT.BANK,X:=BREG
 				lda (LINK.P),Y
 				sbc #0
 				sta SDT.ADRH,X
-				ldy #DIB.UNIT ; SDT.UNIT,X:=(LINK.P),DIB.UNIT
+				ldy #DIB.UNIT 			SDT.UNIT,X:=(LINK.P),DIB.UNIT
 				lda (LINK.P),Y
 				sta SDT.UNIT,X
-				ldy #DIB.DTYPE ; IF (LINK.P),DIB.DTYPE = "BLOCK DEVICE"
+				ldy #DIB.DTYPE 			IF (LINK.P),DIB.DTYPE = "BLOCK DEVICE"
 				lda (LINK.P),Y
-				bpl ADEV.EXIT
-				txa  ; THEN
-				inc BLKDLST ; BLKDLST:=BLKDLST+1
-				ldx BLKDLST ; IF BLKDLST >= BLKD.SIZE
-				cpx #BLKD.SIZE ; THEN
-				bcc ADEV020
-				ldx #ERR9X ; ERROR("TOO MANY BLOCK DEVICES")
+				bpl .3
+				txa  					THEN
+				inc BLKDLST 			BLKDLST:=BLKDLST+1
+				ldx BLKDLST 			IF BLKDLST >= BLKD.SIZE
+				cpx #BLKD.SIZE 			THEN
+				bcc .2
+				ldx #ERR9X 				ERROR("TOO MANY BLOCK DEVICES")
 				ldy #ERR9L
 				jsr ERROR
-ADEV020			sta BLKDLST,X ; BLKDLST,X:=MAX.DNUM
-ADEV.EXIT		rts  ; RETURN
-*
-* SOSLDR1 ()
-*
+.2				sta BLKDLST,X 			BLKDLST,X:=MAX.DNUM
+
+.3				rts
+
 * (PROCESSES KERNEL/INTERPRETER/DRIVER FILES)
-SOSLDR1			ldx	#$1F 		; COPY ROM'S DISK CORE ROUTINE ZPAGE VARS TO SOS ZPAGE
-LDR010			lda $380,X
-				sta				 SZPAGE,X
+
+SOSLDR1			ldx	#$1F 				COPY ROM'S DISK CORE ROUTINE ZPAGE VARS TO SOS ZPAGE
+.1				lda $380,X
+				sta	SZPAGE,X
 				dex
-				bpl				 LDR010
+				bpl	.1
 
 * PROCESS KERNEL FILE
 
 * MOVE AND INITIALIZE SOS GLOBALS
-*
-				lda #LDR.ADR ; WORK.P:=0:LDR.ADR
+
+				lda #LDR.ADR 			WORK.P:=0:LDR.ADR
 				sta WORK.P
 				lda /LDR.ADR
 				sta WORK.P+1
-				jsr ADVANCE ; ADVANCE(WORK.P.IO, SRC.P DST.P CNT.OUT)
+				jsr ADVANCE 			ADVANCE(WORK.P.IO, SRC.P DST.P CNT.OUT)
 
-				lda B.REG ; MOVE(SRC.P DST.P A=BREG CNT.IN)
+				lda B.REG 				MOVE(SRC.P DST.P A=BREG CNT.IN)
 				jsr MOVE
 
-				lda B.REG ; SYSBANK:=BREG
+				lda B.REG 				SYSBANK:=BREG
 				and #$0F
 				sta SYSBANK
-				asl ; MEMSIZ:=SYSBANK*2+4 "16K CHUNKS"
+				asl 					MEMSIZ:=SYSBANK*2+4 "16K CHUNKS"
 				clc
 				adc #4
-				sta MEMSIZE ; AND, MEMSIZE (SIZE IN 16K BYTE "CHUNKS")
-*
+				sta MEMSIZE 			AND, MEMSIZE (SIZE IN 16K BYTE "CHUNKS")
+
 * MOVE KERNAL CODE
-*
-				jsr	ADVANCE ; ADVANCE(WORK.P.IO, SRC.P DST.P CNT.OUT)
-*
-				lda DST.P ; K.BASE:=DST.P
+
+				jsr	ADVANCE 			ADVANCE(WORK.P.IO, SRC.P DST.P CNT.OUT)
+
+				lda DST.P 				K.BASE:=DST.P
 				sta K.BASE
 				lda DST.P+1
 				sta K.BASE+1
-				lda B.REG ; MOVE(SRC.P DST.P A=BREG CNT.IN)
+				lda B.REG 				MOVE(SRC.P DST.P A=BREG CNT.IN)
 				jsr MOVE
-*
+
 * MOVE LOADER TO BANK 0 AND SWITCH FROM SYSTEM BANK TO BANK 0
-*
-				lda #$2000 ; MOVE(SRC.P=0:2000 DST.P=8F:2000 A=BREG CNT=LDR.END-$2000)
+
+				lda #$2000 				MOVE(SRC.P=0:2000 DST.P=8F:2000 A=BREG CNT=LDR.END-$2000)
 				sta SRC.P
 				sta DST.P
 				lda /$2000
@@ -369,45 +296,44 @@ LDR010			lda $380,X
 				sta CNT+1
 				lda B.REG
 				jsr MOVE
-				lda #0 ; BREG:=0
+				lda #0
 				sta B.REG
-*
-* INITIALIZE SDT TABLE, KERNEL AND PRINT WELCOME MESSAGE
-*
-				lda K.DRIVES 			; LINK.INIT(A=K.DRIVES DIB1..4.IN, SDT.TBL BLKDLST.IO)
-				jsr LINK.INIT
-				jsr INIT.KRNL 			; INIT.KRNL()
-				jsr WELCOME 			; WELCOME()
 
-				lda E.REG 				; ENABLE ROM BANK
+* INITIALIZE SDT TABLE, KERNEL AND PRINT WELCOME MESSAGE
+
+				lda K.DRIVES 			LINK.INIT(A=K.DRIVES DIB1..4.IN, SDT.TBL BLKDLST.IO)
+				jsr LINK.INIT
+				jsr INIT.KRNL 			INIT.KRNL()
+				jsr WELCOME 			WELCOME()
+
+				lda E.REG 				ENABLE ROM BANK
 				ora #$03
 				sta E.REG
-				lda ROM.ADR 			; IF MONITOR ROM <> NEW
-				cmp #ROM.ID 			; THEN
-				beq LDR020
-				ldx #ERR7X 				; ERROR("ROM ERROR: PLEASE NOTIFY YOUR DEALER")
+				lda ROM.ADR 			IF MONITOR ROM <> NEW
+				cmp #ROM.ID 			THEN
+				beq .2
+				ldx #ERR7X 				ERROR("ROM ERROR: PLEASE NOTIFY YOUR DEALER")
 				ldy #ERR7L
 				jsr ERROR
 
-LDR020			lda E.REG				;	 DISABLE ROM BANK
+.2				lda E.REG				DISABLE ROM BANK
 				and #$F6
 				sta E.REG
 
 * PROCESS INTERPRETER FILE
-*
 * OPEN SOS INTERPRETER FILE (DEFAULT='SOS.INTERP')
-*
+
 *PATHNAME:=I.PATH
 *=OPEN.REF
 *.P:=80:LDREND-2000	 )
 *("INTERPRETER FILE NOT FOUND")
-*
+
 				ldy I.PATH
 
-LDR030			lda I.PATH,Y
+.3				lda I.PATH,Y
 				sta PATH,Y
 				dey
-				bpl LDR030
+				bpl .3
 
 				lda #LDREND-$2000
 				sta SYSBUF.P
@@ -419,21 +345,22 @@ LDR030			lda I.PATH,Y
 				brk
 				.DA #OPEN
 				.DA OPEN.PARMS
-				beq LDR040
+				beq .4
+
 				ldx #ERR1X
 				ldy #ERR1L
 				jsr ERROR
 
-LDR040			lda OPEN.REF
+.4				lda OPEN.REF
 				sta READ.REF
 				sta CLOSE.REF
-*
+
 * READ IN ENTIRE INTERPRETER FILE
-*
-				lda #$80 ; READ(REFNUM=READ.REF
-				sta CXPAGE+RDBUF.P+1 ; RDBUF.P:=80:FILE
-				lda #FILE ; BYTES=$FFFF-FILE+1
-				sta RDBUF.P ; BYTESRD=I.BYTESRD )
+
+				lda #$80 				READ(REFNUM=READ.REF
+				sta CXPAGE+RDBUF.P+1 	RDBUF.P:=80:FILE
+				lda #FILE 				BYTES=$FFFF-FILE+1
+				sta RDBUF.P 			BYTESRD=I.BYTESRD )
 				lda /FILE
 				sta RDBUF.P+1
 
@@ -441,16 +368,16 @@ LDR040			lda OPEN.REF
 				.DA #READ
 				.DA READ.PARMS
 				beq LDR050
-				ldx #ERR0X ; ERROR("I/O ERROR")
+				ldx #ERR0X 				ERROR("I/O ERROR")
 				ldy #ERR0L
 				jsr ERROR
-* +---------------+
+
 * CLOSE INTERPRETER FILE AND CHECK LABEL ! SEE FIGURE 2. !
-* +---------------+
-LDR050			brk  ; CLOSE(REFNUM=CLOSE.REF)
+
+LDR050			brk  					CLOSE(REFNUM=CLOSE.REF)
 				.DA #CLOSE
 				.DA CLOSE.PARMS
-				ldy #7 ; CHECK LABEL
+				ldy #7 					CHECK LABEL
 
 LDR051			lda (RDBUF.P),Y
 				cmp I.LABEL,Y
@@ -459,28 +386,29 @@ LDR051			lda (RDBUF.P),Y
 				bpl LDR051
 				bmi LDR053
 
-LDR052			ldx #ERR2X ; ERROR("INVALID INTERPRETER FILE")
+LDR052			ldx #ERR2X 				ERROR("INVALID INTERPRETER FILE")
 				ldy #ERR2L
 				jsr ERROR
+
 * MOVE INTERPRETER CODE
-*
-LDR053			lda #I.HDR.CNT-2 ; WORK.P:=80:I.HDR.CNT-2
+
+LDR053			lda #I.HDR.CNT-2 		WORK.P:=80:I.HDR.CNT-2
 				sta WORK.P
 				lda /I.HDR.CNT-2
 				sta WORK.P+1
 				lda #$80
 				sta CXPAGE+WORK.P+1
-*
-				jsr ADVANCE ; ADVANCE(WORK.P.IO, SRC.P DST.P CNT.OUT)
-*
-				lda DST.P ; I.BASE.P:=0:DST.P
+
+				jsr ADVANCE 			ADVANCE(WORK.P.IO, SRC.P DST.P CNT.OUT)
+
+				lda DST.P 				I.BASE.P:=0:DST.P
 				sta I.BASE.P
 				lda DST.P+1
 				sta I.BASE.P+1
 				lda #0
 				sta CXPAGE+I.BASE.P+1
-*
-				clc  ; IF DST.P+CNT > K.BASE THEN ERROR
+
+				clc  					IF DST.P+CNT > K.BASE THEN ERROR
 				lda CNT
 				adc DST.P
 				tax
@@ -490,20 +418,20 @@ LDR053			lda #I.HDR.CNT-2 ; WORK.P:=80:I.HDR.CNT-2
 				sbc K.BASE+1
 				beq LDR070
 				bcc LDR070
-				ldx #ERR3X ; ERROR("INCOMPATIBLE INTERPRETER")
+				ldx #ERR3X 				ERROR("INCOMPATIBLE INTERPRETER")
 				ldy #ERR3L
 				jsr ERROR
-*
-LDR070			lda SYSBANK ; MOVE(SRC.P=RDBUF.P DST.P A=SYSBANK CNT.IN)
+
+LDR070			lda SYSBANK 			MOVE(SRC.P=RDBUF.P DST.P A=SYSBANK CNT.IN)
 				jsr MOVE
 
 * PROCESS DRIVER FILE
-*
-* OPEN SOS DRIVER FILE (DEFAULT='SOS.DRIVER') 000441 *
-				ldy D.PATH ; OPEN(PATHNAME:=D.PATH
+* OPEN SOS DRIVER FILE (DEFAULT='SOS.DRIVER')
 
-LDR080			lda D.PATH,Y ; REFNUM=OPEN.REF
-				sta PATH,Y ; SYSBUF.P:=80:LDREND-2000 )
+				ldy D.PATH 				OPEN(PATHNAME:=D.PATH
+
+LDR080			lda D.PATH,Y 			REFNUM=OPEN.REF
+				sta PATH,Y 				SYSBUF.P:=80:LDREND-2000 )
 				dey
 				bpl LDR080
 
@@ -511,31 +439,31 @@ LDR080			lda D.PATH,Y ; REFNUM=OPEN.REF
 				.DA #OPEN
 				.DA OPEN.PARMS
 				beq LDR090
-				ldx #ERR4X ; ERROR("DRIVER FILE NOT FOUND")
+				ldx #ERR4X 				ERROR("DRIVER FILE NOT FOUND")
 				ldy #ERR4L
 				jsr ERROR
 
 LDR090			lda OPEN.REF
 				sta READ.REF
 				sta CLOSE.REF
-*
+
 * READ IN ENTIRE DRIVER FILE INTO BANK 0
-*
-				brk				  ; READ(REFNUM=READ.REF
-				.DA #READ		  ; RDBUF.P:=80:FILE
-				.DA READ.PARMS  	 BYTES=$FFFF-FILE+1
+
+				brk				  		READ(REFNUM=READ.REF
+				.DA #READ		  		RDBUF.P:=80:FILE
+				.DA READ.PARMS  		BYTES=$FFFF-FILE+1
 				beq LDR100
-				ldx #ERR0X 		 ; ERROR("I/O ERROR")
+				ldx #ERR0X 		 		ERROR("I/O ERROR")
 				ldy #ERR0L
 				jsr ERROR
-*   +---------------+
+
 * CLOSE THE DRIVER FILE AND CHECK LABEL   ! SEE FIGURE 3. !
-*   +---------------+
-LDR100			brk  ; CLOSE(REFNUM=CLOSE.REF)
+
+LDR100			brk  					CLOSE(REFNUM=CLOSE.REF)
 				.DA #CLOSE
 				.DA CLOSE.PARMS
 
-				ldy	#$7  ; CHECK LABEL
+				ldy	#$7  				CHECK LABEL
 
 LDR101			lda (RDBUF.P),Y
 				cmp	D.LABEL,Y
@@ -544,13 +472,13 @@ LDR101			lda (RDBUF.P),Y
 				bpl	LDR101
 				bmi	LDR103
 
-LDR102			ldx #ERR5X ; ERROR("INVALID DRIVER FILE")
+LDR102			ldx #ERR5X 				ERROR("INVALID DRIVER FILE")
 				ldy #ERR5L
 				jsr ERROR
-*
+
 * MOVE CHARACTER SET TABLE
-*
-LDR103			lda #D.CHRSET ; MOVE(SRC.P=D.CHRSET DST.P=$C00 A=0 CNT=$400)
+
+LDR103			lda #D.CHRSET 			MOVE(SRC.P=D.CHRSET DST.P=$C00 A=0 CNT=$400)
 				sta	SRC.P
 				lda	/D.CHRSET
 				sta	SRC.P+1
@@ -564,10 +492,10 @@ LDR103			lda #D.CHRSET ; MOVE(SRC.P=D.CHRSET DST.P=$C00 A=0 CNT=$400)
 				sta	CNT+1
 				lda	#0
 				jsr	MOVE
-*
+
 * MOVE KEYBOARD TABLE
-*
-				lda #D.KYBD ; MOVE(SRC.P=D.KYBD DST.P=$1700 A=0 CNT=$100.IN)
+
+				lda #D.KYBD 			MOVE(SRC.P=D.KYBD DST.P=$1700 A=0 CNT=$100.IN)
 				sta SRC.P
 				lda /D.KYBD
 				sta SRC.P+1
@@ -581,89 +509,89 @@ LDR103			lda #D.CHRSET ; MOVE(SRC.P=D.CHRSET DST.P=$C00 A=0 CNT=$400)
 				sta CNT+1
 				lda #0
 				jsr MOVE
-*
+
 * RE-INITIALIZE SDT TABLE
-*
-				ldy	#D.DRIVES-D.FILE ; LINK.INIT(A=D.DRIVES DIB1..4.IN, SDT.TBL BLKDLST.IO)
+
+				ldy	#D.DRIVES-D.FILE 	LINK.INIT(A=D.DRIVES DIB1..4.IN, SDT.TBL BLKDLST.IO)
 				lda	(RDBUF.P),Y
 				jsr	LINK.INIT
-*
-				lda	#0 ; DST.P:=0:I.BASE.P/256*256
+
+				lda	#0 					DST.P:=0:I.BASE.P/256*256
 				sta	CXPAGE+DST.P+1
 				sta	DST.P
 				lda	I.BASE.P+1
 				sta	DST.P+1
-				cmp	#$A0 ; IF DST.P>=$A000 THEN DST.P:=$A000
+				cmp	#$A0 				IF DST.P>=$A000 THEN DST.P:=$A000
 				bcc	LDR105
 				lda	#$A0
 				sta	DST.P+1
 
-LDR105			lda SYSBANK ; DSTBANK:=SYSBANK
+LDR105			lda SYSBANK 			DSTBANK:=SYSBANK
 				sta	DSTBANK
-				jsr	REVERSE ; REVERSE(D.HDR.CNT.IN, WORK.P.OUT)
-*
-* RELOCATE AND MOVE DRIVERS
-*
-NEXTDRIVER		jsr DADVANCE ; "NO DRIVERS LEFT":=DADVANCE(WORK.P.IO SRC.P CNT REL.P.OUT)
-				bcs	LDR140
+				jsr	REVERSE 			REVERSE(D.HDR.CNT.IN, WORK.P.OUT)
 
-				jsr	FLAGS ; "INACTIVE":=FLAGS(SRC.P.IN, PG.ALIGN FIRST.ADIB.OUT)
+* RELOCATE AND MOVE DRIVERS
+
+NEXTDRIVER		jsr DADVANCE 			"NO DRIVERS LEFT":=DADVANCE(WORK.P.IO SRC.P CNT REL.P.OUT)
+				bcs	.4
+
+				jsr	FLAGS 				"INACTIVE":=FLAGS(SRC.P.IN, PG.ALIGN FIRST.ADIB.OUT)
 				bvs	NEXTDRIVER
 
-				jsr	GETMEM ; GETMEM(PG.ALIGN CNT.IN, DST.P DSTBANK DSEGLIST.IO, PREVBANK.OUT)
-				jsr	RELOC ; RELOC(SRC.P REL.P DST.P.IN)
-*
-				lda	DSTBANK ; IF DSTBANK < 0 OR DST.P < SRC.P THEN ERROR
-				bmi	LDR120
-				lda	CXPAGE+SRC.P+1 ; (CONVERT SRC.P TO BANK SWITCHED ADDRESS)
+				jsr	GETMEM 				GETMEM(PG.ALIGN CNT.IN, DST.P DSTBANK DSEGLIST.IO, PREVBANK.OUT)
+				jsr	RELOC 				RELOC(SRC.P REL.P DST.P.IN)
+
+				lda	DSTBANK 			IF DSTBANK < 0 OR DST.P < SRC.P THEN ERROR
+				bmi	.2
+				lda	CXPAGE+SRC.P+1 		(CONVERT SRC.P TO BANK SWITCHED ADDRESS)
 				and	#$7F
 				sta	TEMP.BANK
 				lda	SRC.P+1
-				bpl	LDR110
+				bpl	.1
 				inc	TEMP.BANK
-LDR110			and #$7F
+.1				and #$7F
 
 				clc
 				adc /$2000
 				sta TEMP.ADRH
-				lda DST.P ; (NOW COMPARE)
+				lda DST.P 				(NOW COMPARE)
 				cmp SRC.P
 				lda DST.P+1
 				sbc TEMP.ADRH
 				lda DSTBANK
 				sbc TEMP.BANK
-				bcs LDR130
+				bcs .3
 
-LDR120 			ldx #ERR6X 			; ERROR("DRIVER FILE TOO LARGE")
+.2	 			ldx #ERR6X 				ERROR("DRIVER FILE TOO LARGE")
 				ldy #ERR6L
 				jsr ERROR
 
-LDR130 			lda DSTBANK 		; MOVE(SRC.P DST.P A=DSTBANK CNT.IN)
+.3	 			lda DSTBANK 			MOVE(SRC.P DST.P A=DSTBANK CNT.IN)
 				jsr MOVE
-				jsr LINK 			; LINK(DST.P DSTBANK PREVBANK FIRST.ADIB.IN, SDT.TBL BLKDLST.IO)
+				jsr LINK 				LINK(DST.P DSTBANK PREVBANK FIRST.ADIB.IN, SDT.TBL BLKDLST.IO)
 				jmp NEXTDRIVER
 
 * SETUP USER ENVIRONMENT
 
 * RE-INITIALIZE KERNEL/DRIVERS, ALLOCATE SYSTEM SEGMENTS
 
-LDR140			jsr INIT.KRNL ; INIT.KRNL()
-				jsr ALLOC.SEG ; ALLOC.SEG(K.BASE I.BASE.P SYSBANK.IN)
-				jsr ALLOC.DSEG ; ALLOC.DSEG(DSEGLIST.IN)
-*
+.4				jsr INIT.KRNL 			INIT.KRNL()
+				jsr ALLOC.SEG 			ALLOC.SEG(K.BASE I.BASE.P SYSBANK.IN)
+				jsr ALLOC.DSEG 			ALLOC.DSEG(DSEGLIST.IN)
+
 * SET PREFIX TO THE BOOT VOLUME
-*
-				lda #0 			; TURN VIDEO OFF - PREVENTS CHAR "GROWTH" DURING DOWNLOAD
+
+				lda #0 					TURN VIDEO OFF - PREVENTS CHAR "GROWTH" DURING DOWNLOAD
 				sta SCRNMODE
-				brk  			; SET.PREFIX(PREFIXPATH=".D1")
+				brk  					SET.PREFIX(".D1")
 				.DA #SETPREFIX
 				.DA	PREFX.PARMS
-*
+
 * LAUNCH CHARACTER SET DOWNLOAD (CONSOLE) AND CLEAR SCREEN
-*
-				cli  ; BEGIN CHARACTER SET DOWNLOAD (CONSOLE)
-*
-				lda #0 ; CLEAR TEXT SCREENS
+
+				cli  					BEGIN CHARACTER SET DOWNLOAD (CONSOLE)
+
+				lda #0 					CLEAR TEXT SCREENS
 				sta CXPAGE+SRC.P+1
 				sta CXPAGE+DST.P+1
 				lda #$04
@@ -676,24 +604,25 @@ LDR140			jsr INIT.KRNL ; INIT.KRNL()
 				lda #$A0
 				ldx #8
 
-CLEAR0			ldy #$77
+.5				ldy #$77
 
-CLEAR1			sta (SRC.P),Y
+.6				sta (SRC.P),Y
 				sta (DST.P),Y
 				dey
-				bpl CLEAR1
+				bpl .6
 
-				inc SRC.P+1 ; NEXT PAGE
-				inc DST.P+1 ; NEXT PAGE
+				inc SRC.P+1 			NEXT PAGE
+				inc DST.P+1 			NEXT PAGE
 				dex
-				bne CLEAR0
-*
-.1				inc SRC.P ; WAIT FOR DOWNLOAD TO COMPLETE
-				bne .1
+				bne .5
+
+.7				inc SRC.P 				WAIT FOR DOWNLOAD TO COMPLETE
+				bne .7
+
 				inx
-				bne .1
-*
-				lda #$80 ; TURN VIDEO ON
+				bne .7
+
+				lda #$80 				TURN VIDEO ON
 				sta SCRNMODE
 				rts
 
@@ -701,56 +630,55 @@ CLEAR1			sta (SRC.P),Y
 * IN: DIB1..4 )
 * (INITIALIZES DIB LINKS IN KERNEL'S FLOPPY DRIVER)
 
-SET.DRIVES		tay ; SAVE # OF DRIVES
-				lda #DIB2 ; DIB1:=ADR(DIB2)
+SET.DRIVES		tay 					SAVE # OF DRIVES
+				lda #DIB2 				DIB1:=ADR(DIB2)
 				sta DIB1
 				lda /DIB2
 				sta DIB1+1
-				lda #DIB3 ; DIB2:=ADR(DIB3)
+				lda #DIB3 				DIB2:=ADR(DIB3)
 				sta DIB2
 				lda /DIB3
 				sta DIB2+1
-				lda #DIB4 ; DIB3:=ADR(DIB4)
+				lda #DIB4 				DIB3:=ADR(DIB4)
 				sta DIB3
 				lda /DIB4
 				sta DIB3+1
-*
-				lda #0 ; CASE (Y=# OF DRIVES)
+
+				lda #0 					CASE (Y=# OF DRIVES)
 				cpy #2
-				bcc STDR010
-				beq STDR020
+				bcc .1
+				beq .2
 				cpy #4
-				bcc STDR030
-				bcs STDR040
-*
-STDR010			sta DIB1 ; 1: DIB1:=0
+				bcc .3
+				bcs .4
+
+.1				sta DIB1 				1: DIB1:=0
 				sta DIB1+1
 				rts
-*
-STDR020			sta DIB2 ; 2: DIB2:=0
+
+.2				sta DIB2 				2: DIB2:=0
 				sta DIB2+1
 				rts
-*
-STDR030			sta DIB3 ; 3: DIB3:=0
+
+.3				sta DIB3 				3: DIB3:=0
 				sta DIB3+1
 				rts
-*
-STDR040			sta DIB4 ; 4: DIB4:=0
+
+.4				sta DIB4 				4: DIB4:=0
 				sta DIB4+1
-				rts ; RETURN
+				rts
 
 * INIT.KRNL ()
-*
 * (CALLS KERNEL INITIALIZATION MODULES)
 
-INIT.KRNL		lda	E.REG ; SWITCH IN I/O BANK AND SELECT PRIMARY STACK
-				ora	#$44 ; E:=( 0.1.1.X:0.1.0.0 )
-				sta	E.REG ; ( 1.I.S.R:W.P.R.R )
+INIT.KRNL		lda	E.REG 				SWITCH IN I/O BANK AND SELECT PRIMARY STACK
+				ora	#$44 				E:=( 0.1.1.X:0.1.0.0 )
+				sta	E.REG 				( 1.I.S.R:W.P.R.R )
 
-				lda	/SZPAGE ; SWITCH TO SOS ZPAGE
+				lda	/SZPAGE 			SWITCH TO SOS ZPAGE
 				sta	Z.REG
 
-				jsr	INT.INIT ; CALL KERNEL INITIALIZATION ROUTINES
+				jsr	INT.INIT 			CALL KERNEL INITIALIZATION ROUTINES
 				jsr	EVQ.INIT
 				jsr	BFM.INIT2
 				bcs	INITK.ERR
@@ -762,16 +690,16 @@ INIT.KRNL		lda	E.REG ; SWITCH IN I/O BANK AND SELECT PRIMARY STACK
 				jsr	BFM.INIT
 				jsr CLK.INIT
 
-				lda E.REG ; SWITCH OUT I/O BANK AND RETURN TO ALTERNATE STACK
-				and #$BB ; E:=( 0.0.1.X:0.0.0.0 )
-				sta E.REG ; ( 1.I.S.R:W.P.R.R )
+				lda E.REG 				SWITCH OUT I/O BANK AND RETURN TO ALTERNATE STACK
+				and #$BB 				E:=( 0.0.1.X:0.0.0.0 )
+				sta E.REG 				( 1.I.S.R:W.P.R.R )
 
-				lda /CZPAGE ; SWITCH BACK TO USER ZPAGE
+				lda /CZPAGE				SWITCH BACK TO USER ZPAGE
 				sta Z.REG
 
-				rts  ; RETURN
+				rts
 
-INITK.ERR		ldx #ERR0X ; ERROR("I/O ERROR")
+INITK.ERR		ldx #ERR0X 				ERROR("I/O ERROR")
 				ldy #ERR0L
 				jmp ERROR
 
@@ -782,8 +710,8 @@ INITK.ERR		ldx #ERR0X ; ERROR("I/O ERROR")
 * (ADVANCES WORK.P TO NEXT INTERP.KERNEL MODULE. INITS SRC.P, DST.P, CNT FOR MOVE)
 
 ADVANCE			clc
-				ldy #2 ; Y:=0
-				lda WORK.P ; WORK.P:=WORK.P+(WORK.P),Y + 4
+				ldy #2 					Y:=0
+				lda WORK.P 				WORK.P:=WORK.P+(WORK.P),Y + 4
 				adc (WORK.P),Y
 				tax
 				iny
@@ -796,7 +724,7 @@ ADVANCE			clc
 				pla
 				adc #0
 				sta WORK.P+1
-				clc ; SRC.P:=X:WORK.P+4
+				clc 					SRC.P:=X:WORK.P+4
 				lda WORK.P
 				adc #$0004
 				sta SRC.P
@@ -805,36 +733,36 @@ ADVANCE			clc
 				sta SRC.P+1
 				lda CXPAGE+WORK.P+1
 				sta CXPAGE+SRC.P+1
-				ldy #0 ; DST.P:=0:(WORK.P)
+				ldy #0 					DST.P:=0:(WORK.P)
 				sty CXPAGE+DST.P+1
 				lda (WORK.P),Y
 				sta DST.P
 				iny
 				lda (WORK.P),Y
 				sta DST.P+1
-				iny ; Y:=2
-				lda (WORK.P),Y ; CNT:=(WORK.P),Y
+				iny 					Y:=2
+				lda (WORK.P),Y 			CNT:=(WORK.P),Y
 				sta CNT
 				iny
 				lda (WORK.P),Y
 				sta CNT+1
-				rts ; RETURN
+				rts
 
 * REVERSE ( IN: D.HDR.CNT
 * IN: SDT.SIZE = CONSTANT
 * I/O: DRIVER FILE,
 * OUT: WORK.P ) )
-*
+
 * LOCAL: REV.SAVE, REV.TEMP
 * (REVERSES TITLE/CODE/RELOC COUNTS TO ALLOW DRIVER FILE TO BE PROCESSED FROM BACK TO FRONT)
 
-REVERSE			lda	#D.HDR.CNT ; WORK.P:=80:D.HDR.CNT
+REVERSE			lda	#D.HDR.CNT 			WORK.P:=80:D.HDR.CNT
 				sta	WORK.P
 				lda	/D.HDR.CNT
 				sta	WORK.P+1
 				lda	#$80
 				sta	CXPAGE+WORK.P+1
-				clc	 ; WORK.P:=WORK.P+(WORK.P)+2
+				clc	 					WORK.P:=WORK.P+(WORK.P)+2
 				ldy	#0
 				lda	WORK.P
 				adc	(WORK.P),Y
@@ -849,62 +777,62 @@ REVERSE			lda	#D.HDR.CNT ; WORK.P:=80:D.HDR.CNT
 				pla
 				adc	#0
 				sta	WORK.P+1
-				lda	(WORK.P),Y ; IF (WORK.P)=$FFFF
+				lda	(WORK.P),Y 			IF (WORK.P)=$FFFF
 				dey
-				and (WORK.P),Y ; THEN
+				and (WORK.P),Y 			THEN
 				cmp #$FF
-				bne REV010
-				ldx #ERR10X ; ERROR("EMPTY DRIVER FILE")
+				bne .1
+				ldx #ERR10X 			ERROR("EMPTY DRIVER FILE")
 				ldy #ERR10L
 				jsr ERROR
 
-REV010			lda #$FF
+.1				lda #$FF
 				sta REV.SAVE
 				sta REV.SAVE+1
-*
-REV020			lda REV.SAVE ;R1: STACK:=REV.SAVE
+
+.2				lda REV.SAVE 			R1: STACK:=REV.SAVE
 				pha
 				lda REV.SAVE+1
 				pha
-				ldy #0 ; REV.SAVE:=(WORK.P)
+				ldy #0 					REV.SAVE:=(WORK.P)
 				lda (WORK.P),Y
 				sta REV.SAVE
 				iny
 				lda (WORK.P),Y
 				sta REV.SAVE+1
-				pla  ; (WORK.P):=STACK
+				pla  					(WORK.P):=STACK
 				sta (WORK.P),Y
 				dey
 				pla
 				sta (WORK.P),Y
-				lda REV.SAVE ; IF REV.SAVE = $FFFF THEN EXIT
+				lda REV.SAVE 			IF REV.SAVE = $FFFF THEN EXIT
 				and REV.SAVE+1
 				cmp #$FF
-				beq REV.EXIT
+				beq .9
 
-REV030			bit REV.SAVE+1 ; IF REV.SAVE >= $8000 THEN ERROR
-				bmi REV040
-				clc  ; WORK.P:=WORK.P+REV.SAVE+2
+.3				bit REV.SAVE+1 			IF REV.SAVE >= $8000 THEN ERROR
+				bmi .4
+				clc  					WORK.P:=WORK.P+REV.SAVE+2
 				lda WORK.P
 				adc REV.SAVE
 				tax
 				lda WORK.P+1
 				adc REV.SAVE+1
 				pha
-				bcs REV040
+				bcs .4
 				txa
 				adc #2
 				sta WORK.P
 				pla
 				adc #0
 				sta WORK.P+1
-				bcc REV020 ; IF C=FALSE THEN R1
+				bcc .2 				IF C=FALSE THEN R1
 
-REV040			ldx #ERR5X ; ELSE ERROR("INVALID DRIVER FILE")
+.4				ldx #ERR5X 				ELSE ERROR("INVALID DRIVER FILE")
 				ldy #ERR5L
 				jsr ERROR
 
-REV.EXIT		rts  ; RETURN
+.9				rts
 
 * DADVANCE ( I/O: WORK.P
 * OUT: C="NO DRIVERS LEFT"
@@ -913,34 +841,34 @@ REV.EXIT		rts  ; RETURN
 * OUT: REL.P )
 * (ADVANCES WORK.P TO NEXT DRIVER MODULE. INITS SRC.P, CNT, REL.P FOR RELOCATION AND MOVE)
 
-DADVANCE		ldy #0 ; IF (WORK.P)=$FFFF THEN EXIT "NO DRIVERS LEFT IN FILE"
+DADVANCE		ldy #0 					IF (WORK.P)=$FFFF THEN EXIT "NO DRIVERS LEFT IN FILE"
 				lda (WORK.P),Y
 				iny
 				and (WORK.P),Y
 				cmp #$FF
-				bne DADV010
-				sec  ; C:="NO DRIVERS LEFT"
-				rts  ; RETURN
+				bne .1
+				sec  					C:="NO DRIVERS LEFT"
+				rts
 
-DADV010			lda WORK.P ; REL.P:=X:WORK.P
+.1				lda WORK.P 				REL.P:=X:WORK.P
 				sta REL.P
 				lda WORK.P+1
 				sta REL.P+1
 				lda CXPAGE+WORK.P+1
 				sta CXPAGE+REL.P+1
 
-				jsr DADD ; ADVANCE TO CODE COUNT FIELD
+				jsr DADD 				ADVANCE TO CODE COUNT FIELD
 
-				ldy #0 ; CNT:=(WORK.P)
+				ldy #0		CNT:=(WORK.P)
 				lda (WORK.P),Y
 				sta CNT
 				iny
 				lda (WORK.P),Y
 				sta CNT+1
 
-				jsr DADD ; ADVANCE TO TITLE CNT FIELD
+				jsr DADD 				ADVANCE TO TITLE CNT FIELD
 
-				clc  ; SRC.P:=X:WORK.P+2
+				clc  					SRC.P:=X:WORK.P+2
 				lda WORK.P
 				adc #2
 				sta SRC.P
@@ -950,15 +878,15 @@ DADV010			lda WORK.P ; REL.P:=X:WORK.P
 				lda CXPAGE+WORK.P+1
 				sta CXPAGE+SRC.P+1
 
-				jsr DADD ; ADVANCE TO RELOC FIELD OF NEXT DRIVER
-				clc  ; C:="DRIVERS LEFT"
-				rts  ; RETURN
+				jsr DADD 				ADVANCE TO RELOC FIELD OF NEXT DRIVER
+				clc  					C:="DRIVERS LEFT"
+				rts
 
 * DADD ( I/O: WORK.P )
-*
+
 * (ADVANCES WORK.P TO NEXT FIELD IN DRIVER MODULE)
 
-DADD			sec  ; WORK.P:=WORK.P-(WORK.P)-2
+DADD			sec  					WORK.P:=WORK.P-(WORK.P)-2
 				ldy #0
 				lda WORK.P
 				sbc (WORK.P),Y
@@ -973,7 +901,7 @@ DADD			sec  ; WORK.P:=WORK.P-(WORK.P)-2
 				pla
 				sbc #0
 				sta WORK.P+1
-				rts  ; RETURN
+				rts
 
 * FLAGS ( IN: SRC.P
 * OUT: PG.ALIGN
@@ -983,46 +911,46 @@ DADD			sec  ; WORK.P:=WORK.P-(WORK.P)-2
 * LOCAL: PREV.ADIB.P, DIB.P
 * (PROCESSES "INACTIVE" & "PAGE ALIGN" FLAGS IN DRIVER MODULE'S DIBS"
 
-FLAGS			sec				 ; C="FIRST DIB"
+FLAGS			sec						C="FIRST DIB"
 
-FLAG010			jsr NEXT.DIB ; NEXT.DIB(SRC.P.IN, DIB.P PG.ALIGN C OV.OUT)
-				bvc				 FLAG015 ; IF OV <> "INACTIVE" THEN ACTIVE DIB FOUND
-				bcc				 FLAG010 ; IF C <> "LAST DIB" THEN CHECK NEXT DIB
-				rts				 ; RETURN (OV:="ALL DIBS INACTIVE")
-*
-FLAG015			php  ; PUSH STATUS
-				sec  ; FIRST.ADIB:=DIB.P-SRC.P
+.1				jsr NEXT.DIB 			NEXT.DIB(SRC.P.IN, DIB.P PG.ALIGN C OV.OUT)
+				bvc	.2		 			IF OV <> "INACTIVE" THEN ACTIVE DIB FOUND
+				bcc	.1		 			IF C <> "LAST DIB" THEN CHECK NEXT DIB
+				rts				 		(OV:="ALL DIBS INACTIVE")
+
+.2				php  					PUSH STATUS
+				sec  					FIRST.ADIB:=DIB.P-SRC.P
 				lda DIB.P
 				sbc SRC.P
 				sta FIRST.ADIB
 				lda DIB.P+1
 				sbc SRC.P+1
 				sta FIRST.ADIB+1
-				lda DIB.P ; PREV.ADIB.P:=X:DIB.P
+				lda DIB.P 				PREV.ADIB.P:=X:DIB.P
 				sta PREV.ADIB.P
 				lda DIB.P+1
 				sta PREV.ADIB.P+1
 				lda CXPAGE+DIB.P+1
 				sta CXPAGE+PREV.ADIB.P+1
-				plp  ; PULL STATUS
-				bcs FLAG100 ; IF C="LAST DIB" THEN EXIT
-*
-FLAG020			jsr NEXT.DIB ; NEXT.DIB(SRC.P.IN, DIB.P PG.ALIGN C OV.OUT)
-				php  ; PUSH STATUS
-				ldy #0 ; IF OV="INACTIVE DIB"
-				bvc FLAG025
-				sec  ; THEN
-				lda PREV.ADIB.P ; (PREV.ADIB.P):=PREV.ADIB.P-SRC.P
+				plp  					PULL STATUS
+				bcs .8		 			IF C="LAST DIB" THEN EXIT
+
+.3				jsr NEXT.DIB 			NEXT.DIB(SRC.P.IN, DIB.P PG.ALIGN C OV.OUT)
+				php  					PUSH STATUS
+				ldy #0 					IF OV="INACTIVE DIB"
+				bvc .4
+				sec  					THEN
+				lda PREV.ADIB.P 		(PREV.ADIB.P):=PREV.ADIB.P-SRC.P
 				sbc SRC.P
 				sta (PREV.ADIB.P),Y
 				iny
 				lda PREV.ADIB.P+1
 				sbc SRC.P+1
 				sta (PREV.ADIB.P),Y
-				jmp FLAG050
-*
-FLAG025			sec  ; ELSE
-				lda DIB.P ; (PREV.ADIB.P):=DIB.P-SRC.P
+				jmp .5
+
+.4				sec  					ELSE
+				lda DIB.P 				(PREV.ADIB.P):=DIB.P-SRC.P
 				sbc SRC.P
 				sta (PREV.ADIB.P),Y
 				iny
@@ -1030,15 +958,15 @@ FLAG025			sec  ; ELSE
 				tax
 				sbc SRC.P+1
 				sta (PREV.ADIB.P),Y
-				stx PREV.ADIB.P+1 ; PREV.ADIB.P:=DIB.P
+				stx PREV.ADIB.P+1 		PREV.ADIB.P:=DIB.P
 				lda DIB.P
 				sta PREV.ADIB.P
 
-FLAG050			plp  ; PULL STATUS
-				bcc FLAG020 ; IF C <> "LAST DIB" THEN PROCESS NEXT DIB
+.5				plp  					PULL STATUS
+				bcc .3		 			IF C <> "LAST DIB" THEN PROCESS NEXT DIB
 
-FLAG100			clv  ; OV:="ACTIVE DIBS"
-				rts  ; RETURN
+.8				clv  					OV:="ACTIVE DIBS"
+				rts
 
 * NEXT.DIB ( IN: C="FIRST DIB"
 * IN: SRC.P
@@ -1050,36 +978,36 @@ FLAG100			clv  ; OV:="ACTIVE DIBS"
 * (ADVANCES TO NEXT DIB IN DRIVER MODULE)
 
 NEXT.DIB		ldy #0
-				bcc NXTD010 ; IF C = "FIRST DIB"
-				sty PG.ALIGN ; THEN
-				sty PG.ALIGN+1 ; PG.ALIGN:=0
-				lda SRC.P ; DIB.P:=X:SRC.P
+				bcc .1		 			IF C = "FIRST DIB"
+				sty PG.ALIGN 			THEN
+				sty PG.ALIGN+1 			PG.ALIGN:=0
+				lda SRC.P 				DIB.P:=X:SRC.P
 				sta DIB.P
 				lda SRC.P+1
 				sta DIB.P+1
 				lda CXPAGE+SRC.P+1
 				sta CXPAGE+DIB.P+1
-				jmp NXTD020
+				jmp .2
 
-NXTD010			lda SRC.P ; ELSE
-				adc (DIB.P),Y ; DIB.P:=SRC.P+(DIB.P)
+.1				lda SRC.P		ELSE
+				adc (DIB.P),Y 			DIB.P:=SRC.P+(DIB.P)
 				tax
 				iny
 				lda SRC.P+1
 				adc (DIB.P),Y
 				sta DIB.P+1
 				stx DIB.P
-*
-NXTD020			ldy #DIB.FLAGS ; IF (DIB.P),DIB.FLAGS.BIT7 = "INACTIVE"
+
+.2				ldy #DIB.FLAGS 			IF (DIB.P),DIB.FLAGS.BIT7 = "INACTIVE"
 				lda (DIB.P),Y
-				bmi NXTD030
-				bit NXTD999 ; THEN
-				bvs NXTD040 ; OV:="INACTIVE"
-*   ELSE
-NXTD030			and #$40 ; IF (DIB.P),DIB.FLAGS.BIT6 = "PAGE ALIGN"
-				beq NXTD040
-				clc  ; THEN
-				lda #DIB.DCB+2 ; PAGE.ALIGN:=DIB.DCB+2+(SRC.P),DIB.DCB
+				bmi .3
+				bit .9			 		THEN
+				bvs .4			 		OV:="INACTIVE"
+
+.3				and #$40 				IF (DIB.P),DIB.FLAGS.BIT6 = "PAGE ALIGN"
+				beq .4
+				clc 		THEN
+				lda #DIB.DCB+2 			PAGE.ALIGN:=DIB.DCB+2+(SRC.P),DIB.DCB
 				tay
 				dey
 				dey
@@ -1089,60 +1017,59 @@ NXTD030			and #$40 ; IF (DIB.P),DIB.FLAGS.BIT6 = "PAGE ALIGN"
 				lda #0
 				adc (SRC.P),Y
 				sta PG.ALIGN+1
-				clv  ; OV:="ACTIVE"
-*
-NXTD040			ldy #0 ; IF (DIB.P) = 0
+				clv  					OV:="ACTIVE"
+
+.4				ldy #0		IF (DIB.P) = 0
 				lda (DIB.P),Y
 				iny
 				ora (DIB.P),Y
-				bne NXTD998
-				sec  ; THEN C:="LAST DIB"
-				bcs NXTD999
-NXTD998			clc  ; ELSE C:=NOT "LAST DIB"
-NXTD999			rts  ; RETURN
+				bne .8
+				sec  					THEN C:="LAST DIB"
+				bcs .9
+.8				clc 					ELSE C:=NOT "LAST DIB"
+.9				rts
 
-*
 * GETMEM ( IN: PG.ALIGN
 * IN: CNT
 * I/O: DST.P
 * I/O: DSTBANK
 * I/O: DSEGLIST
 * OUT: PREVBANK )
-*
+
 * LOCAL: PREVDST
 * (COMPUTES # OF PAGES TO ADD TO DRIVER SEGMENT AND WHETHER TO BEGIN A NEW SEGMENT)
 
-GETMEM			lda	DSTBANK ; PREVBANK:=DSTBANK
+GETMEM			lda	DSTBANK 			PREVBANK:=DSTBANK
 				sta	PREVBANK
-				lda	DST.P ; PREVDST:=DST.P
+				lda	DST.P 				PREVDST:=DST.P
 				sta	PREVDST
 				lda	DST.P+1
 				sta	PREVDST+1
-				jsr	NEWDST ; NEWDST(PG.ALIGN.IN, PREVDST.IN, CNT.IN, DST.P.OUT)
+				jsr	NEWDST 				NEWDST(PG.ALIGN.IN, PREVDST.IN, CNT.IN, DST.P.OUT)
 
-				lda	DST.P+1 ; IF DST.P >= $2000
+				lda	DST.P+1 			IF DST.P >= $2000
 				cmp	#$20
-				bcc	GETM010
-				sec  ; THEN
-				lda PREVDST+1 ; A=PAGES:=PREVDST-DST.P
+				bcc	.1
+				sec  					THEN
+				lda PREVDST+1 			A=PAGES:=PREVDST-DST.P
 				sbc DST.P+1
 				clc
-				jsr BUILD.DSEG ; BUILD.DSEG(C="NEXT BANK".IN, A=PAGES.IN, DSEGLIST.IO)
-				jmp GETM.EXIT
-*   ELSE
-GETM010			dec DSTBANK ; DSTBANK:=DSTBANK-1
-				lda #$A000 ; PREVDST:=$A000
+				jsr BUILD.DSEG 			BUILD.DSEG(C="NEXT BANK".IN, A=PAGES.IN, DSEGLIST.IO)
+				jmp .4
+
+.1				dec DSTBANK 			DSTBANK:=DSTBANK-1
+				lda #$A000 				PREVDST:=$A000
 				sta PREVDST
 				lda /$A000
 				sta PREVDST+1
-				jsr NEWDST ; NEWDST(PG.ALIGN.IN, PREVDST.IN, CNT.IN, DST.P.OUT)
-				sec  ; A="PAGES":=PREVDST-DST.P
+				jsr NEWDST 				NEWDST(PG.ALIGN.IN, PREVDST.IN, CNT.IN, DST.P.OUT)
+				sec  					A="PAGES":=PREVDST-DST.P
 				lda PREVDST+1
 				sbc DST.P+1
 				sec
-				jsr BUILD.DSEG ; BUILD.DSEG(C="NEXTBANK".IN, A="PAGES".IN, DSEGLIST.IO)
-*
-GETM.EXIT		rts ; RETURN
+				jsr BUILD.DSEG 			BUILD.DSEG(C="NEXTBANK".IN, A="PAGES".IN, DSEGLIST.IO)
+
+.4				rts
 
 *
 * NEWDST ( IN: PG.ALIGN
@@ -1151,7 +1078,7 @@ GETM.EXIT		rts ; RETURN
 * I/O: DST.P )
 * (COMPUTES DESTINATION BASE ADDRESS, ALIGNING ON PAGE BOUNDARY IF REQUESTED)
 
-NEWDST			sec  ; IF (PREVDST-$2000) < CNT
+NEWDST			sec  					IF (PREVDST-$2000) < CNT
 				lda PREVDST
 				sbc #$2000
 				tax
@@ -1159,23 +1086,23 @@ NEWDST			sec  ; IF (PREVDST-$2000) < CNT
 				sbc /$2000
 				cpx CNT
 				sbc CNT+1
-				bcs NEWD010
-				lda #0 ; THEN
-				sta DST.P ; DST.P:=0
+				bcs .1
+				lda #0 					THEN
+				sta DST.P 				DST.P:=0
 				sta DST.P+1
-				beq NEWD.EXIT
+				beq .8
 
-NEWD010			sec  ; ELSE
-				lda PREVDST ; DST.P:=PREVDST-CNT
+.1				sec  					ELSE
+				lda PREVDST 			DST.P:=PREVDST-CNT
 				sbc CNT
 				sta DST.P
 				lda PREVDST+1
 				sbc CNT+1
 				sta DST.P+1
-				lda PG.ALIGN ; IF PG.ALIGN <> 0
-				ora PG.ALIGN+1 ; THEN
-				beq NEWD.EXIT
-				sec  ; DST.P:=(DST.P/256*256)-PG.ALIGN
+				lda PG.ALIGN 			IF PG.ALIGN <> 0
+				ora PG.ALIGN+1 			THEN
+				beq .8
+				sec  					DST.P:=(DST.P/256*256)-PG.ALIGN
 				lda #0
 				sbc PG.ALIGN
 				sta DST.P
@@ -1183,7 +1110,7 @@ NEWD010			sec  ; ELSE
 				sbc PG.ALIGN+1
 				sta DST.P+1
 
-NEWD.EXIT		rts  ; RETURN
+.8				rts
 
 * BUILD.DSEG ( IN:C="NEXTBANK"
 *IN:A="PAGES"
@@ -1191,23 +1118,23 @@ NEWD.EXIT		rts  ; RETURN
 * (COMPUTES # OF PAGES TO ADD TO DRIVER SEGMENT AND WHETHER TO BEGIN A NEW SEGMENT)
 
 BUILD.DSEG		pha
-				bcs BLDS010 ; IF ("NEXTBANK"=TRUE OR DSEGX=$FF)
-				lda DSEGX ; THEN
-				bpl BLDS020
+				bcs .1		 			IF ("NEXTBANK"=TRUE OR DSEGX=$FF)
+				lda DSEGX 				THEN
+				bpl .2
 
-BLDS010			inc DSEGX ; DSEGX:=DSEGX+1
+.1				inc DSEGX 				DSEGX:=DSEGX+1
 
-BLDS020			ldx DSEGX
-				clc  ; DSEGLIST(DSEGX):=DSEGLIST(DSEGX)+"PAGES"
+.2				ldx DSEGX
+				clc  					DSEGLIST(DSEGX):=DSEGLIST(DSEGX)+"PAGES"
 				pla
 				adc DSEGLIST,X
 				sta DSEGLIST,X
-				rts  ; RETURN
+				rts
 
-DSEGX			.DA #$0 ; # PAGES FOR 1ST DRIVER SEGMENT (BANK N )
-				.DA #$0 ; " 2ND " (BANK N-1)
-				.DA #$0 ; " 3RD " (BANK N-2)
-				.DA #$0 ; " 4TH " (BANK N-3)
+DSEGX			.DA #$0 				# PAGES FOR 1ST DRIVER SEGMENT (BANK N )
+				.DA #$0 				" 2ND " (BANK N-1)
+				.DA #$0 				" 3RD " (BANK N-2)
+				.DA #$0 				" 4TH " (BANK N-3)
 
 * RELOC ( IN: SRC.P
 * IN: REL.P
@@ -1217,7 +1144,7 @@ DSEGX			.DA #$0 ; # PAGES FOR 1ST DRIVER SEGMENT (BANK N )
 *LOCAL: REL.END, CODE.P
 * (RELOCATES DRIVER MODULE'S CODE FIELD USING RELOCATION FIELD)
 
-RELOC			sec  ; REL.END:=REL.P-(REL.P)
+RELOC			sec  					; REL.END:=REL.P-(REL.P)
 				ldy #0
 				lda REL.P
 				sbc (REL.P),Y
@@ -1227,19 +1154,19 @@ RELOC			sec  ; REL.END:=REL.P-(REL.P)
 				sbc (REL.P),Y
 				sta REL.END+1
 
-REL.LOOP		sec  ; REL.P:=REL.P-2
+.1				sec  					REL.P:=REL.P-2
 				lda REL.P
 				sbc #2
 				sta REL.P
 				lda REL.P+1
 				sbc #0
 				sta REL.P+1
-				lda REL.P ; IF REL.P < REL.END THEN EXIT
+				lda REL.P 				IF REL.P < REL.END THEN EXIT
 				cmp REL.END
 				lda REL.P+1
 				sbc REL.END+1
-				bcc REL.EXIT
-				ldy #0 ; CODE.P:=X:SRC.P+(REL.P)
+				bcc .8
+				ldy #0 					CODE.P:=X:SRC.P+(REL.P)
 				clc
 				lda SRC.P
 				adc (REL.P),Y
@@ -1250,7 +1177,7 @@ REL.LOOP		sec  ; REL.P:=REL.P-2
 				sta CODE.P+1
 				lda CXPAGE+SRC.P+1
 				sta CXPAGE+CODE.P+1
-				ldy #0 ; (CODE.P):=(CODE.P)+DST.P
+				ldy #0 					(CODE.P):=(CODE.P)+DST.P
 				clc
 				lda (CODE.P),Y
 				adc DST.P
@@ -1259,9 +1186,9 @@ REL.LOOP		sec  ; REL.P:=REL.P-2
 				lda (CODE.P),Y
 				adc DST.P+1
 				sta (CODE.P),Y
-				jmp REL.LOOP ; GOTO REL.LOOP
-*
-REL.EXIT		rts  ; RETURN
+				jmp .1		 			GOTO REL.LOOP
+
+.8				rts
 
 * ALLOC.SEG ( IN: K.BASE
 * IN: I.BASE.P
@@ -1270,44 +1197,44 @@ REL.EXIT		rts  ; RETURN
 * D.BASE.PG
 * (ALLOCATES SEGMENTS FOR KERNEL, INTERPRETER AND SYSTEM WORK AREA)
 
-ALLOC.SEG		brk  ; REQ.SEG(BASE=(F,0), LIMIT=(F,1D), SEGID=0, SEGNUM)
+ALLOC.SEG		brk 		REQ.SEG(BASE=(F,0), LIMIT=(F,1D), SEGID=0, SEGNUM)
 				.DA #REQSEG
 				.DA SEGMENT
 
-				lda #$10 ; SET BASE/LIMIT BANKS
+				lda #$10		SET BASE/LIMIT BANKS
 				sta SEGBASE
 				sta SEGLIM
-				lda #0 ; AND INIT BASE PAGE
+				lda #0		AND INIT BASE PAGE
 				sta SEGBASE+1
 
-				ldx K.BASE+1 ; KERNEL SEGMENT, ID=1
+				ldx K.BASE+1		KERNEL SEGMENT, ID=1
 				jsr RSEG
 
-				ldx I.BASE.P+1 ; INTERPRETER SEGMENT, ID=2
+				ldx I.BASE.P+1		INTERPRETER SEGMENT, ID=2
 				jsr RSEG
 				rts
 *
 * RSEG ( IN: X=BASE.PAGE OF SEGMENT )
 *
 
-RSEG			inc SEGID ; SEGID:=SEGID+1
-				ldy SEGBASE+1 ; LIMIT.PAGE:=BASE.PAGE-1
+RSEG			inc SEGID		SEGID:=SEGID+1
+				ldy SEGBASE+1		LIMIT.PAGE:=BASE.PAGE-1
 				dey
 				sty SEGLIM+1
-				stx SEGBASE+1 ; BASE.PAGE:=X
-*
-				cpx #$A0 ; IF BASE>=$A0 OR LIMIT<$A0 THEN
-				bcs RSEG010 ; THEN
-				lda SEGLIM+1 ; REQUEST ONLY ONE SEGMENT
+				stx SEGBASE+1		BASE.PAGE:=X
+
+				cpx #$A0		IF BASE>=$A0 OR LIMIT<$A0 THEN
+				bcs RSEG010		THEN
+				lda SEGLIM+1		REQUEST ONLY ONE SEGMENT
 				cmp #$A0
 				bcc RSEG010
-*
-				txa  ; ELSE
-				pha  ; REQUEST TWO SEGMENTS
+
+				txa 		ELSE
+				pha 		REQUEST TWO SEGMENTS
 				ldx #$A0
 				stx SEGBASE+1
-*
-				brk  ; REQ.SEG(BASE, LIMIT, SEGID, SEGNUM)
+
+				brk 		REQ.SEG(BASE, LIMIT, SEGID, SEGNUM)
 				.DA #REQSEG
 				.DA SEGMENT
 
@@ -1325,7 +1252,7 @@ ALDS.EXIT		rts
 *IN: Y=MESSAGE LENGTH
 * (DISPLAYS ERROR MESSAGE, SOUNDS BELL AND LOOPS UNTIL CONTROL/RESET PRESSED)
 
-ERROR			sty ETEMP ; CENTER MSG (Y:=LEN/2+LEN)
+ERROR			sty ETEMP		CENTER MSG (Y:=LEN/2+LEN)
 				sec
 				lda #40
 				sbc ETEMP
@@ -1333,18 +1260,18 @@ ERROR			sty ETEMP ; CENTER MSG (Y:=LEN/2+LEN)
 				clc
 				adc ETEMP
 				tay
-*
-PRNT010			lda ERR,X ; MOVE MESSAGE TO SCREEN MEMORY
+
+.1				lda ERR,X		MOVE MESSAGE TO SCREEN MEMORY
 				sta EMSGADR-1,Y
 				dex
 				dey
 				dec ETEMP
-				bne PRNT010
-*
-				lda #$73 ; E:=( 0.1.1.1:0.0.1.1 )
-				sta E.REG ; ( 1.I.S.R:W.P.R.S )
-				lda $C040 ; SOUND BELL
-				jmp * ; LOOP UNTIL REBOOT (CTRL/RESET)
+				bne .1
+
+				lda #$73		E:=( 0.1.1.1:0.0.1.1 )
+				sta E.REG		( 1.I.S.R:W.P.R.S )
+				lda $C040		SOUND BELL
+				jmp *		LOOP UNTIL REBOOT (CTRL/RESET)
 *
 * ERROR MESSAGES
 *
@@ -1369,34 +1296,34 @@ ERR4L			.EQ *-ERR4
 ERR4X			.EQ *-ERR-1
 ERR5			.AS "INVALID DRIVER FILE"
 ERR5L			.EQ *-ERR5
-*
-RSEG010			brk  ; REQ.SEG(BASE, LIMIT, SEGID, SEGNUM)
+
+RSEG010			brk  					REQ.SEG(BASE, LIMIT, SEGID, SEGNUM)
 				.DA #REQSEG
 				.DA SEGMENT
-*
-				rts  ; RETURN
-*
+
+				rts
+
 * ALLOC.DSEG ( IN: DSEGLIST )
-*
+
 * (ALLOCATES SEGMENTS FOR DRIVER MODULES"
 
-ALLOC.DSEG		inc DSEGX ; DSEGX:=DSEGX+1
-				bne ALDS010 ; IF DSEGX=0
-				ldx #ERR5X ; THEN ERROR("INVALID DRIVER FILE")
+ALLOC.DSEG		inc DSEGX 				DSEGX:=DSEGX+1
+				bne .1					IF DSEGX=0
+				ldx #ERR5X 				THEN ERROR("INVALID DRIVER FILE")
 				ldy #ERR5L
 				jsr ERROR
-*
-ALDS010			ldy #$FF ; Y:=-1
-ALDS020			iny ; WHILE (Y:=Y+1) < DSEGX
-				cpy	DSEGX ; DO
+
+.1				ldy #$FF 				Y:=-1
+.2				iny 					WHILE (Y:=Y+1) < DSEGX
+				cpy	DSEGX 				DO
 				bcs	ALDS.EXIT
-				lda	DSEGLIST,Y ; PAGECT:=DSEGLIST(Y)
+				lda	DSEGLIST,Y 			PAGECT:=DSEGLIST(Y)
 				sta	SEGPGCNT
-				brk	 ; FINDSEG (SRCHMODE=0.IN, SEGID=3
-				.DA #FINDSEG ; PAGECT=DSEGLIST(Y)
-				.DA	SEGMENT1 ; BASE.OUT, LIMIT.OUT)
-				jmp	ALDS020
-*
+				brk	 					FINDSEG (SRCHMODE=0.IN, SEGID=3
+				.DA #FINDSEG 			PAGECT=DSEGLIST(Y)
+				.DA	SEGMENT1 			BASE.OUT, LIMIT.OUT)
+				jmp	.2
+
 ERR5X			.EQ *-ERR-1
 ERR6			.AS "DRIVER FILE TOO LARGE"
 ERR6L			.EQ *-ERR6
@@ -1414,53 +1341,50 @@ ERR10			.AS "EMPTY DRIVER FILE"
 ERR10L			.EQ *-ERR10
 ERR10X			.EQ *-ERR-1
 
-* WELCOME ()
-*
-* (PRINTS WELCOME MESSAGE - "APPLE ///", VERSION, DATE/TIME, COPYRIGHT)
-* PRINT "APPLE III" MESSAGE
-*
+* PRINTS WELCOME MESSAGE
+
 WELCOME			ldy #AMSGL
 
-WAM010			lda AMSG-1,Y
+.1				lda AMSG-1,Y
 				sta AMSGADR-1,Y
 				dey
-				bne WAM010
-*
+				bne .1
+
 * PRINT SOS VERSION MESSAGE
-*
+
 				clc
 				lda	#40
 				adc	#SOSVERL
 				lsr
 				tax
 				ldy	#SOSVERL
-WSM010			lda SOSVER-1,Y
+.2				lda SOSVER-1,Y
 				ora	#$80
 				sta	SMSGADR-1,X
 				dex
 				dey
-				bne	WSM010
-*
+				bne	.2
+
 * PRINT DATE AND TIME MESSAGE
-*
-				brk  ; GET.TIME(TIME.OUT)
+
+				brk 		GET.TIME(TIME.OUT)
 				.DA #GETTIME
 				.DA DTPARMS
-*
+
 				lda DATETIME+8 ;SET UP WEEKDAY
 				and #$0F
-				beq WDM040 ;NO CLOCK
+				beq .7			 ;NO CLOCK
 				sta WTEMP
 				asl
 				adc WTEMP
 				tax
 				ldy #3
 
-WDM010			lda DAYNAME-1,X
+.3				lda DAYNAME-1,X
 				sta DMSG-1,Y
 				dex
 				dey
-				bne WDM010
+				bne .3
 *
 				lda DATETIME+7 ;SET UP DATE
 				ldx DATETIME+6
@@ -1471,55 +1395,50 @@ WDM010			lda DAYNAME-1,X
 				and #$0F
 				ldx DATETIME+4
 				cpx #$31
-				bcc WDM020
+				bcc .4
 				adc #9
 
-WDM020			sta WTEMP
+.4				sta WTEMP
 				asl
 				adc WTEMP
 				tax
 				ldy #3
 
-WDM030			lda MONNAME-1,X
+.5				lda MONNAME-1,X
 				sta DMSG+7,Y
 				dex
 				dey
-				bne WDM030
-*
-				lda DATETIME+3 ;SET UP YEAR
+				bne .5
+
+				lda DATETIME+3 			SET UP YEAR
 				ldx DATETIME+2
 				sta DMSG+13
 				stx DMSG+12
-*
-				lda DATETIME+10 ;SET UP HOUR
+
+				lda DATETIME+10 		SET UP HOUR
 				ldx DATETIME+09
 				sta DMSG+17
 				stx DMSG+16
-*
-				lda DATETIME+12 ;SET UP MINUTE
+
+				lda DATETIME+12 		SET UP MINUTE
 				ldx DATETIME+11
 				sta DMSG+20
 				stx DMSG+19
-*
-				ldy #DMSGL ;PRINT DATE & TIME
-WDM050			lda DMSG-1,Y
+
+				ldy #DMSGL 				PRINT DATE & TIME
+.6				lda DMSG-1,Y
 				ora #$80
 				sta DMSGADR-1,Y
 				dey
-				bne WDM050
-*
-* PRINT COPYRIGHT MESSAGE
-*
-WDM040			ldy #CMSGL
+				bne .6
 
-WCM010			lda CMSG-1,Y
+.7				ldy #CMSGL
+
+.8				lda CMSG-1,Y
 				sta CMSGADR-1,Y
 				dey
-				bne WCM010
+				bne .8
 				rts
-*
-* WELCOME () - DATA DECLARATIONS
-*
 
 AMSG			.AS -"APPLE ///"
 AMSGL			.EQ *-AMSG
@@ -1536,12 +1455,10 @@ MONNAME			.AS "JANFEBMARAPRMAYJUN"
 CMSG			.AS -"(C)1980,1981,1982 BY APPLE COMPUTER INC."
 CMSGL			.EQ *-CMSG
 CMSGADR			.EQ 40-CMSGL/2+$7D0
-*
+*--------------------------------------
 * SOS SYSTEM CALLS (1)
-*
-* OPEN (PATHNAME.IN, REFNUM.OUT, OPENLIST.IN, OPENCNT.IN) ** (ACCESS.IN, PAGES.IN, SYSBUF.IN)
 
-OPEN			.EQ $C8
+* OPEN (PATHNAME.IN, REFNUM.OUT, OPENLIST.IN, OPENCNT.IN) ** (ACCESS.IN, PAGES.IN, SYSBUF.IN)
 
 OPEN.PARMS		.DA #4
 				.DA PATH
@@ -1550,13 +1467,11 @@ OPEN.REF		.DA #0
 				.DA #4
 OPEN.LIST		.DA #0,#4  PAGES:=4
 				.DA SYSBUF.P
-PATH			.BS $40 ; PATHNAME BUFFER
-I.LABEL			.AS "SOS NTRP" ; FILE LABELS
+PATH			.BS $40		PATHNAME BUFFER
+I.LABEL			.AS "SOS NTRP"		FILE LABELS
 D.LABEL			.AS "SOS DRVR"
 
 * READ (REFNUM.IN, BUFFER.IN, BYTES.IN, BYTESREAD.OUT)
-
-READ			.EQ $CA
 
 READ.PARMS		.DA #4
 READ.REF		.DA #0
@@ -1566,81 +1481,64 @@ READ.BYTRD		.DA 0
 
 * CLOSE (REFNUM.IN)
 
-CLOSE			 .EQ $CC
-
 CLOSE.PARMS		 .DA #1
 CLOSE.REF		 .DA #0
 
 * FIND.SEG (SRCHMODE.IN, PAGES.IN, SEGID.IN, BASE.OUT, LIMIT.OUT, SEGNUM.OUT)
 
-FINDSEG			.EQ $41
-*
-SEGMENT1		.DA #6 ; FIND.SEG(SRCHMODE, SEGID, PAGECT, BASE, LIMIT, SEGNUM)
+SEGMENT1		.DA #6		FIND.SEG(SRCHMODE, SEGID, PAGECT, BASE, LIMIT, SEGNUM)
 SEGSRCH			.DA #0,#3
 SEGPGCNT		.DA 0
 				.DA 0
 				.DA 0
 				.DA #0
-*
+
 * SOS SYSTEM CALLS (2)
-*
+
 * REQUEST.SEG (BASE.IN, LIMIT.IN, SEGID.IN, SEGNUM.OUT)
 
-REQSEG			.EQ $40
-*
-SEGMENT			.DA #4 ; REQUEST SEG PARM LIST
+SEGMENT			.DA #4		REQUEST SEG PARM LIST
 SEGBASE			.DA #$f,#$0
 SEGLIM			.DA #$F,#$1D
 SEGID			.DA #$0,#$0
 
 * SET.PREFIX (PREFIXPATH.IN)
 
-SETPREFIX		.EQ $C6
-
 PREFX.PARMS		.DA #$1
 				.DA	PREFX.PATH
 PREFX.PATH		.DA #3
-ASC				'.D1'
+				.AS '.D1'
 
 * GETTIME (TIME.OUT)
 
-GETTIME			 .EQ $63
-*
 DTPARMS			.DA #1
 				.DA DATETIME
 DATETIME		.AS "YYYYMMDDWHHMMSSMMM"
-*
+
 * END OF SOSLDR CODE
-*
-SLOP			.EQ >$F8-*
-				.BS SLOP 	; +-----------------------------------+
-INITMODULE		.BS $200 	; ! KERNEL'S INIT MODULE RESIDES HERE !
-LDREND			.EQ *	 	; +-----------------------------------+
+
+				.BS $F800-*
+
+INITMODULE		.BS $200 	KERNEL'S INIT MODULE RESIDES HERE
+
+LDREND			.EQ *
 
 FILE			.EQ *-$2000+$400
 
 * SOS INTERPRETER FILE
 
-I.FILE			 .EQ FILE
-I.HDR.CNT		 .EQ I.FILE+$8
+I.FILE			.EQ FILE
+I.HDR.CNT		.EQ I.FILE+$8
 
 * SOS DRIVER FILE
 
-D.FILE			 .EQ FILE
-D.HDR.CNT		 .EQ D.FILE+$8
-D.DRIVES		 .EQ D.HDR.CNT+$2
-D.CHRSET		 .EQ D.DRIVES+$2+$10
-D.KYBD			 .EQ D.CHRSET+$10+$400
+D.FILE			.EQ FILE
+D.HDR.CNT		.EQ D.FILE+$8
+D.DRIVES		.EQ D.HDR.CNT+$2
+D.CHRSET		.EQ D.DRIVES+$2+$10
+D.KYBD			.EQ D.CHRSET+$10+$400
 
-				.EP
-
-				.LIST ON
-SOSLDR.LEN		 .EQ *-SOSLDR.ORG
-				.LIST OFF
-				.DO SOSLDR.LEN=LENLODR
-				.ELSE
-				FAIL 2,"SOSORG FILE IS INCORRECT FOR SOS LOADER"
-				.FIN
+SOSLDR.END		.EP
 *--------------------------------------
 MAN
 SAVE /A3OSX.BUILD/SOS.13/sos.s.sosldr

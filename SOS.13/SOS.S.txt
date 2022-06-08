@@ -9,6 +9,7 @@ NEW
 		.INB /A3OSX.BUILD/inc/io.i
 		.INB /A3OSX.BUILD/inc/mon.i
 		.INB /A3OSX.BUILD/inc/sos.i
+		.INB /A3OSX.BUILD/inc/sos.e.i
 *--------------------------------------
 		.INB /A3OSX.BUILD/SOS.13/sos.s.sosldr
 		.INB /A3OSX.BUILD/SOS.13/sos.s.init

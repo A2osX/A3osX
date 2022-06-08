@@ -1,22 +1,9 @@
 NEW
   AUTO 3,1
 *--------------------------------------
-REV0ROM			.EQ 0 					1=SUPPORT REV0 ROM
-
-XREQCODE		.EQ $20
-XBADOP			.EQ $26
-XNODRIVE		.EQ $28
-XIOERROR		.EQ $27
-XNOWRITE		.EQ $2B
-XBYTECNT		.EQ $2C
-XBLKNUM			.EQ $2D
-XDISKSW			.EQ $2E
-XCTLCODE		.EQ $21
-
 * RETRY COUNTERS:
-
 R.RECAL			.EQ 1 					MAX RECALIBRATES
-* R.RECAL MUST NOT BECOME ZERO! (MOUSE WILL BE LOCKED OUT) 
+* R.RECAL MUST NOT BECOME ZERO! (MOUSE WILL BE LOCKED OUT)
 R.FIND			.EQ 3 					MAX REVS TO FIND A SECTOR
 R.IOERR			.EQ 4 					MAX RETRIES ON READ ERROR
 R.IRQ			.EQ 6 					MAX IRQ'S TOLERATED BEFORE SEI
@@ -48,12 +35,12 @@ TRKN			.BS 1 					SEEK:TARGET TRACK
 				.DUMMY
 				.OR $D0 				WE'RE ALLOWED TO $FF
 BLKTEMP			.BS 2 					LOCAL TEMP FOR BLKNUMBER
-BUFTEMP			.BS 2 					LOCAL TEMP FOR BUFFER ADDRESS
-TRACK			.BS 1 					LOCAL TEMP FOR TRACK
-SECTOR			.BS 1 					LOCAL TEMP FOR SECTOR
-RETRYADR		.BS 1 					LOCAL TEMP FOR SECTOR-FIND RETRIES
-RETRYCNT		.BS 1 					LOCAL TEMP FOR I/O RETRIES
-RECALCNT		.BS 1 					LOCAL TEMP FOR RECAL COUNT
+BUFTEMP			.BS 2 					.. BUFFER ADDRESS
+TRACK			.BS 1 					.. TRACK
+SECTOR			.BS 1 					.. SECTOR
+RETRYADR		.BS 1 					.. SECTOR-FIND RETRIES
+RETRYCNT		.BS 1 					.. I/O RETRIES
+RECALCNT		.BS 1 					.. RECAL COUNT
 BLKCOUNT		.BS 1 					BLKS REQD TO SATISFY BYTECOUNT
 SEEKWAIT		.BS 1 					<>0 IF SEEK DELAY NEEDED
 IRQMASK			.BS 1 					ENTRY 'I' BIT
@@ -87,40 +74,40 @@ DIB1			.DA DIB2  				FLINK
 				.DA $1100  				VERSION=1.1
 
 DIB2			.DA DIB3  				FLINK
-				.DA MAIN  			
-				.DA #3  			
+				.DA MAIN
+				.DA #3
 				.AS '.D2 '
-				.DA #$80  			
-				.DA #0  			
-				.DA #1  			
-				.DA #$E1,#1,#0 		
-				.DA 280  			
-				.DA 1  				
-				.DA $1100  			
+				.DA #$80
+				.DA #0
+				.DA #1
+				.DA #$E1,#1,#0
+				.DA 280
+				.DA 1
+				.DA $1100
 
 DIB3			.DA DIB4  				FLINK
-				.DA MAIN  			
-				.DA #3  			
-				.AS '.D3 '          
-				.DA #$80  			
-				.DA #0  			
-				.DA #2  			
-				.DA #$E1,#1,#0 		
-				.DA 280  			
-				.DA 1  				
-				.DA $1100  			
+				.DA MAIN
+				.DA #3
+				.AS '.D3 '
+				.DA #$80
+				.DA #0
+				.DA #2
+				.DA #$E1,#1,#0
+				.DA 280
+				.DA 1
+				.DA $1100
 
 DIB4			.DA 0  					NO FLINK
-				.DA MAIN  		
-				.DA #3  		
-				.AS '.D3 '
-				.DA #$80  		
-				.DA #0  		
-				.DA #3  		
-				.DA #$E1,#1,#0 	
-				.DA 280  		
-				.DA 1  			
-				.DA $1100  		
+				.DA MAIN
+				.DA #3
+				.AS '.D4 '
+				.DA #$80
+				.DA #0
+				.DA #3
+				.DA #$E1,#1,#0
+				.DA 280
+				.DA 1
+				.DA $1100
 
 * DISABLE NMI/RESET AND ENABLE ROM/IO SPACE
 
@@ -286,7 +273,7 @@ DOIO			lda D.BUFL 				COPY USER BUFFER
 				lda D.COMMAND 			IS IT STATUS?
 				cmp #2 					IF SO, THEN BYTECOUNT
 				bne DOIO2 				IS MEANINGLESS
-				jmp STATUS
+				jmp DISK3.STATUS
 
 DOIO2			ldy BLKCOUNT 			BLKS=0?
 				beq READOK				=>YES, YOU GET GOOD RETURN
@@ -351,7 +338,7 @@ WRITEREQ		jsr BLK2SECT 			COMPUTE TRK/SECTOR THIS BLOCK
 
 WRITERR			jmp EXIT 				RETURN ERROR CODE
 
-STATUS			ldx #$60 				DUMMY SLOT
+DISK3.STATUS	ldx #$60 				DUMMY SLOT
 				lda Q6H,X 				SENSE WRITE PROTECT
 				lda Q7L,X
 				asl  					PRESERVE IT IN CARRY
@@ -494,7 +481,7 @@ SEEKDEL			lda #0
 				dey
 				bne SEEKDEL
 
-* ISSUE THE SEEK:
+* ISSUE THE SEEK
 
 GOSEEK			lda TRACK 				GET DESTINATION TRACK
 				jsr MYSEEK 				=>..AND YOU SHALL FIND...
@@ -506,7 +493,7 @@ SOUGHT			lda IRQMASK 			SET IRQ MASK FOR
 				lda #R.IOERR 			AND ERROR RETRIES
 				sta RETRYCNT
 
-* DELAY FOR ANY REMAINING MOTOR-UP TIME:
+* DELAY FOR ANY REMAINING MOTOR-UP TIME
 
 MDELAY			lda MONTIMEH 			ANY TIME REMAINING?
 				bpl FINDIT 				=>NO, WE'RE UP TO SPEED.
@@ -549,7 +536,7 @@ FINDIT			php 					INHIBIT IRQ WHILE
 				bcs IORETRY 			=>I/O ERR:BAD CHKSUM
 				jmp SIOGOOD 			=>GOOD READ
 
-* WRITE A SECTOR:
+* WRITE A SECTOR
 
 SIOWRITE		jsr WRITE 				WRITE THE DATA
 				jsr FIXIRQ 				RE-ENABLE IRQ IF OK
@@ -558,14 +545,14 @@ SIOWRITE		jsr WRITE 				WRITE THE DATA
 				bcc SIOGOOD 			=>GOOD WRITE
 				bvc SIOWPROT 			=>WRITE PROTECTED
 
-* IT DIDN'T GO WELL FOR US:
+* IT DIDN'T GO WELL FOR US
 
 BADIO			.DO 1-REV0ROM 			;FOR REV1
 				bvs FINDIT 				=>IRQ. JUST RETRY IT.
 				.ELSE  ;FOR REV0
 
 * THE REV1 ROM TAKES CARE OF THE
-* IRQ RETRY COUNT, BUT REV0 DOESN'T:
+* IRQ RETRY COUNT, BUT REV0 DOESN'T
 
 				bvc IORETRY 			=>I/O ERROR. RETRY IT
 				lda ROMREV 				WHICH ROM?
@@ -578,12 +565,12 @@ BADIO2			dec INTRTRY 			ONE LESS RETRY
 				jmp FINDIT 				=>RETRY AFTER IRQ
 				.FIN
 
-* RETRY AFTER AN I/O ERROR:
+* RETRY AFTER AN I/O ERROR
 
 IORETRY			dec	RETRYCNT 			ANY RETRIES LEFT?
 				bne	FINDIT 				=>YEAH, RETRY AFTER ERROR
 
-* RETRIES EXHAUSTED. RECALIBRATE:
+* RETRIES EXHAUSTED. RECALIBRATE
 
 TRYRECAL		lda	VBLSAVE 			ALLOW VBL IF RECAL
 				sta	E.IER 				OR UNRECOVERABLE ERROR
@@ -593,10 +580,10 @@ TRYRECAL		lda	VBLSAVE 			ALLOW VBL IF RECAL
 				ldy	D.UNITNUM 			ARE WE ON-TRACK?
 				lda	TRACK
 				cmp	DRVTRACK,Y
-				bne	NOTSAME
+				bne	.1
 				jmp	SOUGHT 				=>IF SO, FORGET RESEEK
 
-NOTSAME			jmp GOSEEK 				TRY AGAIN ON TARGET TRACK
+.1				jmp GOSEEK 				TRY AGAIN ON TARGET TRACK
 
 SIOERR			lda #XIOERROR 			RETURN CODE
 				sec  					INDICATE HARD ERROR
@@ -699,7 +686,7 @@ UNITSEL			ldy D.UNITNUM 			GET DRIVENUM
 				bne SPINNING 			=>YES. WHO IS IT?
 
 * NO MOTOR(S) SPINNING. DESELECT
-* ALL MOTORS AND START AFRESH:
+* ALL MOTORS AND START AFRESH
 
 				ldx MD.INT 				DESELECT ALL
 				lda #0 					SHOW INTERNAL AS
@@ -714,7 +701,7 @@ SPINNING		lda DRIVESEL,Y 			HAD WE BEEN SELECTED?
 				bne GOFORIT 			=>YES, GO FOR IT RIGHT AWAY.
 
 * WE AREN'T SPINNING. SHUTDOWN ANOTHER
-* DRIVE, IF NECESSARY, TO GET GOING:
+* DRIVE, IF NECESSARY, TO GET GOING
 
 				cpy #0 					ARE WE THE INTERNAL DRIVE?
 				beq SETTIME 			=>YES, LEAVE EXT MOTOR ALONE
@@ -753,7 +740,7 @@ SETTIME			lda #0 					INDICATE THAT
 				ldx D.COMMAND 			GET CURRENT COMMAND
 				lda MTIMES,X 			GET CORRECT DELAY TIME
 
-* SELECT THE DRIVE & START IT:
+* SELECT THE DRIVE & START IT
 
 SELECT			sta MONTIMEH 			NEGATE IT BECAUSE
 				lda #0 					IT GETS INCREMENTED
@@ -791,17 +778,17 @@ UNITRET			lda MOTORON 			PROVIDE MOTOR POWER
 * TURNING ON THE MOTOR.
 
 				lda MONTIMEH 			ANY MOTORTIME?
-				bpl UNITRTS 			=>NO, WE GO FOR IT.
+				bpl .2 			=>NO, WE GO FOR IT.
 				ldy #5 					5*10 MS
 
-UNITDEL			lda #100 				100*100US IS 10MS
+.1			lda #100 				100*100US IS 10MS
 				jsr MSWAIT
 				dey
-				bne UNITDEL
+				bne .1
 				lda #2 					INCLUDE THE 50MS
 				jsr ADDTIME 			IN MOTOR UPTIME(S)
 
-UNITRTS			rts
+.2			rts
 				.BS 5
 
 * NAME : EXTDESEL
@@ -814,10 +801,10 @@ EXTDESEL		lda MD.EXT1 			DESELECT ALL EXTERNAL
 				ldx #3 					SHOW THAT THEY ARE
 				lda #0 					ARE ALL DEAD DUCKS
 
-EDS1			sta DRIVESEL,X
+.1				sta DRIVESEL,X
 				sta	UPTIME,X 			DRIVE MOTORS ARE OFF
 				dex
-				bne	EDS1
+				bne	.1
 
 				rts
 
@@ -842,25 +829,25 @@ EDS1			sta DRIVESEL,X
 
 CHKDRV			ldx #3 					CHECK SHIFTER SEVERAL TIMES
 
-CHKD1			lda Q6L+$60 			GET DATA
+.1				lda Q6L+$60 			GET DATA
 				cmp Q6L+$60 			HAS IT CHANGED?
-				bne CHANGED 			=>YES
+				bne .2		 			=>YES
 				cmp Q6L+$60
-				bne CHANGED
+				bne .2
 				cmp Q6L+$60
-				bne CHANGED
+				bne .2
 				cmp Q6L+$60
-				bne CHANGED
+				bne .2
 				cmp Q6L+$60
-				bne CHANGED
+				bne .2
 				cmp Q6L+$60
-				bne CHANGED
+				bne .2
 				cmp Q6L+$60
-				bne CHANGED
+				bne .2
 				rts 					IF EVER LOCKED, IT'S STOPPED
 
-CHANGED			dex
-				bne CHKD1 				TRY SEVERAL TIMES
+.2				dex
+				bne .1	 				TRY SEVERAL TIMES
 
 				dex 					SET CC=BNE
 				rts 					RETURN ZFLAG APPROPRIATELY
@@ -872,20 +859,20 @@ CHANGED			dex
 ADDTIME			pha  					PRESERVE AC
 				ldy #4 					TABLE INDEX/COUNT
 
-ADD2			lda DRIVESEL-1,Y 		IS IT SELECTED?
-				beq ADD3 				=>NOPE
+.1				lda DRIVESEL-1,Y 		IS IT SELECTED?
+				beq .3 					=>NOPE
 				pla
 				pha  					RECOVER DELTA-T
 				clc
 				adc UPTIME-1,Y 			ADD TO MOTOR UPTIME
 				cmp #T1SEC+2 			IS IT AT MAX TIME?
-				bcc ADD2A 				=>NO, STORE NEW TIME
+				bcc .2 					=>NO, STORE NEW TIME
 				lda #T1SEC+1 			YES, SET TO >1 SEC
 
-ADD2A			sta UPTIME-1,Y
+.2				sta UPTIME-1,Y
 
-ADD3			dey
-				bne	ADD2 				=>DO ALL 4 DRIVES
+.3				dey
+				bne	.1	 				=>DO ALL 4 DRIVES
 
 				pla				  		RESTORE AC
 				rts
@@ -910,20 +897,20 @@ ADD3			dey
 
 RECAL			lda #2 					TWO ITERATIONS, PLEASE
 
-RECAL1			pha  					SAVE LOOPCOUNT
+.1				pha  					SAVE LOOPCOUNT
 				ldx #$60 				SETUP SLOT FOR CORE RTNS
 				jsr RDADR 				WHERE ARE WE?
-				bcc RECAL2 				=>NOW WE KNOW
+				bcc .2 				=>NOW WE KNOW
 				jsr RDADR 				GIVE SECOND SHOT
-				bcc RECAL2 				=>THAT GOT IT
+				bcc .2 				=>THAT GOT IT
 				lda #48 				LOST? TRY 48-TRACK SEEK
-				jmp RECAL3
+				jmp .3
 
-RECAL2			lda CSSTV+2 			HERE'S WHERE WE ARE
+.2				lda CSSTV+2 			HERE'S WHERE WE ARE
 				clc  					ADD SOME SO WE GET A
 				adc #3 					HARDER SEEK TO ZERO
 
-RECAL3			ldy D.UNITNUM 			THIS IS NOW WHERE
+.3				ldy D.UNITNUM 			THIS IS NOW WHERE
 				sta DRVTRACK,Y 			WE ARE
 				jsr FIXIRQ 				ENABLE IRQ IF OK
 
@@ -935,7 +922,7 @@ RECAL3			ldy D.UNITNUM 			THIS IS NOW WHERE
 				tay
 				dey
 				tya
-				bne RECAL1 				=>DO TWO ITERATIONS
+				bne .1	 				=>DO TWO ITERATIONS
 
 				rts
 
@@ -1014,7 +1001,7 @@ BLK2SECT		lda	BLKTEMP+1 			GET HI BLK HALF
 				lda	BLKTEMP 			GET LO HALF AGAIN
 				and	#7
 				tay
-				lda	SECTABLE,Y 			GET START SECTOR
+				lda	.8,Y 			GET START SECTOR
 				sta	SECTOR
 
 * ADJUST BUFFER ADDRESS SO THAT I/O
@@ -1024,16 +1011,16 @@ BLK2SECT		lda	BLKTEMP+1 			GET HI BLK HALF
 				lda BUFTEMP+1 			GET BUFFER HI ADDRESS
 				ldy $1400+BUFTEMP+1 	AND XTND BYTE
 				cmp #$82 				IF RAM ADDR >=8200 THEN BUMP TO
-				bcc NOADJ 				NEXT BANK PAIR
+				bcc .1 				NEXT BANK PAIR
 				cpy #$80
-				bcc NOADJ 				=>NOT USING BANKPAIR
+				bcc .1 				=>NOT USING BANKPAIR
 				cpy #$8F 				SPECIAL BANK 0?
-				beq NOADJ 				=>YES
+				beq .1 				=>YES
 				and #$7F 				DROP HI ADDRESS AND
 				sta BUFTEMP+1 			BUMP BANK NUMBER
 				inc $1400+BUFTEMP+1
 
-NOADJ			lda BUFTEMP+1 			COPY BUFFER ADDRESS
+.1			lda BUFTEMP+1 			COPY BUFFER ADDRESS
 				sta BUF+1 				FOR PRE & POSTNIB
 				lda BUFTEMP
 				sta BUF
@@ -1041,7 +1028,7 @@ NOADJ			lda BUFTEMP+1 			COPY BUFFER ADDRESS
 				sta $1400+BUF+1
 				rts
 
-SECTABLE		.HS 0004080C0105090D
+.8		.HS 0004080C0105090D
 
 * NAME : MOREBLKS FUNCTION: SETUP TO DO NEXT BLOCK
 * INPUT : NONE
@@ -1052,10 +1039,10 @@ SECTABLE		.HS 0004080C0105090D
 MOREBLKS		inc BUFTEMP+1
 				inc BUFTEMP+1
 				inc BLKTEMP
-				bne MORE2
+				bne .1
 				inc BLKTEMP+1
 
-MORE2			dec BLKCOUNT 			MORE BLOCKS TO GO?
+.1				dec BLKCOUNT 			MORE BLOCKS TO GO?
 				rts  					RETURN RESULT OF DEC
 				.BS 4
 
@@ -1066,10 +1053,10 @@ MORE2			dec BLKCOUNT 			MORE BLOCKS TO GO?
 
 FIXIRQ			pha
 				lda IRQMASK 			SHOULD IRQ BE ENABLED?
-				bmi FIXRET 				=>NO, LEAVE IT ALONE
+				bmi .1 				=>NO, LEAVE IT ALONE
 				cli  					ENABLE IRQ
 
-FIXRET			pla
+.1			pla
 				rts
 
 * GENERAL DATA:
@@ -1108,31 +1095,31 @@ SEEK			jmp *
 MSWAIT			jmp *
 PRENIB			jmp *
 POSTNIB			jmp *
+VSIZE			.EQ *-JMPTAB
 
-REV0			jmp	$F1BD 				RDADR
-				jmp	$F148 				READ
-				jmp	$F219 				WRITE
-				jmp	$F400 				SEEK
-				jmp	$F456 				MSWAIT
-				jmp	$F2C6 				PRENIB
-				jmp	$F311 				POSTNIB
-VSIZE			.EQ *-REV0 				TABLE SIZE
+REV0			jmp	MON.REV0.RDADR
+				jmp	MON.REV0.READ
+				jmp	MON.REV0.WRITE
+				jmp	MON.REV0.SEEK
+				jmp	MON.REV0.MSWAIT
+				jmp	MON.REV0.PRENIB
+				jmp	MON.REV0.POSTNIB
 
-REV1			jmp	$F1B9 				RDADR
-				jmp	$F148 				READ
-				jmp	$F216 				WRITE
-				jmp	$F400 				SEEK
-				jmp	$F456 				MSWAIT
-				jmp	$F2C4 				PRENIB
-				jmp	$F30F 				POSTNIB
+REV1			jmp	MON.REV1.RDADR
+				jmp	MON.REV1.READ
+				jmp	MON.REV1.WRITE
+				jmp	MON.REV1.SEEK
+				jmp	MON.REV1.MSWAIT
+				jmp	MON.REV1.PRENIB
+				jmp	MON.REV1.POSTNIB
 				.ELSE			  		FOR REV1 WE USE EQUATES
-RDADR			.EQ $F1B9 				RDADR
-READ			.EQ $F148 				READ
-WRITE			.EQ $F216 				WRITE
-SEEK			.EQ $F400 				SEEK
-MSWAIT			.EQ $F456 				MSWAIT
-PRENIB			.EQ $F2C4 				PRENIB
-POSTNIB			.EQ $F30F 				POSTNIB
+RDADR			.EQ MON.REV1.RDADR
+READ			.EQ MON.REV1.READ
+WRITE			.EQ MON.REV1.WRITE
+SEEK			.EQ MON.REV1.SEEK
+MSWAIT			.EQ MON.REV1.MSWAIT
+PRENIB			.EQ MON.REV1.PRENIB
+POSTNIB			.EQ MON.REV1.POSTNIB
 				.FIN
 *--------------------------------------
 MAN

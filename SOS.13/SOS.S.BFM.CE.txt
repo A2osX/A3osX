@@ -1,7 +1,7 @@
 NEW
   AUTO 3,1
 *--------------------------------------
-CLOSE			lda C.REFNUM 			; CLOSE ALL?
+BFM.CLOSE		lda C.REFNUM 			; CLOSE ALL?
 				bne	CLOSE1 				; NO, JUST ONE OF 'EM
 				sta	CFERR 				; CLEAR GLOBAL CLOSE ERROR
 				jsr	GFCBADR 			; SET UP POINTER TO FCB

@@ -223,9 +223,11 @@ WHICHROM		lda RDADR
 NEWROM			rts
 
 IOERROR			dec RETRY
-				beq ERR1
+				beq .1
+				
 				jmp GETK 				; TRY, TRY AGAIN
-ERR1			jmp ENUFF 				; I/O ERROR, CLEANUP AND EXIT
+
+.1				jmp ENUFF 				; I/O ERROR, CLEANUP AND EXIT
 
 WAIT			ldy #0
 

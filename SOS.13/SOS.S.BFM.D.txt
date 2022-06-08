@@ -1,7 +1,7 @@
 NEW
   AUTO 3,1
 *--------------------------------------
-NEWLINE			ldy #FCBATTR 			; ADJUST NEWLINE STATUS FOR OPEN FILE.
+BFM.NEWLINE		ldy #FCBATTR 			; ADJUST NEWLINE STATUS FOR OPEN FILE.
 				lda	C.ISNEWL 			; ON OR OFF?
 				bpl	OFFNEWL 			; BRANCH IF NEW LINE IS TO BE CLEARED.
 				lda	#NLINEN
