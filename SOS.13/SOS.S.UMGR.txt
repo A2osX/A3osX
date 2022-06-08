@@ -350,7 +350,7 @@ MON				.EQ CLKREGS+4
 YEAR			.EQ CLKREGS+2
 *
 *
-DATETIME		stx OFFSET
+UMGR.DATETIME	stx OFFSET
 				lda Z.REG
 				pha  					; SAVE ZERO PAGE
 				lda E.REG

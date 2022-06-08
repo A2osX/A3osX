@@ -8,16 +8,16 @@ REV0ROM			.EQ 0 					1=SUPPORT REV0 ROM
 TRUE			.EQ $80
 FALSE			.EQ 0
 *--------------------------------------
-REQSEG			.EQ $40
-FINDSEG			.EQ $41
+BFM.C.REQSEG			.EQ $40
+BFM.C.FINDSEG			.EQ $41
 
-GETTIME			.EQ $63
-SETPREFIX		.EQ $C6
+BFM.C.GETTIME			.EQ $63
+BFM.C.SETPREFIX		.EQ $C6
 
-OPEN			.EQ $C8
+BFM.C.OPEN			.EQ $C8
 
-READ			.EQ $CA
-CLOSE			 .EQ $CC
+BFM.C.READ			.EQ $CA
+BFM.C.CLOSE			 .EQ $CC
 
 *--------------------------------------
 ZPAGE			.EQ $00
