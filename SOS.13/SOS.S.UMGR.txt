@@ -513,7 +513,7 @@ JS050			iny
 				ldy #$02
 				sta (J.VALUE),Y 		; RETURN X AXIS
 JS060			inc AD.INPUT
-				lsr
+				lsr J.MODE
 				bcc JS070
 				lda AD.INPUT
 				jsr AD.READ 			; READ A/D
@@ -630,11 +630,11 @@ ADR070			plp
 				sta AD.TEMP
 				tya
 				eor #$FF
-				lsr
+				lsr AD.TEMP
 				ror
-				lsr
+				lsr AD.TEMP
 				ror
-				lsr
+				lsr AD.TEMP
 				bne ADR090 				 ; RESULT > 255
 				ror
 				adc #0
