@@ -489,7 +489,7 @@ TSTERR			sec
 				rts  					; DO NOTHING.
 *
 *
-TSTSOS			lda GBUF 				; TEST SOS STAMP
+*TSTSOS			lda GBUF 				; TEST SOS STAMP
 				cmp SOSTMPL
 				bne TSTERR
 				lda GBUF+1
@@ -501,8 +501,66 @@ TSTSOS			lda GBUF 				; TEST SOS STAMP
 				bne TSTERR 				; BRANCH IF NOT SOS HEADER (NO ERROR NUMBER)
 				clc  					; INDICATE NO ERROR
 				rts
+*
+*				CHN FNDFIL,4,1
+*NE				 TSTERR
+				lda GBUF+4 				; TEST FOR HEADER
+				and #$E0
+				cmp #HEDTYP*16
+				bne TSTERR 				; BRANCH IF NOT SOS HEADER (NO ERROR NUMBER)
+				clc  					; INDICATE NO ERROR
+				rts
+*
+*				CHN FNDFIL,4,1
+*O				ERROR
+				rts
+*
+*				CHN FNDFIL,4,1
+*				ENTRY TOO.
+				ldy #D.MODDT+3
+RIPTIME			lda DATELO,X
+				sta (DRBUFPL),Y
+				dey
+				dex
+				bpl RIPTIME 			;MOVE ALL FOR BYTES...
 
+RUPDATE			jsr WRTGBUF 			;WRITE UPDATED ENTRY BACK TO DISK. (ASSUMES BLOKNM UNDISTURBEDD)
+				bcs DERROR1 			;GIVE UP ON ANY ERROR.
+				ldy #D.DHDR 			;NOW COMPARE CURRENT BLOCK NUMBER TO THIS
+				lda (DRBUFPL),Y 		; ENTRY'S HEADER BLOCK
+				iny
+				cmp BLOKNML 			;ARE LOW ADDRESSES THE SAME?
+				sta BLOKNML 			;(SAVE IT IN CASE IT'S NOT)
+				bne RIPPLE2 			;BRANCH IF ENTRY DOES NOT RESIDE IN SAME BLOCK AS HEADER.
+				lda (DRBUFPL),Y 		;CHECK HIGH ADDRESS JUST TO BE SURE.
+				cmp BLOKNMH
+				beq RIPPLE 				;THEY ARE THE SAME, CONTINUE RIPPLE TO ROOT DIRECTORY.
 
+RIPPLE2			lda (DRBUFPL),Y 		;THEY AREN'T THE SAME, READ IN THIS DIRECTORY'S HEADER.
+				sta BLOKNMH
+				jsr RDGBUF
+				bcc RIPPLE 				;CONTINUE IF READ WAS GOOD.
+
+DERROR1			rts
+
+*
+NOTDIR2			lda #TYPERR 			;NOT TREE OR DIRECTORY- NOT A RECOGNIZED TYPE!
+TSTERR2			sec
+				rts 					;DO NOTHING.
+*
+*
+TSTSOS			lda GBUF 				;TEST SOS STAMP
+				cmp SOSTMPL
+				bne TSTERR
+				lda GBUF+1
+				cmp SOSTMPH
+				bne TSTERR
+				lda GBUF+4 				;TEST FOR HEADER
+				and #$E0
+				cmp #HEDTYP*16
+				bne TSTERR 				;BRANCH IF NOT SOS HEADER (NO ERROR NUMBER)
+DRVISDNE		clc  					;INDICATE NO ERROR./
+				rts
 *--------------------------------------
 MAN
 SAVE /A3OSX.BUILD/SOS.13/sos.s.bfm.c
