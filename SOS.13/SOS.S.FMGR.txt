@@ -10,8 +10,8 @@ NEW
 * MANAGER, OR THE CHARACTER FILE MANAGER.
 *
 *F.TPARMX		.EQ $A0 ; LOC OF FILE SYSTEM CALL PARMS
-*OPEN			.EQ $8
-*CLOSE			.EQ $C
+FMGR.OPEN		.EQ $8
+FMGR.CLOSE		.EQ $C
 SETLEVEL		.EQ $12
 GETLEVEL		.EQ $13
 *F.REQCODE		.EQ F.TPARMX
@@ -24,10 +24,10 @@ LEVEL			.DA #1
 * FILE MANAGER
 *
 FMGR			lda F.REQCODE
-				cmp #OPEN
+				cmp #FMGR.OPEN
 				bcc FMGR010
 				beq FMGR020
-				cmp #CLOSE
+				cmp #FMGR.CLOSE
 				bcc FMGR030
 				beq FMGR040
 				cmp #SETLEVEL
@@ -38,7 +38,7 @@ FMGR			lda F.REQCODE
 FMGR010			jmp BFMGR ; EXIT
 *
 FMGR020			ldy #1
-				lda (PATHNAME),Y
+				lda (O.PATH),Y
 				cmp #PERIOD
 				bne FMGR010
 				jsr CFMGR

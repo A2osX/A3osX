@@ -133,10 +133,10 @@ STIM011			and #$0F 				; ASCII TO BCD AND
 				cpy	#$07
 				beq	STIM010
 				lda	(TIME),Y
-				asl	A
-				asl	A
-				asl	A
-				asl	A
+				asl
+				asl
+				asl
+				asl
 				ora	PCLOCK,X
 				sta	PCLOCK,X
 				dey
@@ -148,8 +148,8 @@ STIM011			and #$0F 				; ASCII TO BCD AND
 				lda	PCLOCK+8
 				jsr	BCDBIN
 				tay
-				lsr	A
-				lsr	A
+				lsr
+				lsr
 				sta	WKDAY
 				tya
 				and	#$03
@@ -513,7 +513,7 @@ JS050			iny
 				ldy #$02
 				sta (J.VALUE),Y 		; RETURN X AXIS
 JS060			inc AD.INPUT
-				lsr J.MODE
+				lsr
 				bcc JS070
 				lda AD.INPUT
 				jsr AD.READ 			; READ A/D
@@ -584,7 +584,7 @@ AD.CLNUP		lda	E.REG
 * X, Y: UNDEFINED
 *
 *
-AD.READ			lsr	A 					; SELECT THE APPROPRIATE
+AD.READ			lsr	 					; SELECT THE APPROPRIATE
 				bit	AD.SEL0 			; A/D INPUT
 				bcc	ADR010
 				bit	AD.SEL0+1
@@ -630,11 +630,11 @@ ADR070			plp
 				sta AD.TEMP
 				tya
 				eor #$FF
-				lsr AD.TEMP
+				lsr
 				ror
-				lsr AD.TEMP
+				lsr
 				ror
-				lsr AD.TEMP
+				lsr
 				bne ADR090 				 ; RESULT > 255
 				ror
 				adc #0

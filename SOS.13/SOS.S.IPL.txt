@@ -207,7 +207,7 @@ GIR020			lda E.REG 				; SELECT $C000 RAM
 * SET INTERRUPT ZERO PAGE AND SOS BANK
 * THEN POLL I/O DEVICES
 *
-POLL.IO			bit E.IORA 				; VERIFY THAT 'IRQ IS LOW
+POLL.IO			bit B.REG 				; VERIFY THAT 'IRQ IS LOW
 				bpl	PIO006
 				inc	IRQCNTR 			; BUMP FALSE IRQ COUNTER
 				bne	PIO004
@@ -256,7 +256,7 @@ PIO040			ldx #$11
 				inx
 				bit SLOT2 				; SLOT 2?
 				bpl PIO070
-				lda E.IORA
+				lda B.REG
 				inx
 				bit SLOT3 				; SLOT 3?
 				beq PIO070

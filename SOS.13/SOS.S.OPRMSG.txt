@@ -254,7 +254,7 @@ VID010			lda E.REG
 
 VID020			sta E.REG
 				lda	#$00
-				ror	A
+				ror
 				sta	SCRNMODE
 
 VID030			rts

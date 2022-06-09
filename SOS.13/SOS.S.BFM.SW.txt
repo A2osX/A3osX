@@ -51,10 +51,10 @@ GETVOL			jsr VERFYVOL 			; IS THE CORRECT VOLUME ON LINE NOW?
 VONLINE			ldx DEVNUM 				; UPDATE THE
 				jsr	UPBMAP 				; DIRTY BIT MAP
 MARKSWAP		lda VCBPTR 				; CALCULATE
-				lsr	A 					; SWAP BYTE
-				lsr	A 					; AND
-				lsr	A 					; MARK ALL FILES
-				lsr	A 					; BELONGING TO THIS VOLUME
+				lsr 					; SWAP BYTE
+				lsr 					; AND
+				lsr 					; MARK ALL FILES
+				lsr 					; BELONGING TO THIS VOLUME
 				sec						; AS SWAPPED OUT
 				ora	#$80
 				pha						; SAVE SWAP BYTE

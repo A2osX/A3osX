@@ -25,7 +25,7 @@ ENDSECT			.EQ $6
 *
 *TRACK			.EQ $99
 *SECTOR			.EQ $98
-*VOLUME			.EQ $9A
+BFM.VOLUME		.EQ $9A
 KEY				.EQ $E0 ; THRU $E7
 PREV.K			.EQ KEY+$8
 XIDX			.EQ KEY+$9
@@ -178,7 +178,7 @@ GETK020			ldx #SLOT
 GETK100			ldx #1
 				jsr	WAIT 				; (X * 1284) + 15 MILISECONDS
 				ldx	XIDX
-				lda	VOLUME
+				lda	BFM.VOLUME
 				sta	KEY,X
 				dec	XIDX
 				bmi	ENUFF
@@ -213,7 +213,7 @@ NOTPROT			lda #0
 DOREAD			jsr WHICHROM
 				bcs OLDREAD
 				jmp RDADR
-OLDREAD			jmp RDADRX
+OLDREAD			jmp MON.REV0.RDADR
 
 WHICHROM		lda RDADR
 				cmp #ROMID

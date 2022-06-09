@@ -117,9 +117,11 @@ SDEATH.REGS		.DA #$00 				;BANK
 				.DA $00 				;PROGRAM COUNTER  
 				.DA #$00 				;STACK POINTER  
 
+				.DUMMY
 				.OR SYSGLOB+$100   
 				.DA $B800 				;KERNEL TARGET ADDRESS  
 				.DA $47C0 				; AND LENGTH  
+				.ED
 *--------------------------------------
 MAN
 SAVE /A3OSX.BUILD/SOS.13/sos.s.sysglob

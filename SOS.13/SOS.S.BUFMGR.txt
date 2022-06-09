@@ -408,7 +408,7 @@ RELBUF			tay
 * OTHERWISE CALL MEMORY MGR TO RELEASE BUFFER'S MEMORY SEG
 *
 				lda	#RELSEG
-				sta	REQCODE
+				sta	M.RQCODE
 *
 				lda	SEG.T,Y
 				sta	RLS.NUM
@@ -528,7 +528,7 @@ BUFC200			lda (SOURCE),Y 			; MOVE LOOP
 *
 				stx RLS.NUM
 				lda #RELSEG
-				sta REQCODE
+				sta M.RQCODE
 				jsr MMGR
 				bcs BUFC.ERR
 *
@@ -538,7 +538,7 @@ BUFC200			lda (SOURCE),Y 			; MOVE LOOP
 BUFC.EXIT1		ldx F.NUMX 				; DONE,
 				stx RLS.NUM 			; RELEASE SEG BEFORE EXIT
 				lda #RELSEG
-				sta REQCODE
+				sta M.RQCODE
 				jsr MMGR
 				bcs BUFC.ERR
 *
@@ -567,7 +567,7 @@ FSEG			sta	F.PGCTX
 *				lda	#FINDSEG
 				lda #1
 
-				sta	REQCODE
+				sta	M.RQCODE
 				lda	#2
 				sta	SRCHMODE
 				lda	#4

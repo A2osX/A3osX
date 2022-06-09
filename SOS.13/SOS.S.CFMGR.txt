@@ -16,11 +16,11 @@ NEW
 *
 * FILE REQUEST CODE VALUES
 *
-*OPEN			.EQ 8
+CFMGR.OPEN		.EQ 8
 NEWLINE			.EQ 9
 *READ			.EQ $A
 *WRITE			.EQ $B
-*CLOSE			.EQ $C
+CFMGR.CLOSE		.EQ $C
 *
 * DEVICE CALL PARM LOCATIONS ON SOS ZPAGE
 *
@@ -67,8 +67,8 @@ CFCB.LVL		.BS CFCB.MAX
 *
 * SWITCH, BASED ON REQUEST CODE
 *
-CFMGR			lda REQCODE
-				cmp #OPEN
+CFMGR			lda F.REQCODE
+				cmp #CFMGR.OPEN
 				beq CFOPEN 				; "OPEN"
 				cmp #NEWLINE
 				beq CFNEWLINE 			; "NEWLINE"
@@ -77,7 +77,7 @@ CFMGR			lda REQCODE
 				cmp #WRITE
 				bne CFM010
 				jmp CFWRITE 			; "WRITE"
-CFM010			cmp #CLOSE
+CFM010			cmp #CFMGR.CLOSE
 				jmp	CFCLOSE 			; "CLOSE"
 				bne	CFM020
 CFM020			lda #BADSCNUM
@@ -237,7 +237,7 @@ CFCL030			lda CFCB.DEV,X 			; AND MARK TRUE IN DEV CLOSE TBL
 				lda #TRUE
 				sta DCLOSE.TBL,Y
 				sec
-				ror CFCB.DEV,X
+				ror
 CFCL050			dex
 				bne CFCL030
 
@@ -362,7 +362,7 @@ REL.CFCB		and #$7F
 				lda CFCB.DEV,X
 				bmi REL.ERR
 				sec 					; MARK ENTRY FREE
-				ror CFCB.DEV,X
+				ror
 				jsr OPENCOUNT
 				clc
 				rts 					; NORMAL EXIT

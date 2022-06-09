@@ -721,10 +721,10 @@ TSFRBLK			ldy #VCBTFRE+1
 				bne	TSFR01
 				dex						; ADJUST FOR BITMAP BLOCK BOUNDARY
 TSFR01			txa
-				lsr	A 					; DIVIDE BY 16. THE RESULT IS THE NUMBER
-				lsr	A 					; OF BIT MAPS TO BE SEARCHED.
-				lsr	A
-				lsr	A
+				lsr	 					; DIVIDE BY 16. THE RESULT IS THE NUMBER
+				lsr						; OF BIT MAPS TO BE SEARCHED.
+				lsr
+				lsr
 				sta	BMCNT 				; SAVE IT.
 				lda	#0 					; START COUNT AT ZERO.
 				sta	SCRTCH

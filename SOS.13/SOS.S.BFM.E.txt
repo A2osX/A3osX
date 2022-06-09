@@ -208,7 +208,7 @@ BMBPAGE			 .EQ $BA	 			; BIT MAP B ADDR
 FCBZPP			 .EQ FCBPTR   
 *    
 *    
-*    			.DUMMY
+    			.DUMMY
 				.OR	0 					; (THE FOLLOWING DO NOT NEED TO BE ON ZERO PAGE. 7/16/80 JRH.)  
 DATBLKL			.BS 1   
 DATBLKH			.BS 1   

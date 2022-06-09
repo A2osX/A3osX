@@ -316,10 +316,10 @@ PARMLOOP		lda RGHT.NIB
 				lda	(DFN.PTR),Y
 				sta	SCT.DFN
 				and	#$30
-				lsr	A
-				lsr	A
-				lsr	A
-				lsr	A
+				lsr
+				lsr
+				lsr
+				lsr
 				sta	SCT.DCNT
 				bpl	VALUE ;BRANCH ALWAYS
 *
@@ -332,10 +332,10 @@ ELSE.RNIB		lda SCT.DFN
 				and	#$03
 				sta	SCT.DCNT
 				tya
-				asl	A
-				asl	A
-				asl	A
-				asl	A
+				asl
+				asl
+				asl
+				asl
 				sta	SCT.DFN
 				inc	DFN.PTRX ; ADVANCE SYS CALL DFN PTR
 *
