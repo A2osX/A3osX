@@ -14,26 +14,26 @@ NEW
 * SEGMENT TABLE
 * (NOTE: ENTRY 0 IS NOT USED)
 *
-ST.FREE			 .BS 1 ; PTR TO FIRST FREE SEG TABLE ENTRY
-ST.ENTRY		 .BS 1 ; PTR TO HIGHEST ALLOC SEG TABLE ENTRY
+ST.FREE			 .BS 1 					PTR TO FIRST FREE SEG TABLE ENTRY
+ST.ENTRY		 .BS 1 					PTR TO HIGHEST ALLOC SEG TABLE ENTRY
 
 ST.SIZ			 .EQ 7
 ST.CNT			 .EQ 32
 
 ST.TBL			 .BS ST.SIZ*ST.CNT
-ST.BLINK		 .EQ ST.TBL ; BACK LINK TO PREV ALLOC SEG ENTRY
-ST.FLINK		 .EQ ST.BLINK+ST.CNT ; FORWARD LINK "
-ST.BASEL		 .EQ ST.FLINK+ST.CNT ; BASE BANK/PAGE
+ST.BLINK		 .EQ ST.TBL 			BACK LINK TO PREV ALLOC SEG ENTRY
+ST.FLINK		 .EQ ST.BLINK+ST.CNT 	FORWARD LINK "
+ST.BASEL		 .EQ ST.FLINK+ST.CNT 	BASE BANK/PAGE
 ST.BASEH		 .EQ ST.BASEL+ST.CNT
-ST.LIML			 .EQ ST.BASEH+ST.CNT ; LIMIT BANK/PAGE
+ST.LIML			 .EQ ST.BASEH+ST.CNT 	LIMIT BANK/PAGE
 ST.LIMH			 .EQ ST.LIML+ST.CNT
-ST.ID			 .EQ ST.LIMH+ST.CNT ; SEG ID
+ST.ID			 .EQ ST.LIMH+ST.CNT 	SEG ID
 *
 * DATA DECLARATIONS
 *
 * REGION - DATA DECLARATIONS
 *
-RGN.BKPG		 .BS 2 ; TEMP CONTAINER FOR BANK/PAGE
+RGN.BKPG		 .BS 2 					TEMP CONTAINER FOR BANK/PAGE
 *
 * MMGR
 *
@@ -43,17 +43,17 @@ RGN.BKPG		 .BS 2 ; TEMP CONTAINER FOR BANK/PAGE
 * HANDLES THE SPECIFIC SYSTEM CALL.
 *
 MMGR			lda M.RQCODE
-				beq MMGR010 ; "REQ.SEG"
-				cmp #1
-				beq MMGR020 ; "FIND.SEG"
-				cmp #2
-				beq MMGR030 ; "CHANGE.SEG"
-				cmp #3
-				beq MMGR040 ; "GET.SEG.INFO"
-				cmp #4
-				beq MMGR050 ; "GET.SEG.NUM"
-				cmp #5
-				beq MMGR060 ; "RELEASE.SEG"
+				beq MMGR010 			"REQ.SEG"
+				cmp #1			
+				beq MMGR020 			"FIND.SEG"
+				cmp #2			
+				beq MMGR030 			"CHANGE.SEG"
+				cmp #3			
+				beq MMGR040 			"GET.SEG.INFO"
+				cmp #4			
+				beq MMGR050 			"GET.SEG.NUM"
+				cmp #5			
+				beq MMGR060 			"RELEASE.SEG"
 *
 				lda #BADSCNUM
 				jsr SYSERR
@@ -84,14 +84,14 @@ RQ005			stx RQ.BASE
 				ldx RQ.LIM
 				ldy RQ.LIM+1
 				jsr CNVRT.IBP
-				bcs RQ.ERR ; ERR - INVALID BANK/PAGE
+				bcs RQ.ERR 				ERR - INVALID BANK/PAGE
 				stx RQ.LIM
 				sty RQ.LIM+1
 *
 * IF BASE AND LIMIT ARE IN DIFFERENT REGIONS THEN ERR
 *
 				cmp RQ.REGION
-				bne RQ.ERR1 ; ERR - INVALID BANK/PAGE PAIR
+				bne RQ.ERR1 			ERR - INVALID BANK/PAGE PAIR
 *
 * IF CALLER'S BASE > LIMIT THEN ERR
 *
@@ -99,12 +99,12 @@ RQ005			stx RQ.BASE
 				cmp RQ.BASE
 				lda RQ.LIM+1
 				sbc RQ.BASE+1
-				bcc RQ.ERR1 ; ERR - INVALID BANK/PAGE PAIR
+				bcc RQ.ERR1 			ERR - INVALID BANK/PAGE PAIR
 *
 * PREV SEGNUM:=NULL; NEXT SEGNUM:=FIRST ENTRY
 *
 				ldx	#0
-				ldy	ST.ENTRY ; NOTE: PREV/NEXT CARRIED IN X & Y REGISTERS
+				ldy	ST.ENTRY 			NOTE: PREV/NEXT CARRIED IN X & Y REGISTERS
 *
 * IF NO SEGS IN SEG TABLE THEN ALLOCATE REQUESTED SEG
 *
@@ -138,7 +138,7 @@ RQ010			tya
 				sbc ST.BASEH,X
 				bcc RQ030
 *
-				bcs RQ.ERR2 	ERR - SEGMENT REQUEST DENIED
+				bcs RQ.ERR2 			ERR - SEGMENT REQUEST DENIED
 *
 * IF REQUESTED LIMIT >= PREV SEG'S BASE THEN ERR
 *
@@ -159,7 +159,7 @@ RQ020			lda RQ.LIM
 *
 RQ030			txa 					ALLOCATE REQUESTED SEGMENT
 				jsr	GET.FREE
-				bcs	RQ.ERR3 ; ERR - SEG TABLE FULL
+				bcs	RQ.ERR3				ERR - SEG TABLE FULL
 *
 * ENTER BASE,LIMIT AND ID IN NEW SEG ENTRY
 *
@@ -184,16 +184,16 @@ RQ030			txa 					ALLOCATE REQUESTED SEGMENT
 				sta (RQ.NUM),Y
 
 				clc
-				rts				 		; NORMAL EXIT
+				rts				 		NORMAL EXIT
 
 RQ.ERR1			lda #BADBKPG
-				jsr	SYSERR 				; ERR EXIT
+				jsr	SYSERR 				ERR EXIT
 
 RQ.ERR2			lda #SEGRQDN
-				jsr	SYSERR 				; ERR EXIT
+				jsr	SYSERR 				ERR EXIT
 
 RQ.ERR3			lda #SEGTBLFULL
-				jsr	SYSERR				; ERR EXIT
+				jsr	SYSERR				ERR EXIT
 *
 * FIND.SEG(IN.SRCHMODE,SEGID; INOUT.PAGECT;
 * OUT.BASE.BKPG,LIMIT.BKPG,SEGNUM)
@@ -210,19 +210,19 @@ FIND.SEG		ldy #0
 				bne FIND001
 				lda FX.PGCT
 				bne FIND001
-				lda #BADPGCNT 				; ERR, PAGECT=0, EXIT
-				jsr SYSERR
-*
-FIND001			lda #FALSE
-				sta F.ERR
-*
-* IF SEARCH MODE>2 THEN ERR
-*
-				lda SRCHMODE
-				cmp #3
-				bcc FIND005
-				lda #BADSRCHMODE
-				jsr SYSERR 					; ERR EXIT
+				lda #BADPGCNT 				ERR, PAGECT=0, EXIT
+				jsr SYSERR                  
+*                                           
+FIND001			lda #FALSE                  
+				sta F.ERR                   
+*                                           
+* IF SEARCH MODE>2 THEN ERR                 
+*                                           
+				lda SRCHMODE                
+				cmp #3                      
+				bcc FIND005                 
+				lda #BADSRCHMODE            
+				jsr SYSERR 					ERR EXIT
 *
 * INITIALIZE NEXT FREE SEGMENT SUBROUTINE,
 * AND BIGGEST FREE SEGMENT PAGE COUNT
@@ -235,7 +235,7 @@ FIND005			jsr NXTFRSEG.I
 * GET NEXT FREE SEGMENT
 *
 FIND010			jsr NXTFRSEG
-				bcc FIND015 			; PROCESS FREE SEGMENT
+				bcc FIND015 				PROCESS FREE SEGMENT
 *
 * NO MORE FREE SEGMENTS LEFT
 * RETURN BIGGEST FREE SEGMENT FOUND
@@ -243,7 +243,7 @@ FIND010			jsr NXTFRSEG
 *
 				lda #TRUE
 				sta F.ERR
-				ldx #0 					; SEG#:=0
+				ldx #0 						SEG#:=0
 				jmp FIND070
 *
 * FREE SEGMENT FOUND.
@@ -293,7 +293,7 @@ FIND050			lda FX.PGCT
 				lda BFS.BLINK
 				jsr GET.FREE
 				bcc FIND060
-				rts				  ; ERR - SEG TABLE FULL
+				rts				  		ERR - SEG TABLE FULL
 *
 * ST.ID(NEW):=F.ID
 * ST.BASE(NEW):=BFS.BASE
@@ -345,14 +345,14 @@ FIND070			ldy #0
 				txa
 				sta (F.LIM),Y
 *
-				lda F.ERR ; IF ERR FLAG TRUE THEN REPORT IT.
+				lda F.ERR 				IF ERR FLAG TRUE THEN REPORT IT.
 				bne FIND.ERR
 *
 				clc
-				rts  ; NORMAL EXIT
+				rts  					NORMAL EXIT
 *
 FIND.ERR		lda #SEGRQDN
-				jsr SYSERR ; ERR EXIT
+				jsr SYSERR 				ERR EXIT
 
 * NEXT FREE SEGMENT - INITIALIZATION
 *
@@ -431,7 +431,7 @@ NXTFRSEG		lda CFS.PTR+1
 				bpl FRSG010
 *
 				sec
-				rts				 ; EXIT - NO MORE FREE SEGMENTS LEFT
+				rts				 		EXIT - NO MORE FREE SEGMENTS LEFT
 *
 * CFS.BLINK:=CFS.PREV
 * CFS.LIM:=CFS.PTR
@@ -591,7 +591,7 @@ FRSG060			sec
 				jsr NXTFRPG
 *
 FRSG070			clc
-				rts				 ; EXIT - FREE SEGMENT FOUND
+				rts				 		EXIT - FREE SEGMENT FOUND
 *
 * NEXT FREE PAGE
 *
@@ -653,7 +653,7 @@ CHG.SEG			ldy #0
 				bpl CHGS005
 *
 CHGS.ERR		lda #BADSEGNUM
-				jsr SYSERR ; ERR EXIT
+				jsr SYSERR 				ERR EXIT
 
 * CASE OF CHANGE MODE
 
@@ -666,7 +666,7 @@ CHGS005			ldy CHG.MODE
 				beq CHGS040
 *
 				lda #BADCHGMODE
-				jsr SYSERR ; ERR EXIT
+				jsr SYSERR 				ERR EXIT
 
 * CHANGE MODE = 0(BASE UP)
 
@@ -680,7 +680,7 @@ CHGS010			clc
 				adc CHG.PGCTX+1
 				sta CHG.NEW+1
 *
-				bcs CHGS014 ; OVERFLOW, PEG IT
+				bcs CHGS014 			OVERFLOW, PEG IT
 *
 * IF CHG.NEW <= ST.LIM(SEG#) THEN EXIT
 *
@@ -711,7 +711,7 @@ CHGS020			sec
 				sbc CHG.PGCTX+1
 				sta CHG.NEW+1
 				bcs CHGS050
-				bcc CHGS052 ; OVERFLOW, PEG IT
+				bcc CHGS052 			OVERFLOW, PEG IT
 
 * CHANGE MODE = 2(LIMIT UP)
 
@@ -725,7 +725,7 @@ CHGS030			clc
 				adc CHG.PGCTX+1
 				sta CHG.NEW+1
 				bcc CHGS050
-				bcs CHGS052 ; OVERFLOW, PEG IT
+				bcs CHGS052 			OVERFLOW, PEG IT
 
 * CHANGE MODE = 3(LIMIT DOWN)
 
@@ -738,7 +738,7 @@ CHGS040			sec
 				lda ST.LIMH,X
 				sbc CHG.PGCTX+1
 				sta CHG.NEW+1
-				bcc CHGS044 ; OVERFLOW, PEG IT
+				bcc CHGS044 				OVERFLOW, PEG IT
 *
 * IF CHG.NEW >= ST.BASE(SEG#) THEN EXIT
 *
@@ -926,11 +926,11 @@ CHGS620			sta ST.LIML,X
 * IF SEG# OUT OF BOUNDS OR ST.FLINK(SEG#)=ST.FREE THEN ERR
 *
 GET.SEG.INFO	ldx GSI.NUM
-				beq GSI.ERR ; ERR - INVALID SEGNUM
+				beq GSI.ERR 			ERR - INVALID SEGNUM
 				cpx #ST.CNT
-				bcs GSI.ERR ; ERR - INVALID SEGNUM
+				bcs GSI.ERR 			ERR - INVALID SEGNUM
 				lda ST.FLINK,X
-				bmi GSI.ERR ; ERR - INVALID SEGNUM
+				bmi GSI.ERR 			ERR - INVALID SEGNUM
 *
 * RETURN BASE.BKPG TO CALLER
 *
@@ -991,7 +991,7 @@ GSI010			tya
 				rts  ; NORMAL EXIT
 
 GSI.ERR			lda #BADSEGNUM
-				jsr SYSERR ; ERR EXIT
+				jsr SYSERR 				ERR EXIT
 *
 * GET.SEG.NUM(IN.BANKPAGE; OUT.SEGNUM) SYSTEM CALL
 *
@@ -1001,14 +1001,14 @@ GSI.ERR			lda #BADSEGNUM
 GET.SEG.NUM		ldx GSN.BKPG
 				ldy GSN.BKPG+1
 				jsr CNVRT.IBP
-				bcs GSN.ERR ; ERR - INVALID BANK PAGE
+				bcs GSN.ERR 			ERR - INVALID BANK PAGE
 				stx GSN.BKPG
 				sty GSN.BKPG+1
 *
 * QUIT IF NO ENTRIES IN SEG TABLE
 *
 				lda ST.ENTRY
-				beq GSN.ERR1 ; ERR - SEG NOT FOUND
+				beq GSN.ERR1 			ERR - SEG NOT FOUND
 *
 * L1: IF BANKPAGE>ST.LIM(SEG#) THEN ERR
 *
@@ -1017,7 +1017,7 @@ GSN010			tax
 				cmp GSN.BKPG
 				lda ST.LIMH,X
 				sbc GSN.BKPG+1
-				bcc GSN.ERR1 ; ERR - SEG NOT FOUND
+				bcc GSN.ERR1 			ERR - SEG NOT FOUND
 *
 * IF BANKPAGE>=ST.BASE(SEG#) THEN FOUND!
 *
@@ -1030,7 +1030,7 @@ GSN010			tax
 * SEG#:=ST.FLINK(SEG#); GOTO L1
 *
 				lda ST.FLINK,X
-				beq GSN.ERR1 ; ERR - SEG NOT FOUND
+				beq GSN.ERR1 			ERR - SEG NOT FOUND
 				jmp GSN010
 *
 * RETURN SEG# TO CALLER
@@ -1039,24 +1039,24 @@ GSN020			ldy #0
 				txa
 				sta (GSN.NUM),Y
 				clc
-				rts ; NORMAL EXIT
+				rts 					NORMAL EXIT
 *
-GSN.ERR			rts ; ERROR EXIT
+GSN.ERR			rts 					ERROR EXIT
 *
 GSN.ERR1		lda #SEGNOTFND
-				jsr	SYSERR ; ERROR EXIT
+				jsr	SYSERR 				ERROR EXIT
 *
 * RELEASE.SEG(IN.SEGNUM) SYSTEM CALL
 *
 * IF ST.FLINK(SEG#)=ST.FREE THEN ERR
 *
 RELEASE.SEG		ldx RLS.NUM
-				beq RLS.ALL ; RELEASE.SEG(SEG#=0)
+				beq RLS.ALL 			RELEASE.SEG(SEG#=0)
 				cpx #ST.CNT
-				bcs RLS.ERR ; ERR - SEG# TOO LARGE
+				bcs RLS.ERR 			ERR - SEG# TOO LARGE
 				lda ST.FLINK,X
-				bmi RLS.ERR ; ERR - INVALID SEGNUM
-				bpl REL.SEG ; RELEASE.SEG(SEG#0)
+				bmi RLS.ERR 			ERR - INVALID SEGNUM
+				bpl REL.SEG 			RELEASE.SEG(SEG#0)
 *
 * RELEASE ALL
 *
@@ -1065,20 +1065,20 @@ RLS.ALL			ldx ST.ENTRY
 				stx RLS.NUM
 
 RLS0.LOOP		lda ST.ID,X
-				cmp #$10 ; CARRY SET/CLEARED HERE
+				cmp #$10 				CARRY SET/CLEARED HERE
 
 				lda ST.FLINK,X
 				pha
-				bcc RLS006 ; IF ID=SYS SEG THEN SKIP
-				jsr REL.SEG ; RELEASE ONE SEGMENT
+				bcc RLS006 				IF ID=SYS SEG THEN SKIP
+				jsr REL.SEG 			RELEASE ONE SEGMENT
 RLS006			pla
 				beq RLS0.EXIT
 				sta RLS.NUM
 				tax
-				bne RLS0.LOOP ; ALWAYS TAKEN
+				bne RLS0.LOOP 			ALWAYS TAKEN
 
 RLS0.EXIT		clc
-				rts  ; NORMAL EXIT ; ALL NON SYSTEM SEGMENTS RELEASED.
+				rts  					NORMAL EXIT ; ALL NON SYSTEM SEGMENTS RELEASED.
 *
 * REL SEG
 *
@@ -1116,7 +1116,7 @@ RLS030			lda ST.FREE
 				sta ST.FREE
 *
 				clc
-				rts				 ; NORMAL EXIT
+				rts				 		NORMAL EXIT
 *
 RLS.ERR			lda #BADSEGNUM
 				jsr	SYSERR ; ERR EXIT
@@ -1162,8 +1162,8 @@ CNVI020			cpx #$10 ; BANK = "10"
 				sec
 				sbc #$80
 
-CNVI030			tay ; SHIFT BANK RIGHT ONE BIT
-				txa ; INTO HIGH BIT OF PAGE BYTE.
+CNVI030			tay 					SHIFT BANK RIGHT ONE BIT
+				txa 					INTO HIGH BIT OF PAGE BYTE.
 				lsr
 				tax
 				tya
@@ -1180,10 +1180,10 @@ CNVI040			pha
 *
 * COMPUTE REGION (VIRT=0,PHY1=1,PHY2=2)
 *
-				jsr REGION ; REGION RETURNED IN A REG.
-				bcs CNVI.ERR1 ; ERR - INVALID BANK PAGE
+				jsr REGION 				REGION RETURNED IN A REG.
+				bcs CNVI.ERR1 			ERR - INVALID BANK PAGE
 *
-				rts				 ; NORMAL EXIT
+				rts				 		NORMAL EXIT
 *
 CNVI.ERR1		lda #BADBKPG
 				jsr SYSERR
@@ -1212,14 +1212,14 @@ CNVRT.XBP		txa
 *
 				txa
 				cpy #$F
-				beq CNVX020 ; BANK = "F"
+				beq CNVX020				BANK = "F"
 				bcs CNVX010
 *
-				clc  ; BANK < "F"
+				clc  					BANK < "F"
 				adc #$20
 				jmp CNVX020
 *
-CNVX010			clc  ; BANK = "10"
+CNVX010			clc  					BANK = "10"
 				adc #$80
 *
 * EXCHANGE X & Y
@@ -1229,7 +1229,7 @@ CNVX020			pha
 				tax
 				pla
 				tay
-				rts  ; NORMAL EXIT
+				rts  					NORMAL EXIT
 *
 * REGION
 *
@@ -1249,7 +1249,7 @@ REGION			stx RGN.BKPG
 				cmp RGN.BKPG
 				lda /PHY2LIM
 				sbc RGN.BKPG+1
-				bcc RGN.ERR ; ERR - INVALID BANK PAGE
+				bcc RGN.ERR 			ERR - INVALID BANK PAGE
 *
 * IF BANKPAGE>=PHY2BASE THEN REGION:=2
 *
@@ -1267,7 +1267,7 @@ RGN010			lda #PHY1LIM
 				cmp RGN.BKPG
 				lda /PHY1LIM
 				sbc RGN.BKPG+1
-				bcc RGN.ERR ; ERR - INVALID BANK PAGE
+				bcc RGN.ERR 			ERR - INVALID BANK PAGE
 *
 * IF BANKPAGE>=PHY1BASE THEN REGION:=1
 *
@@ -1288,10 +1288,10 @@ RGN020			lda >VRT.LIM
 				bcc RGN.ERR
 				lda #0
 *
-RGN040			clc  ; "N" FLAG ALWAYS REFLECTS REGION VAL IN A REG!
-				rts  ; NORMAL EXIT
+RGN040			clc  					"N" FLAG ALWAYS REFLECTS REGION VAL IN A REG!
+				rts  					NORMAL EXIT
 *
-RGN.ERR			sec  ; INVALID BANK PAGE
+RGN.ERR			sec  					INVALID BANK PAGE
 				rts
 *
 * GET FREE
@@ -1353,7 +1353,7 @@ GTFR020			lda ST.FLINK,Y
 *
 GTFR030			tya
 				clc
-				rts  ; NORMAL EXIT
+				rts  					NORMAL EXIT
 *
 GTFR.ERR		lda #SEGTBLFULL
 				jsr SYSERR

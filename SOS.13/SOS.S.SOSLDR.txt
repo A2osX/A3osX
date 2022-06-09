@@ -13,7 +13,7 @@ D.PATH			.DA #14
 				.AS ".D1/SOS.DRIVER"
 				.BS 33
 LDR.ADR			.DA 0
-LDR.CNT			.DA SOSLDR.END-SOSLDR
+				.DA SOSLDR.LEN
 *--------------------------------------
 SOSLDR			lda	#0					ZERO SOS/USER X, Z AND STACK PAGES
 				tax
@@ -26,8 +26,8 @@ SOSLDR			lda	#0					ZERO SOS/USER X, Z AND STACK PAGES
 				sta SSPAGE,X
 				dex
 				bne .1
-* SETUP SOS CALL ENVIRONMENT (WRITE PROTECT=OFF)
-				lda #$30		)
+* SETUP SOS CALL ENVIRONMENT (WRITE PROTECT=OFF
+				lda #$30
 				sta E.REG		
 
 				ldx #$FB			CONSOLE 1.0 MODIFIES STACK DURING D.INIT CALL
@@ -92,7 +92,7 @@ MOVE			tax
 				bne .2		 		IF PAGE.CNT <> 0 THEN M1
 
 				inc	SRC.P+1 		RESTORE SRC.P
-				inc DST.P+1 		" DST.P
+				inc DST.P+1 		DST.P
 
 .4				pla  				RESTORE BANK REGISTER
 				sta B.REG
@@ -159,10 +159,10 @@ WALKLINKS		jsr ALLOC.DEV 		ALLOC.DEV(LINK.P BREG.IN, SDT.TBL BLKDLST.IO)
 				sty B.REG
 				rts
 
-LINK.INIT		jsr SET.DRIVES 			SET.DRIVES(A=#DRIVES.IN, DIB1..4.IN)
+LINK.INIT		jsr SET.DRIVES 		SET.DRIVES(A=#DRIVES.IN, DIB1..4.IN)
 				lda #0
-				sta MAX.DNUM 			MAXDNUM:=0
-				sta BLKDLST 			BLKDLST:=0
+				sta MAX.DNUM 		MAXDNUM:=0
+				sta BLKDLST 		BLKDLST:=0
 				sta CXPAGE+LINK.P+1 	LINK.P:=0:DIB1
 				lda #DIB1
 				sta LINK.P
@@ -170,7 +170,7 @@ LINK.INIT		jsr SET.DRIVES 			SET.DRIVES(A=#DRIVES.IN, DIB1..4.IN)
 				sta LINK.P+1
 				jmp WALKLINKS
 
-* (ADDS A NEW ENTRY TO THE DEVICE MANAGER'S SYSTEM DEVICE TABLE (SDT))
+* ADDS A NEW ENTRY TO THE DEVICE MANAGER'S SYSTEM DEVICE TABLE (SDT)
 
 ALLOC.DEV		inc MAX.DNUM 			MAX.DNUM:=MAX.DNUM+1
 				ldx MAX.DNUM 			IF MAX.DNUM >= SDT.SIZE
@@ -275,22 +275,22 @@ SOSLDR1			ldx	#$1F 				COPY ROM'S DISK CORE ROUTINE ZPAGE VARS TO SOS ZPAGE
 
 * INITIALIZE SDT TABLE, KERNEL AND PRINT WELCOME MESSAGE
 
-				lda K.DRIVES 			LINK.INIT(A=K.DRIVES DIB1..4.IN, SDT.TBL BLKDLST.IO)
+				lda K.DRIVES 		LINK.INIT(A=K.DRIVES DIB1..4.IN, SDT.TBL BLKDLST.IO)
 				jsr LINK.INIT
-				jsr INIT.KRNL 			INIT.KRNL()
-				jsr WELCOME 			WELCOME()
+				jsr INIT.KRNL 		INIT.KRNL()
+				jsr WELCOME 		WELCOME()
 
-				lda E.REG 				ENABLE ROM BANK
+				lda E.REG 			ENABLE ROM BANK
 				ora #$03
 				sta E.REG
-				lda ROM.ADR 			IF MONITOR ROM <> NEW
-				cmp #ROM.ID 			THEN
+				lda ROM.ADR 		IF MONITOR ROM <> NEW
+				cmp #ROM.ID 		THEN
 				beq .2
-				ldx #ERR7X 				ERROR("ROM ERROR: PLEASE NOTIFY YOUR DEALER")
+				ldx #ERR7X 			ERROR("ROM ERROR: PLEASE NOTIFY YOUR DEALER")
 				ldy #ERR7L
 				jsr ERROR
 
-.2				lda E.REG				DISABLE ROM BANK
+.2				lda E.REG			DISABLE ROM BANK
 				and #$F6
 				sta E.REG
 
@@ -335,32 +335,32 @@ SOSLDR1			ldx	#$1F 				COPY ROM'S DISK CORE ROUTINE ZPAGE VARS TO SOS ZPAGE
 				brk
 				.DA #READ
 				.DA READ.PARMS
-				beq LDR050
+				beq .5
 				ldx #ERR0X 				ERROR("I/O ERROR")
 				ldy #ERR0L
 				jsr ERROR
 
 * CLOSE INTERPRETER FILE AND CHECK LABEL ! SEE FIGURE 2. !
 
-LDR050			brk  					CLOSE(REFNUM=CLOSE.REF)
+.5				brk  					CLOSE(REFNUM=CLOSE.REF)
 				.DA #BFM.C.CLOSE
 				.DA CLOSE.PARMS
 				ldy #7 					CHECK LABEL
 
-LDR051			lda (RDBUF.P),Y
+.6				lda (RDBUF.P),Y
 				cmp I.LABEL,Y
-				bne LDR052
+				bne .7
 				dey
-				bpl LDR051
-				bmi LDR053
+				bpl .6
+				bmi .8
 
-LDR052			ldx #ERR2X 				ERROR("INVALID INTERPRETER FILE")
+.7				ldx #ERR2X 				ERROR("INVALID INTERPRETER FILE")
 				ldy #ERR2L
 				jsr ERROR
 
 * MOVE INTERPRETER CODE
 
-LDR053			lda #I.HDR.CNT-2 		WORK.P:=80:I.HDR.CNT-2
+.8				lda #I.HDR.CNT-2 		WORK.P:=80:I.HDR.CNT-2
 				sta WORK.P
 				lda /I.HDR.CNT-2
 				sta WORK.P+1
@@ -1041,8 +1041,8 @@ BUILD.DSEG		pha
 				sta DSEGLIST,X
 				rts
 
-DSEGX				.DA #$0 				# PAGES FOR 1ST DRIVER SEGMENT (BANK N )
-DSEGLIST			.DA #$0 				" 2ND " (BANK N-1)
+DSEGX			.DA #$0 				# PAGES FOR 1ST DRIVER SEGMENT (BANK N )
+DSEGLIST		.DA #$0 				" 2ND " (BANK N-1)
 				.DA #$0 				" 3RD " (BANK N-2)
 				.DA #$0 				" 4TH " (BANK N-3)
 
@@ -1142,7 +1142,32 @@ RSEG			inc SEGID			SEGID:=SEGID+1
 				sta SEGBASE
 				sta SEGLIM
 
-				rts
+RSEG010 		brk 					REQ.SEG(BASE, LIMIT, SEGID, SEGNUM)
+				.DA #BFM.C.REQSEG
+				.DA SEGMENT
+
+				rts 					RETURN
+
+* ALLOCATES SEGMENTS FOR DRIVER MODULES
+
+ALLOC.DSEG		inc DSEGX 				DSEGX:=DSEGX+1
+				bne .1					IF DSEGX=0
+				ldx #ERR5X 				THEN ERROR("INVALID DRIVER FILE")
+				ldy #ERR5L
+				jsr ERROR
+
+.1				ldy #$FF 				Y:=-1
+.2				iny 					WHILE (Y:=Y+1) < DSEGX
+				cpy	DSEGX 				DO
+				bcs	ALDS.EXIT
+				lda	DSEGLIST,Y 			PAGECT:=DSEGLIST(Y)
+				sta	SEGPGCNT
+				brk	 					FINDSEG (SRCHMODE=0.IN, SEGID=3
+				.DA #BFM.C.FINDSEG 			PAGECT=DSEGLIST(Y)
+				.DA	SEGMENT1 			BASE.OUT, LIMIT.OUT)
+				jmp	.2
+
+ALDS.EXIT		rts
 
 ERROR			sty ETEMP		CENTER MSG (Y:=LEN/2+LEN)
 				sec
@@ -1187,34 +1212,6 @@ ERR4L			.EQ *-ERR4
 ERR4X			.EQ *-ERR-1
 ERR5			.AS "INVALID DRIVER FILE"
 ERR5L			.EQ *-ERR5
-
-RSEG010			brk
-				.DA #BFM.C.REQSEG
-				.DA SEGMENT
-
-				rts
-
-* ALLOCATES SEGMENTS FOR DRIVER MODULES
-
-ALLOC.DSEG		inc DSEGX 				DSEGX:=DSEGX+1
-				bne .1					IF DSEGX=0
-				ldx #ERR5X 				THEN ERROR("INVALID DRIVER FILE")
-				ldy #ERR5L
-				jsr ERROR
-
-.1				ldy #$FF 				Y:=-1
-.2				iny 					WHILE (Y:=Y+1) < DSEGX
-				cpy	DSEGX 				DO
-				bcs	ALDS.EXIT
-				lda	DSEGLIST,Y 			PAGECT:=DSEGLIST(Y)
-				sta	SEGPGCNT
-				brk	 					FINDSEG (SRCHMODE=0.IN, SEGID=3
-				.DA #BFM.C.FINDSEG 			PAGECT=DSEGLIST(Y)
-				.DA	SEGMENT1 			BASE.OUT, LIMIT.OUT)
-				jmp	.2
-
-ALDS.EXIT		rts
-
 ERR5X			.EQ *-ERR-1
 ERR6			.AS "DRIVER FILE TOO LARGE"
 ERR6L			.EQ *-ERR6
@@ -1276,12 +1273,12 @@ WELCOME			ldy #AMSGL
 				dex
 				dey
 				bne .3
-*
+
 				lda DATETIME+7 		SET UP DATE
 				ldx DATETIME+6
 				sta DMSG+6
 				stx DMSG+5
-*
+
 				lda DATETIME+5 		SET UP MONTH
 				and #$0F
 				ldx DATETIME+4
@@ -1346,11 +1343,11 @@ MONNAME			.AS "JANFEBMARAPRMAYJUN"
 CMSG			.AS -"(C)1980,1981,1982 BY APPLE COMPUTER INC."
 CMSGL			.EQ *-CMSG
 CMSGADR			.EQ 40-CMSGL/2+$7D0
-*--------------------------------------
+
 OPEN.PARMS		.DA #4
 				.DA PATH
 OPEN.REF		.DA #0
-				.DAOPEN.LIST
+				.DA OPEN.LIST
 				.DA #4
 OPEN.LIST		.DA #0,#4  PAGES:=4
 				.DA SYSBUF.P
@@ -1388,11 +1385,11 @@ DTPARMS			.DA #1
 				.DA DATETIME
 DATETIME		.AS "YYYYMMDDWHHMMSSMMM"
 
-* END OF SOSLDR CODE
-
 *				.BS $F800-*
 
 INITMODULE		.BS $200 	KERNEL'S INIT MODULE RESIDES HERE
+
+SOSLDR.LEN		.EQ *-SOSLDR
 
 LDREND			.EQ *
 
@@ -1411,7 +1408,7 @@ D.DRIVES		.EQ D.HDR.CNT+$2
 D.CHRSET		.EQ D.DRIVES+$2+$10
 D.KYBD			.EQ D.CHRSET+$10+$400
 
-SOSLDR.END		.EP
+				.EP
 *--------------------------------------
 MAN
 SAVE /A3OSX.BUILD/SOS.13/sos.s.sosldr

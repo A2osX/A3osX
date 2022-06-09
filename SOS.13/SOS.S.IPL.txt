@@ -27,7 +27,7 @@ BITOFF4			.EQ $EF
 BITOFF5			.EQ $DF
 BITOFF6			.EQ $BF
 BITOFF7			.EQ $7F
-*BACKBIT			.EQ $20 				; BACKUP BIT MASK
+*BACKBIT			.EQ $20 			BACKUP BIT MASK
 *
 * 6522 REGISTERS
 *
@@ -47,7 +47,7 @@ S.SAVE			.EQ $104
 *E.SAVE			.EQ $1FE
 *Z.SAVE			.EQ $1FD
 *B.SAVE			.EQ $1FC
-EXPNSLOT		.HS 00 					;CURRENT I/O EXPANSION SLOT
+EXPNSLOT		.HS 00 					CURRENT I/O EXPANSION SLOT
 *
 * STATUS LOCATIONS FOR INTERRUPT POLLING
 *
@@ -85,13 +85,13 @@ EVQ.SIZ			.EQ 6 ;ENTRY SIZE
 EVQ.CNT			.EQ $07 ;ENTRY COUNT
 EVQ.LEN			.EQ $2A ;(EVQ.SIZ*EVQ.CNT)
 EV.QUEUE		.BS EVQ.LEN
-EVQ.FREE		.EQ EV.QUEUE+2 			;FIRST FREE ENTRY INDEX
-EVQ.LINK		.EQ EV.QUEUE+0			;NEXT ACTIVE ENTRY INDEX
-EVQ.PRI			.EQ EV.QUEUE+1 			;EVENT PRIORITY
-EVQ.ID			.EQ EV.QUEUE+2 			;EVENT IDENTIFICATION
-EVQ.ADRL		.EQ EV.QUEUE+3 			;EVENT ADDRESS: LOW BYTE
-EVQ.ADRH		.EQ EV.QUEUE+4 			;EVENT ADDRESS: HIGH BYTE
-EVQ.BANK		.EQ EV.QUEUE+5 			;EVENT ADDRESS: BANK
+EVQ.FREE		.EQ EV.QUEUE+2 			FIRST FREE ENTRY INDEX
+EVQ.LINK		.EQ EV.QUEUE+0			NEXT ACTIVE ENTRY INDEX
+EVQ.PRI			.EQ EV.QUEUE+1 			EVENT PRIORITY
+EVQ.ID			.EQ EV.QUEUE+2 			EVENT IDENTIFICATION
+EVQ.ADRL		.EQ EV.QUEUE+3 			EVENT ADDRESS: LOW BYTE
+EVQ.ADRH		.EQ EV.QUEUE+4 			EVENT ADDRESS: HIGH BYTE
+EVQ.BANK		.EQ EV.QUEUE+5 			EVENT ADDRESS: BANK
 *
 * THIS IS THE GENERAL INTERRUPT RECEIVER. WHEN AN
 * INTERRUPT OCCURS, THE CPU PASSES CONTROL TO THE GIR
@@ -173,25 +173,25 @@ GIR010			txa
 * CALL SYSTEM CALL MANAGER; ON RETURN, PUT ERROR CODE IN
 * USER'S A REGISTER AND SET RETURN STATUS, THEN DISPATCH.
 *
-				tsx				 		; CHECK FOR
-				cpx	#B.SAVE-2 			; REENTRANT
-				beq	GIR020 				; SYSTEM CALL
+				tsx				 		CHECK FOR
+				cpx	#B.SAVE-2 			REENTRANT
+				beq	GIR020 				SYSTEM CALL
 				lda	#BADBRK
 				jsr	SYSDEATH
 
-GIR020			lda E.REG 				; SELECT $C000 RAM
+GIR020			lda E.REG 				SELECT $C000 RAM
 				and	#BITOFF6
 				sta	E.REG
-				cli						; ENABLE INTERRUPTS
-				jsr	SCMGR 				; CALL THE SYSTEM CALL MGR
-				lda	#BACKBIT 			; GET THE MASK
-				sta	BACKMASK 			; SET IT IN SYSGLOB
+				cli						ENABLE INTERRUPTS
+				jsr	SCMGR 				CALL THE SYSTEM CALL MGR
+				lda	#BACKBIT 			GET THE MASK
+				sta	BACKMASK 			SET IT IN SYSGLOB
 				jsr	CHKBUF
 				sei
 				ldx	SP.SAVE
 				lda	Z.SAVE
-				eor	#BITON0 			; SET ZERO PAGE TO
-				sta	Z.REG 				; CALLER'S STACK
+				eor	#BITON0 			SET ZERO PAGE TO
+				sta	Z.REG 				CALLER'S STACK
 				lda	SERR
 				sta	>A.SAVE,X
 				php
@@ -207,69 +207,69 @@ GIR020			lda E.REG 				; SELECT $C000 RAM
 * SET INTERRUPT ZERO PAGE AND SOS BANK
 * THEN POLL I/O DEVICES
 *
-POLL.IO			bit B.REG 				; VERIFY THAT 'IRQ IS LOW
+POLL.IO			bit B.REG 				VERIFY THAT 'IRQ IS LOW
 				bpl	PIO006
-				inc	IRQCNTR 			; BUMP FALSE IRQ COUNTER
+				inc	IRQCNTR 			BUMP FALSE IRQ COUNTER
 				bne	PIO004
 				inc	IRQCNTR+1
 PIO004			jmp DISPATCH
-PIO006			lda #0 					; SET INTERRUPT ZERO PAGE
+PIO006			lda #0 					SET INTERRUPT ZERO PAGE
 				sta	Z.REG
 				lda	E.REG
-				ora	#BITON7 			; FORCE 1 MHZ FOR
-				sta	E.REG 				; READING ACIA STATUS
+				ora	#BITON7 			FORCE 1 MHZ FOR
+				sta	E.REG 				READING ACIA STATUS
 				and	#BITOFF7
 				ldx	#$01
-				ldy	ACIASTAT 			; ANY INTERRUPT ON ACIA?
+				ldy	ACIASTAT 			ANY INTERRUPT ON ACIA?
 				sta	E.REG
 				bmi	PIO070
-				lda	E.IFR 				; ANY INTERRUPT ON E-6522?
-				bpl	PIO020 				; NO
+				lda	E.IFR 				ANY INTERRUPT ON E-6522?
+				bpl	PIO020 				NO
 				and	E.IER
 				ldy	#7
 				ldx	#$02
 
-PIO010			lsr 					; CHECK FLAG BITS
+PIO010			lsr 					CHECK FLAG BITS
 				bcs	PIO070
 				inx
 				dey
 				bne PIO010
 				beq PIO035
 
-PIO020			lda D.IFR 				; ANY INTERRUPT ON D-6522?
+PIO020			lda D.IFR 				ANY INTERRUPT ON D-6522?
 				bpl PIO035
 				and D.IER
-				bit ANYSLOT 			; ANY SLOT INTERRUPT?
-				bne PIO040 				; YES
+				bit ANYSLOT 			ANY SLOT INTERRUPT?
+				bne PIO040 				YES
 				ldy #7
 				ldx #$09
-PIO030			lsr 					; CHECK FLAG BITS
+PIO030			lsr 					CHECK FLAG BITS
 				bcs PIO070
 				inx
 				dey
 				bne PIO030
-PIO035			ldx #$10 				; INTERRUPT NOT FOUND
+PIO035			ldx #$10 				INTERRUPT NOT FOUND
 				bne PIO050
 PIO040			ldx #$11
-				bit SLOT1 				; SLOT 1?
+				bit SLOT1 				SLOT 1?
 				bpl PIO070
 				inx
-				bit SLOT2 				; SLOT 2?
+				bit SLOT2 				SLOT 2?
 				bpl PIO070
 				lda B.REG
 				inx
-				bit SLOT3 				; SLOT 3?
+				bit SLOT3 				SLOT 3?
 				beq PIO070
 				inx
-				bit SLOT4 				; SLOT 4?
+				bit SLOT4 				SLOT 4?
 				beq PIO070
 				ldx #$0A
 *
 * BAD INTERRUPT -- SYSTEM DEATH
 *
-PIO050			lda #BADINT1 			; INTERRUPT NOT FOUND
+PIO050			lda #BADINT1 			INTERRUPT NOT FOUND
 				jsr SYSDEATH
-PIO060			lda #BADINT2 			; BAD ZERO PAGE ALLOCATION
+PIO060			lda #BADINT2 			BAD ZERO PAGE ALLOCATION
 				jsr SYSDEATH
 *
 * INTERRUPTING DEVICE FOUND
@@ -287,34 +287,34 @@ PIO060			lda #BADINT2 			; BAD ZERO PAGE ALLOCATION
 *
 CALLMIH			jmp (IRQADDR)
 *
-PIO070			lda SIRTABLE,X 			; INTERRUPT ALLOCATED?
-				bpl	PIO050 				; NO
-				lda	SIRADR.L,X 			; GET INTERRUPT ADDRESS
+PIO070			lda SIRTABLE,X 			INTERRUPT ALLOCATED?
+				bpl	PIO050 				NO
+				lda	SIRADR.L,X 			GET INTERRUPT ADDRESS
 				sta	IRQADDR
-				ora	SIRADR.H,X 			; CHECK FOR ADDRESS = $00
-				beq	PIO050 				; BAD ADDRESS
+				ora	SIRADR.H,X 			CHECK FOR ADDRESS = $00
+				beq	PIO050 				BAD ADDRESS
 				lda	SIRADR.H,X
 				sta	IRQADDR+1
 				lda	SIRADR.B,X
 				sta	B.REG
-				lda	ZPGSTACK 			; ALLOCATE MIH ZERO PAGE
+				lda	ZPGSTACK 			ALLOCATE MIH ZERO PAGE
 				cmp	#ZPGSTOP+ZPGSPACE
-				bcc	PIO060 				; TOO MANY NESTED INTERRUPTS
+				bcc	PIO060 				TOO MANY NESTED INTERRUPTS
 				sbc	#ZPGSPACE
 				sta	ZPGSTACK
 				sta	ZPGSP
 				tax
-				jsr	CALLMIH 			; CALL INTERRUPT HANDLER
+				jsr	CALLMIH 			CALL INTERRUPT HANDLER
 				sei
 				lda	#$00
 				sta	Z.REG
 				clc
-				lda	ZPGSTACK 			; DEALLOCATE MIH ZERO PAGE
+				lda	ZPGSTACK 			DEALLOCATE MIH ZERO PAGE
 				adc	#ZPGSPACE
 				sta	ZPGSTACK
 				sta	ZPGSP
 				lda	#BITON1
-				sta	D.IFR 				 ;CLEAR ANY SLOT INTERRUPT
+				sta	D.IFR 				CLEAR ANY SLOT INTERRUPT
 				jmp	DISPATCH
 *
 * THIS IS THE NON-MASKABLE INTERRUPT RECEIVER. WHEN AN
@@ -498,8 +498,8 @@ DSP020			lda CEVPRI
 				pla
 				sta	Z.REG
 				pla
-				ora	#BITON5 			; SET SCREEN STATE TO
-				bit	SCRNMODE 			; CURRENT SCREEN MODE
+				ora	#BITON5 			SET SCREEN STATE TO
+				bit	SCRNMODE 			CURRENT SCREEN MODE
 				bmi	DSP025
 				and	#BITOFF5
 DSP025			sta E.REG
@@ -599,7 +599,7 @@ DO.EVENT		.EQ *
 *
 * 0 1 2 3 4
 * +-------+-------+-------+-------+-------+
-* | SIR # | ID | ADR.L | ADR.H | ADR.B |
+* | SIR # |  ID   | ADR.L | ADR.H | ADR.B |
 * +-------+-------+-------+-------+-------+
 *
 * SIR # -- SYSTEM INTERNAL RESOURCE NUMBER
@@ -647,36 +647,36 @@ IDBYTE			.DA #$81
 ALLOCSIR		clc
 				php
 				sei
-				sta SIRARGSIZ 			; SAVE TABLE SIZE
+				sta SIRARGSIZ 			SAVE TABLE SIZE
 				lda E.REG
 				sta SIRTEMP
-				ora #BITON2 			; FORCE PRIMARY STACK
-				and #BITOFF3 			; AND WRITE ENABLE
+				ora #BITON2 			FORCE PRIMARY STACK
+				and #BITOFF3 			AND WRITE ENABLE
 				sta E.REG
 				lda SIRTEMP
 				pha
 				lda Z.REG
 				pha
 				lda #$00
-				sta Z.REG 				; SET ZERO PAGE := $00
+				sta Z.REG 				SET ZERO PAGE := $00
 				stx SIRARGS
-				sty SIRARGS+1 			; SET POINTER TO TABLE
+				sty SIRARGS+1 			SET POINTER TO TABLE
 *
 				ldy #$00
 
-ASIR010			lda (SIRARGS),Y 		; GET SIR NUMBER
+ASIR010			lda (SIRARGS),Y 		GET SIR NUMBER
 				cmp #SIRTBLSIZ
 				tax
 				bcs ASIR020
-				lda SIRTABLE,X 			; CHECK ALLOCATION
+				lda SIRTABLE,X 			CHECK ALLOCATION
 				bmi ASIR020
 				lda IDBYTE
-				sta SIRTABLE,X 			; ALLOCATE SIR
+				sta SIRTABLE,X 			ALLOCATE SIR
 				iny
-				sta (SIRARGS),Y 		; RETURN ID BYTE
+				sta (SIRARGS),Y 		RETURN ID BYTE
 				iny
 				lda (SIRARGS),Y
-				sta SIRADR.L,X 			; SAVE INTERRUPT ADDRESS
+				sta SIRADR.L,X 			SAVE INTERRUPT ADDRESS
 				iny
 				lda (SIRARGS),Y
 				sta SIRADR.H,X
@@ -688,31 +688,31 @@ ASIR010			lda (SIRARGS),Y 		; GET SIR NUMBER
 				bcc ASIR010
 *
 				clc
-				inc IDBYTE 				; BUMP ID BYTE
+				inc IDBYTE 				BUMP ID BYTE
 				bmi SIREXIT
 				lda #$81
 				sta IDBYTE
 				bmi SIREXIT
 *
-ASIR020			stx SIRTEMP 			; SAVE BAD SIR NUMBER
+ASIR020			stx SIRTEMP 			SAVE BAD SIR NUMBER
 ASIR030			sec
 				tya
 				sbc #5
 				tay
 				bcc ASIR040
-				lda (SIRARGS),Y 		; GET SIR NUMBER
+				lda (SIRARGS),Y 		GET SIR NUMBER
 				tax
 				lda #FALSE
-				sta SIRTABLE,X 			; RELEASE ALLOCATED SIRS
+				sta SIRTABLE,X 			RELEASE ALLOCATED SIRS
 				beq ASIR030
 *
-ASIR040			ldx SIRTEMP 			; RETURN BAD SIR
+ASIR040			ldx SIRTEMP 			RETURN BAD SIR
 				sec
 
 SIREXIT			pla
-				sta Z.REG 				; RESTORE Z REGISTER
+				sta Z.REG 				RESTORE Z REGISTER
 				pla
-				sta E.REG 				; RESTORE E REGISTER
+				sta E.REG 				RESTORE E REGISTER
 				bcc SIREXIT1
 				pla
 				ora #BITON0
@@ -725,29 +725,29 @@ SIREXIT1		plp
 DEALCSIR		clc
 				php
 				sei
-				sta SIRARGSIZ 			; SAVE TABLE SIZE
+				sta SIRARGSIZ 			SAVE TABLE SIZE
 				lda E.REG
 				sta SIRTEMP
-				ora #BITON2 			; FORCE PRIMARY STACK
-				and #BITOFF3 			; AND WRITE ENABLE
+				ora #BITON2 			FORCE PRIMARY STACK
+				and #BITOFF3 			AND WRITE ENABLE
 				sta E.REG
 				lda SIRTEMP
 				pha
 				lda Z.REG
 				pha
 				lda #$00
-				sta Z.REG 				; SET ZERO PAGE := $00
+				sta Z.REG 				SET ZERO PAGE := $00
 				stx SIRARGS
-				sty SIRARGS+1 			; SET POINTER TO TABLE
+				sty SIRARGS+1 			SET POINTER TO TABLE
 *
 				ldy #$00
-DSIR010			lda (SIRARGS),Y 		; GET SIR NUMBER
+DSIR010			lda (SIRARGS),Y 		GET SIR NUMBER
 				tax
 				cpx #SIRTBLSIZ
 				bcs DSIR030
 				iny
 				lda SIRTABLE,X
-				bpl DSIR030 			; VERIFY ALLOCATION
+				bpl DSIR030 			VERIFY ALLOCATION
 				cmp (SIRARGS),Y
 				bne DSIR030
 				iny
@@ -763,7 +763,7 @@ DSIR020			sec
 				sbc #5
 				tay
 				bcc SIREXIT
-				lda (SIRARGS),Y 		; GET SIR NUMBER
+				lda (SIRARGS),Y 		GET SIR NUMBER
 				tax
 				lda #FALSE
 				sta SIRTABLE,X
@@ -793,16 +793,16 @@ DSIR030			sec
 * WARNING !!!
 * 'SELC800' USES SELF-MODIFYING CODE!
 *
-SELC800			cmp	#$05 				; CHECK SLOT NUMBER
-				bcs	SC8EXIT 			; INVALID
+SELC800			cmp	#$05 				CHECK SLOT NUMBER
+				bcs	SC8EXIT 			INVALID
 				php
 				sei
 				sta	EXPNSLOT
-				ora	#$C0 				; MAKE SLOT INTO $CN00
-				sta	CNADDR+2 			; AND MODIFY BIT ADDRESS
+				ora	#$C0 				MAKE SLOT INTO $CN00
+				sta	CNADDR+2 			AND MODIFY BIT ADDRESS
 				bit	$C020
-				bit	$CFFF 				; DESELECT PREVIOUS SLOT
-CNADDR			bit $C0FF 				; AND SELECT CURRENT SLOT
+				bit	$CFFF 				DESELECT PREVIOUS SLOT
+CNADDR			bit $C0FF 				AND SELECT CURRENT SLOT
 				plp
 SC8EXIT			rts
 *
@@ -822,44 +822,44 @@ NMIDSBL			ldx	E.REG
 				sta	NMICNTR
 				sta	NMICNTR+1
 
-NDS010			bit NMIFLAG 			; NMI PENDING?
-				bpl	NDS020 				; NO
-				inc	NMICNTR 			; BUMP NMI COUNTER
-				bne	NDS010				; AND RECHECK NMI FLAG
+NDS010			bit NMIFLAG 			NMI PENDING?
+				bpl	NDS020 				NO
+				inc	NMICNTR 			BUMP NMI COUNTER
+				bne	NDS010				AND RECHECK NMI FLAG
 				inc	NMICNTR+1
 				bne	NDS010
-				lda	#NMIHANG 			; CAN'T LOCK NMI
+				lda	#NMIHANG 			CAN'T LOCK NMI
 				jsr	SYSDEATH
 
 NDS020			txa ;GET E.REG
-				and	#BITOFF4 			; DISABLE NMI
+				and	#BITOFF4 			DISABLE NMI
 				sta	E.REG
 				rts
 *
 *
 *
 NMIENBL			lda	E.REG
-				ora	#BITON4 			; ENABLE NMI
+				ora	#BITON4 			ENABLE NMI
 				sta	E.REG
 				rts
 *
 * BY DEFAULT, KEYBOARD NMI IS IGNORED. THE USER MAY
 * PROCESS NMI BY CHANGING THE ADDRESS IN SYSTEM GLOBAL.
 *
-NMIDBUG			tsx  					; SAVE THE STACK POINTER
-				stx NMISPSV
-				lda #$03 				; SELECT MONITOR'S ZERO PAGE
-				sta Z.REG
-				lda E.REG
-				ora #$03 				; SELECT MONITOR ROM
-				sta E.REG
-				jsr $F901 				; CALL THE MONITOR
-*
-NMICONT			lda E.REG
-				ora #BITON2 			; FORCE PRIMARY STACK
-				sta E.REG
-				ldx NMISPSV
-				txs						; RESTORE STACK POINTER
+NMIDBUG			tsx  					SAVE THE STACK POINTER
+				stx NMISPSV             
+				lda #$03 				SELECT MONITOR'S ZERO PAGE
+				sta Z.REG               
+				lda E.REG               
+				ora #$03 				SELECT MONITOR ROM
+				sta E.REG               
+				jsr $F901 				CALL THE MONITOR
+*                                       
+NMICONT			lda E.REG               
+				ora #BITON2 			FORCE PRIMARY STACK
+				sta E.REG               
+				ldx NMISPSV             
+				txs						RESTORE STACK POINTER
 				rts
 *
 * THE EVENT QUEUE IS USED TO HOLD THE PARAMETERS OF EVENTS
@@ -900,9 +900,9 @@ NMICONT			lda E.REG
 * Y: EVENT PARAMETER ADDRESS (HIGH BYTE)
 *
 * EVENT 0 1 2 3 4
-* PARMS: +-------+-------+-------+-------+ +
-* | PRI | ID | ADR.L | ADR.H | ADR.B |
-* +-------+-------+-------+-------+-------+
+* PARMS: +-------+-------+-------+-------+-------+
+*        |  PRI  |  ID   | ADR.L | ADR.H | ADR.B |
+*        +-------+-------+-------+-------+-------+
 * PRI: EVENT PRIORITY
 * ID: EVENT ID BYTE
 * ADR: EVENT ADDRESS (LOW, HIGH, BANK)
@@ -916,32 +916,32 @@ QUEEVENT		clc
 				sei
 				lda	E.REG
 				sta	QEVTEMP
-				ora	#BITON2 			; FORCE PRIMARY STACK
-				and #BITOFF3 			; AND WRITE ENABLE
+				ora	#BITON2 			FORCE PRIMARY STACK
+				and #BITOFF3 			AND WRITE ENABLE
 				sta E.REG
 				lda QEVTEMP
 				pha
 				lda Z.REG
 				pha
 				lda #0
-				sta Z.REG 				; SET ZERO PAGE := 0
+				sta Z.REG 				SET ZERO PAGE := 0
 *
 				stx QEVARGS
-				sty QEVARGS+1 			; SET ARGUMENT POINTER
+				sty QEVARGS+1 			SET ARGUMENT POINTER
 				ldy #0
-				lda (QEVARGS),Y 		; GET PRIORITY
-				beq Q.EXIT 				; IGNORE IF ZERO
+				lda (QEVARGS),Y 		GET PRIORITY
+				beq Q.EXIT 				IGNORE IF ZERO
 *
 				ldx EVQ.FREE
 				beq Q.FULL
-				stx QEV.THIS 			; GET FIRST FREE ENTRY
-				lda EVQ.LINK,X 			; AND DELINK IT
+				stx QEV.THIS 			GET FIRST FREE ENTRY
+				lda EVQ.LINK,X 			AND DELINK IT
 				sta EVQ.FREE
 *
 				ldy #EVQ.SIZ-2
 
-QEV010			lda (QEVARGS),Y 		; COPY ARGUMENTS
-				sta EVQ.BANK,X 			; INTO NEW ENTRY
+QEV010			lda (QEVARGS),Y 		COPY ARGUMENTS
+				sta EVQ.BANK,X 			INTO NEW ENTRY
 				dex
 				dey
 				bpl QEV010
@@ -952,24 +952,24 @@ QEV010			lda (QEVARGS),Y 		; COPY ARGUMENTS
 QEV020			sty QEV.LAST
 				lda EVQ.LINK,Y
 				tay
-				lda EVQ.PRI,Y 			; SCAN EVENT QUEUE
-				cmp EVQ.PRI,X 			; FOR PROPER POSITION
+				lda EVQ.PRI,Y 			SCAN EVENT QUEUE
+				cmp EVQ.PRI,X 			FOR PROPER POSITION
 				bcs QEV020
 *
 				tya
-				sta EVQ.LINK,X 			; RELINK EVENT INTO QUEUE
+				sta EVQ.LINK,X 			RELINK EVENT INTO QUEUE
 				txa
 				ldy QEV.LAST
 				sta EVQ.LINK,Y
 *
 Q.EXIT			pla
-				sta Z.REG 				; RESTORE Z REGISTER
+				sta Z.REG 				RESTORE Z REGISTER
 				pla
-				sta E.REG 				; RESTORE E REGISTER
+				sta E.REG 				RESTORE E REGISTER
 				plp
 				rts
 *
-Q.FULL			lda #EVQOVFL 			; EVENT QUEUE OVERFLOW
+Q.FULL			lda #EVQOVFL 			EVENT QUEUE OVERFLOW
 				jsr SYSDEATH
 *--------------------------------------
 MAN

@@ -15,18 +15,18 @@ NEW
 * ALL HARDWARE INTERRUPTS ARE MASKED AND THE
 * INTERRUPT ALLOCATION TABLE IS CLEARED.
 *
-INT.INIT		sei				 		;DISABLE INTERRUPTS
-				lda #ZPGSTART 			;SET UP MIH
-				sta ZPGSTACK 			; ZERO PAGE STACK POINTER
+INT.INIT		sei				 		DISABLE INTERRUPTS
+				lda #ZPGSTART 			SET UP MIH
+				sta ZPGSTACK 			ZERO PAGE STACK POINTER
 
-				lda E.REG 				;SELECT $C000 I/O SPACE
-				pha 					; AND SET 1 MHZ
+				lda E.REG 				SELECT $C000 I/O SPACE
+				pha 					AND SET 1 MHZ
 				ora #BITON7+BITON6
 				sta E.REG
 
-				sta ACIASTAT 			;RESET ACIA
+				sta ACIASTAT 			RESET ACIA
 
-				lda #$FF 				;SET UP 6522 D
+				lda #$FF 				SET UP 6522 D
 				sta D.DDRB
 				sta D.DDRA
 				lda #$00
@@ -38,8 +38,8 @@ INT.INIT		sei				 		;DISABLE INTERRUPTS
 				sta D.IER
 				lda #$82
 				sta D.IER
-*
-				lda #$3F 				;SET UP 6522 E
+
+				lda #$3F 				SET UP 6522 E
 				sta E.DDRB
 				lda #$0F
 				sta E.DDRA
@@ -52,31 +52,31 @@ INT.INIT		sei				 		;DISABLE INTERRUPTS
 				sta E.IER
 *
 				lda #$FF
-				sta E.IORB 				;SOUND PORT
-				bit $C0D8 				;DISABLE GRAPHICS SCROLL
-				bit $C0DA 				;DISABLE CHARACTER DOWNLOAD
-				bit $C0DC 				;DISABLE ENSEL
-				bit $C0DE 				;SET ENSIO FOR INPUT
+				sta E.IORB 				SOUND PORT
+				bit $C0D8 				DISABLE GRAPHICS SCROLL
+				bit $C0DA 				DISABLE CHARACTER DOWNLOAD
+				bit $C0DC 				DISABLE ENSEL
+				bit $C0DE 				SET ENSIO FOR INPUT
 *
-				pla  					;RESTORE E REGISTER
+				pla  					RESTORE E REGISTER
 				sta E.REG
 *
 				lda #FALSE
-				sta NMIFLAG 			;CLEAR NMI WAIT FLAG
+				sta NMIFLAG 			CLEAR NMI WAIT FLAG
 				ldy #SIRTBLSIZ-1
 
-INTI010			sta SIRTABLE,Y 			; ALLOCATION TABLE
+INTI010			sta SIRTABLE,Y 			ALLOCATION TABLE
 				dey
 				bpl INTI010
 				lda #TRUE
-				sta SIRTABLE+$0A 		;LOCK DOWN ANY SLOT SIR
+				sta SIRTABLE+$0A 		LOCK DOWN ANY SLOT SIR
 
 				ldx #$05
 
-INTI020			lda RAMVECT,X 			;SET UP VECTORS
-				sta $FFFA,X 			; AT $FFFA - $FFFF
-				lda RAMJMPS,X 			;SET UP JMP INSTRUCTIONS
-				sta $FFCA,X 			; AT $FFCA - $FFCF
+INTI020			lda RAMVECT,X 			SET UP VECTORS
+				sta $FFFA,X 			AT $FFFA - $FFFF
+				lda RAMJMPS,X 			SET UP JMP INSTRUCTIONS
+				sta $FFCA,X 			AT $FFCA - $FFCF
 				dex
 				bpl INTI020
 				rts
@@ -126,49 +126,49 @@ EVQI020			tay
 *
 PCLK			.EQ $F0
 CKSUM			.EQ $F2
-CLKICR			.EQ $11 				; CLOCK INTERRUPT CONTROL REG
-CLKSTBY			.EQ $16 				; CLOCK STANDBY INTERRUPT
+CLKICR			.EQ $11 				CLOCK INTERRUPT CONTROL REG
+CLKSTBY			.EQ $16 				CLOCK STANDBY INTERRUPT
 *
 CLK.INIT		lda #$D0
-				sta PCLK 				;POINT (PCLK) TO 8F:FFD0
+				sta PCLK 				POINT (PCLK) TO 8F:FFD0
 				lda #$FF
 				sta PCLK+1
 				lda #$8F
 				sta SXPAGE+PCLK+1
 				lda #$A5
-				sta CKSUM 				;INITIALIZE CHECKSUM
+				sta CKSUM 				INITIALIZE CHECKSUM
 *
 				ldy #$00
 
-CLK010			lda (PCLK),Y 			;COPY SAVED CLOCK DATA
-				sta	PCLOCK,Y 			; TO PSEUDO CLOCK
+CLK010			lda (PCLK),Y 			COPY SAVED CLOCK DATA
+				sta	PCLOCK,Y 			TO PSEUDO CLOCK
 				eor	CKSUM
-				sta	CKSUM 				;UPDATE CHECKSUM
+				sta	CKSUM 				UPDATE CHECKSUM
 				iny
 				cpy	#$0A
 				bcc	CLK010
 *
-				cmp	(PCLK),Y 			;TEST CHECKSUM
+				cmp	(PCLK),Y 			TEST CHECKSUM
 				beq	CLK030
 *
 				lda	#$00
 
 CLK020			dey
-				sta	PCLOCK,Y 			;ZERO PSEUDO CLOCK
+				sta	PCLOCK,Y 			ZERO PSEUDO CLOCK
 				bne	CLK020
 
 CLK030			lda E.REG
 				pha
-				ora #$80 				; SET 1 MHZ
+				ora #$80 				SET 1 MHZ
 				sta E.REG
 				lda #$00
 				ldy Z.REG
 				ldx #CLKICR
 				stx Z.REG
-				sta CLOCK 				; DISABLE CLOCK INTERRUPTS
+				sta CLOCK 				DISABLE CLOCK INTERRUPTS
 				ldx #CLKSTBY
 				stx Z.REG
-				sta CLOCK 				; DISABLE STANDBY INTERRUPT
+				sta CLOCK 				DISABLE STANDBY INTERRUPT
 				sty Z.REG
 				pla
 				sta E.REG
@@ -199,33 +199,33 @@ DNUM.TEMP		.BS 1
 *
 *
 DMGR.INIT		ldx MAX.DNUM
-				inc MAX.DNUM 			; MAX.DNUM:=MAX DEV NUMBER IN SYSTEM+1
+				inc MAX.DNUM 			MAX.DNUM:=MAX DEV NUMBER IN SYSTEM+1
 				stx DNUM.TEMP
 
-DMI110			lda #8 					; INITIALIZE ALL DEVICES IN SYSTEM (D.INIT)
+DMI110			lda #8 					INITIALIZE ALL DEVICES IN SYSTEM (D.INIT)
 				sta	D.REQCODE
 				lda	DNUM.TEMP
 				sta	DNUM
 				jsr	DMGR
 				dec	DNUM.TEMP
 				bne	DMI110
-				rts						; NORMAL EXIT
+				rts						NORMAL EXIT
 *
 * BMGR.INIT
 *
 * THIS ROUTINE INITIALIZES THE BUFFER TABLE'S ENTRIES TO "FREE".
 * CALLED DURING SYSTEM BOOT.
 *
-BMGR.INIT		lda #$FF 				; USED WHEN FINDING LOWEST BUFFER IN TBL (BUFCOMPACT)
+BMGR.INIT		lda #$FF 				USED WHEN FINDING LOWEST BUFFER IN TBL (BUFCOMPACT)
 				sta XBYTE.T
 *
 				ldx #BUF.CNT-1
 				lda #$80
-BUFI010			sta PGCT.T,X 			;SET ALL ENTRIES "FREE"
+BUFI010			sta PGCT.T,X 			SET ALL ENTRIES "FREE"
 				dex
 				bne BUFI010
 
-				stx BUFREF 				;ZERO COUNT BYTE IN BUFFER REFERENCE TABLE
+				stx BUFREF 				ZERO COUNT BYTE IN BUFFER REFERENCE TABLE
 
 				clc
 				rts
@@ -242,7 +242,7 @@ MMGR.INIT		lda #0
 				sta ST.FREE
 
 				ldy #ST.CNT-1
-				lda #$80 				; SET LAST LINK TO NULL
+				lda #$80 				SET LAST LINK TO NULL
 				sta ST.FLINK,Y
 
 MEMI010			tya
@@ -267,35 +267,35 @@ MEMI010			tya
 				ror
 				sta VRT.LIM
 				clc
-				rts  					; NORMAL EXIT
+				rts  					NORMAL EXIT
 *
-MEMI.ERR		lda #MEM2SML 			; FATAL ERR - MEM < 64K
+MEMI.ERR		lda #MEM2SML 			FATAL ERR - MEM < 64K
 				jsr SYSDEATH
 *
 * BLOCK FILE MANAGER INITIALIZATION
 *
-SISTER			.EQ $1400 				;BFM XPAGE
+SISTER			.EQ $1400 				BFM XPAGE
 
-BFM.INIT		lda #BFMFCB1 			; ADDRESS OF PAGE 1 OF FCB
+BFM.INIT		lda #BFMFCB1 			ADDRESS OF PAGE 1 OF FCB
 				sta >FCBZPP+1
-				lda #BFMFCB2 			; AND PAGE 2
+				lda #BFMFCB2 			AND PAGE 2
 				sta >FCBZPP+3
 				lda #0
-				sta >FCBZPP 			; FCB PAGE ALIGNED
+				sta >FCBZPP 			FCB PAGE ALIGNED
 				sta >FCBZPP+2
-				sta SISTER+FCBZPP+1 	; PREPARE PART OF EXTEND BYTE
+				sta SISTER+FCBZPP+1 	PREPARE PART OF EXTEND BYTE
 				sta SISTER+FCBZPP+3
-				tay  					; MAKE ZERO INTO INDEX
+				tay  					MAKE ZERO INTO INDEX
 
-CLRBUFFS		sta PATHBUF,Y 			; PATHNAME BUFFER PAGE
-				sta VCB,Y 				; VOLUME CONTROL BLOCK PAGE
-				sta (FCBZPP),Y 			; BOTH FILE CONTROL BLOCK PAGES
+CLRBUFFS		sta PATHBUF,Y 			PATHNAME BUFFER PAGE
+				sta VCB,Y 				VOLUME CONTROL BLOCK PAGE
+				sta (FCBZPP),Y 			BOTH FILE CONTROL BLOCK PAGES
 				sta (FCBZPP+2),Y
 				iny
 				bne CLRBUFFS
-				ldx #$3F 				; SIZE OF MY ZERO PAGE STUFF
+				ldx #$3F 				SIZE OF MY ZERO PAGE STUFF
 
-CLRZWRK			sta 0,X 				; ZERO PAGE ZEROED
+CLRZWRK			sta 0,X 				ZERO PAGE ZEROED
 				sta WORKSPC,X
 				dex
 				bpl CLRZWRK
@@ -303,9 +303,9 @@ CLRZWRK			sta 0,X 				; ZERO PAGE ZEROED
 				sta PFIXPTR+1
 				lda #BFMFCB1
 				sta FCBADDRH
-				lda #BMAPAGE 			; BIT MAP A PAGE NUMBER
+				lda #BMAPAGE 			BIT MAP A PAGE NUMBER
 				sta BMAMADR
-				lda #BMBPAGE 			; BIT MAP B PAGE NUMBER
+				lda #BMBPAGE 			BIT MAP B PAGE NUMBER
 				sta BMBMADR
 				clc
 				rts

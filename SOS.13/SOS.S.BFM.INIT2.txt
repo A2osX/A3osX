@@ -14,8 +14,8 @@ NEW
 *
 * CONSTANTS
 *
-KERNEL.BASE		.EQ $B800 				; BASE ADDRESS OF SOS KERNEL
-ROMID			.EQ $A0 				;$F1B9 OF NEW ROM/D3RRA81084
+KERNEL.BASE		.EQ $B800 				BASE ADDRESS OF SOS KERNEL
+ROMID			.EQ $A0 				$F1B9 OF NEW ROM/D3RRA81084
 SLOT			.EQ $60
 BEGTRK			.EQ $9
 BEGSECT			.EQ $2
@@ -38,7 +38,7 @@ I				.EQ KEY+$A ; & $B
 *
 * BFM.INIT2 ENTRY POINT
 *
-STATE			.DA #$FE 				; FF=1ST ENTRY, 0=2ND ENTRY, 1=PROT
+STATE			.DA #$FE 				FF=1ST ENTRY, 0=2ND ENTRY, 1=PROT
 *
 BFM.INIT2		inc STATE
 				bmi BFMI050
@@ -53,7 +53,7 @@ BFM.INIT2		inc STATE
 BFMI050			clc
 				rts
 
-BADNEWS			sec 					; I/O ERROR
+BADNEWS			sec 					I/O ERROR
 				rts
 *
 * DECODE SUBROUTINE
@@ -64,11 +64,11 @@ BADNEWS			sec 					; I/O ERROR
 * 1A02.1A03: - NEW INTERP'S LOAD ADR (LO,HII)
 * B81DG: - JSR FROM MONITOR
 *
-DC				lda B.REG 				; SAVE BANK REGISTER
+DC				lda B.REG 				SAVE BANK REGISTER
 				pha
-				lda SYSBANK 			; AND SWITCH TO SYSTEM BANK
+				lda SYSBANK 			AND SWITCH TO SYSTEM BANK
 				sta	B.REG
-				clc  					; FETCH LOADER'S INTERPRETER POINTER
+				clc  					FETCH LOADER'S INTERPRETER POINTER
 				lda CZPAGE+I.BASE.P
 				adc #3
 				sta I
@@ -80,38 +80,38 @@ DC				lda B.REG 				; SAVE BANK REGISTER
 				lda #0
 				sta SXPAGE+I+1
 *
-				ldy I 					; ALIGN I PTR TO PAGE BOUNDARY
+				ldy I 					ALIGN I PTR TO PAGE BOUNDARY
 				lda #0
 				sta I
 				sta PREV.K
 *
-				jsr DCLOOP 				; DECODE
+				jsr DCLOOP 				DECODE
 *
-				pla  					; RETRIEVE LOADER'S INTERPRETER POINTER
+				pla  					RETRIEVE LOADER'S INTERPRETER POINTER
 				sta I+1
 				pla
 				sta I
 *
-				ldy #1 					; REPOSITION LOADER'S INTERPRETER POINTER (PUT ENCODE JMP HERE)
+				ldy #1 					REPOSITION LOADER'S INTERPRETER POINTER (PUT ENCODE JMP HERE)
 				lda (I),Y
 				sta CZPAGE+I.BASE.P
 				iny
 				lda (I),Y
 				sta CZPAGE+I.BASE.P+1
 *
-				ldy #2 					; WALK ON INTERPRETER'S FIRST INSTRUCTION (3 BYTES)
+				ldy #2 					WALK ON INTERPRETER'S FIRST INSTRUCTION (3 BYTES)
 				lda #0
 
 DCA				sta (I),Y
 				dey
 				bpl DCA
-				pla  					; RESTORE BANK REGISTER (ENCODE JMP JUMPS TO HERE)
+				pla  					RESTORE BANK REGISTER (ENCODE JMP JUMPS TO HERE)
 				sta B.REG
 				rts
 *
 * DECODE LOOP SUBROUTINE
 *
-DCLOOP			ldx #7 					; SHIFT LEFT ONE BIT
+DCLOOP			ldx #7 					SHIFT LEFT ONE BIT
 				clc
 				lda KEY
 				bpl DC1
@@ -136,8 +136,8 @@ DC2				tya
 				clc
 				adc KEY,X
 				sta PREV.K
-				eor (I),Y 				; DECODE BYTE
-				sta (I),Y 				; AND PUT IT BACK
+				eor (I),Y 				DECODE BYTE
+				sta (I),Y 				AND PUT IT BACK
 				iny
 				bne DC2
 				inc I+1
@@ -148,15 +148,15 @@ DC2				tya
 *
 * GETKEY SUBROUTINE
 *
-RETRY			.DA #10+1 				;TEN RETRIES
+RETRY			.DA #10+1 				TEN RETRIES
 
-OURTRACK		.BS 1 					;CURRENT TRACK/D3RRA81084
+OURTRACK		.BS 1 					CURRENT TRACK/D3RRA81084
 *
 GETK			ldx #7
 				stx XIDX
 				ldx #SLOT
-				lda MOTORON,X 			;ENSURE MOTOR STAYS ON
-				lda E.REG 				; SELECT 1MHZ, ROM
+				lda MOTORON,X 			ENSURE MOTOR STAYS ON
+				lda E.REG 				SELECT 1MHZ, ROM
 				ora #$83
 				sta E.REG
 *
@@ -165,27 +165,27 @@ GETK			ldx #7
 * DRIVE CURRENTLY SELECTED, ROM+I/O ENABLED! /D3RRA81084
 *
 GETK010			lda #BEGTRK
-				sta	OURTRACK 			;WHERE WE SEEK TO /D3RRA81084
-				jsr	SEEKDSK3 			;HAVE DISKDH SEEK FOR US /D3RRA81084
+				sta	OURTRACK 			WHERE WE SEEK TO /D3RRA81084
+				jsr	SEEKDSK3 			HAVE DISKDH SEEK FOR US /D3RRA81084
 
 GETK020			ldx #SLOT
-				jsr	DOREAD 				;FIND A SECTOR HEADER
-				bcs	IOERROR 			;=>RETRY IF BAD
-				lda	SECTOR 				;WHERE ARE WE?
-				cmp	#BEGSECT 			;AT THE RIGHT PLACE?
-				bne	GETK020 			;=>NO, GET THERE
+				jsr	DOREAD 				FIND A SECTOR HEADER
+				bcs	IOERROR 			=>RETRY IF BAD
+				lda	SECTOR 				WHERE ARE WE?
+				cmp	#BEGSECT 			AT THE RIGHT PLACE?
+				bne	GETK020 			=>NO, GET THERE
 
 GETK100			ldx #1
-				jsr	WAIT 				; (X * 1284) + 15 MILISECONDS
+				jsr	WAIT 				(X * 1284) + 15 MILISECONDS
 				ldx	XIDX
 				lda	BFM.VOLUME
 				sta	KEY,X
 				dec	XIDX
 				bmi	ENUFF
-				inc	OURTRACK 			;BUMP FOR NEXT TRACK /D3RRA81084
-				lda	OURTRACK 			;WHERE TO GO /D3RRA81084
+				inc	OURTRACK 			BUMP FOR NEXT TRACK /D3RRA81084
+				lda	OURTRACK 			WHERE TO GO /D3RRA81084
 				ldx	#SLOT
-				jsr	SEEKDSK3 			;DISKDH, PLEASE SEEK ME /D3RRA81084
+				jsr	SEEKDSK3 			DISKDH, PLEASE SEEK ME /D3RRA81084
 				ldx	#SLOT
 				jsr	DOREAD
 				bcc	GETK100
@@ -193,16 +193,16 @@ GETK100			ldx #1
 
 ENUFF			ldx #SLOT
 				lda	MOTOROFF,X
-				lda	E.REG 				; SELECT 2MHZ, RAM
+				lda	E.REG 				SELECT 2MHZ, RAM
 				and #$7C
 				sta E.REG
 
 				lda SECTOR
-				cmp #ENDSECT 			;TRACKS SYNC'ED?
+				cmp #ENDSECT 			TRACKS SYNC'ED?
 				bne NOTPROT
 				lda KEY
 				eor KEY+1
-				beq NOTPROT 			;IF FIRST 2 VOLS ARE EQUAL
+				beq NOTPROT 			IF FIRST 2 VOLS ARE EQUAL
 				sec
 				rts
 
@@ -225,9 +225,9 @@ NEWROM			rts
 IOERROR			dec RETRY
 				beq .1
 				
-				jmp GETK 				; TRY, TRY AGAIN
+				jmp GETK 				TRY, TRY AGAIN
 
-.1				jmp ENUFF 				; I/O ERROR, CLEANUP AND EXIT
+.1				jmp ENUFF 				I/O ERROR, CLEANUP AND EXIT
 
 WAIT			ldy #0
 

@@ -19,7 +19,7 @@ NEW
 *TIME			.EQ U.TPARMX+1
 *MEMORY			.EQ U.TPARMX+1
 *
-UMGR			lda E.REG 				; SELECT $C000 I/O SPACE
+UMGR			lda E.REG 				SELECT $C000 I/O SPACE
 				ora #BITON6
 				sta E.REG
 *
@@ -59,13 +59,13 @@ USWCNT			.EQ *-USWTBL/2
 *
 SET.FENCE		lda PRIORITY
 				sta CEVPRI
-				rts 					; NORMAL EXIT
+				rts 					NORMAL EXIT
 *
 *
 GET.FENCE		lda CEVPRI
 				ldy #0
 				sta (PRIORITY),Y
-				rts 					; NORMAL EXIT
+				rts 					NORMAL EXIT
 *
 * SET.TIME(IN.TIME)
 * GET.TIME(OUT.TIME)
@@ -98,14 +98,14 @@ GET.FENCE		lda CEVPRI
 *
 * TEMPORARY ZERO PAGE
 *
-UMGR.PCLK		.EQ $D0 				; POINTER TO SAVED PCLOCK
+UMGR.PCLK		.EQ $D0 				POINTER TO SAVED PCLOCK
 WKDAY			.EQ $D2
 UMGR.CKSUM		.EQ $D3
-CLKTEMP			.EQ $18D4 				; THROUGH $18DD - ABSOLUTE
+CLKTEMP			.EQ $18D4 				THROUGH $18DD - ABSOLUTE
 *
 * CLOCK LOCAL DATA
 *
-PCLOCK			.DA #$0A 				; PSEUDO CLOCK REGISTERS
+PCLOCK			.DA #$0A 				PSEUDO CLOCK REGISTERS
 UMGR.RETRY			.DA #$01
 *
 * CLOCK HARDWARE ADDRESSES
@@ -126,9 +126,9 @@ SET.TIME		ldx	#$00
 				bne	STIM011
 *
 STIM010			inx
-				lda	(TIME),Y 			; CONVERT TIME FROM
-STIM011			and #$0F 				; ASCII TO BCD AND
-				sta	PCLOCK,X 			; TRANSFER TO PCLOCK
+				lda	(TIME),Y 			CONVERT TIME FROM
+STIM011			and #$0F 				ASCII TO BCD AND
+				sta	PCLOCK,X 			TRANSFER TO PCLOCK
 				dey
 				cpy	#$07
 				beq	STIM010
@@ -142,7 +142,7 @@ STIM011			and #$0F 				; ASCII TO BCD AND
 				dey
 				bpl	STIM010
 *
-				lda	PCLOCK+7 			; CALCULATE WEEKDAY
+				lda	PCLOCK+7 			CALCULATE WEEKDAY
 				jsr	BCDBIN
 				tax
 				lda	PCLOCK+8
@@ -155,7 +155,7 @@ STIM011			and #$0F 				; ASCII TO BCD AND
 				and	#$03
 				bne	STIM015
 				cpx	#3
-				bcs	STIM015 			; <SRS 82.162>
+				bcs	STIM015 			<SRS 82.162>
 				dey
 STIM015			clc
 				tya
@@ -173,7 +173,7 @@ STIM016			sbc #7
 				sta	PCLOCK+5
 *
 				lda #$D0
-				sta UMGR.PCLK 				; POINT (PCLK) TO 8F:FFD0
+				sta UMGR.PCLK 			POINT (PCLK) TO 8F:FFD0
 				lda #$FF
 				sta UMGR.PCLK+1
 				lda #$8F
@@ -182,54 +182,54 @@ STIM016			sbc #7
 				sta UMGR.CKSUM ;INITIALIZE CHECKSUM
 				ldy #$00
 *
-STIM020			lda PCLOCK,Y 			; SAVE PCLOCK
-				sta (UMGR.PCLK),Y 			; BEHIND 6522
+STIM020			lda PCLOCK,Y 			SAVE PCLOCK
+				sta (UMGR.PCLK),Y 		BEHIND 6522
 				eor UMGR.CKSUM
 				sta UMGR.CKSUM
 				iny
 				cpy #$0A
 				bcc STIM020
-				sta (UMGR.PCLK),Y 			; SAVE CHECKSUM
+				sta (UMGR.PCLK),Y 		SAVE CHECKSUM
 *
 				lda Z.REG
-				pha  					; SAVE ZERO PAGE
+				pha  					SAVE ZERO PAGE
 				lda E.REG
-				pha  					; SAVE ENVIRONMENT
-				ora #BITON7 			; AND SET 1 MHZ
+				pha  					SAVE ENVIRONMENT
+				ora #BITON7 			AND SET 1 MHZ
 				sta E.REG
 *
 				ldy #STATUS
 				sty Z.REG
 				lda CLOCK ;DOES CLOCK EXIST?
-				bmi STIM050 			; NO
+				bmi STIM050 			NO
 *
 				ldx #CRESET
 				stx Z.REG
-				lda #$FF 				; RESET ALL COUNTERS
+				lda #$FF 				RESET ALL COUNTERS
 				sta CLOCK
 				sta CLOCK
 *
 				ldx #CSEC-1
 STIM030			inx
 				php
-				sei  					; DISABLE INTERRUPTS
+				sei  					DISABLE INTERRUPTS
 STIM040			stx Z.REG
-				lda CLOCK 				;(DUMMY READ FOR STATUS)
+				lda CLOCK 				DUMMY READ FOR STATUS)
 				lda PCLOCK,X
-				sta CLOCK 				; SET CLOCK COUNTER
-				lda CLOCK 				; (DUMMY READ FOR STATUS)
+				sta CLOCK 				SET CLOCK COUNTER
+				lda CLOCK 				(DUMMY READ FOR STATUS)
 				sty Z.REG
-				lda CLOCK 				; CHECK STATUS BIT
+				lda CLOCK 				CHECK STATUS BIT
 				bne STIM040
-				plp  					; RESTORE INTERRUPTS
+				plp  					RESTORE INTERRUPTS
 				cpx #CMON
 				bcc STIM030
 *
 				ldx #LDAY
 				stx Z.REG
 				lda PCLOCK+8
-				ora #$CC 				; STUFF YEAR INTO DAY
-				sta CLOCK 				; AND MONTH LATCHES
+				ora #$CC 				STUFF YEAR INTO DAY
+				sta CLOCK 				AND MONTH LATCHES
 				inc Z.REG
 				lda PCLOCK+8
 				lsr
@@ -238,48 +238,48 @@ STIM040			stx Z.REG
 				sta CLOCK
 *
 STIM050			pla
-				sta E.REG 				; RESTORE ENVIRONMENT
+				sta E.REG 				RESTORE ENVIRONMENT
 				pla
-				sta Z.REG 				; AND ZERO PAGE
+				sta Z.REG 				AND ZERO PAGE
 				rts
 
-GET.TIME		lda Z.REG 				; SAVE ZERO PAGE
+GET.TIME		lda Z.REG 				SAVE ZERO PAGE
 				pha
-				lda E.REG 				; SAVE ENVIRONMENT
+				lda E.REG 				SAVE ENVIRONMENT
 				pha
 				ora #BITON7
-				sta E.REG 				; SET 1 MHZ
+				sta E.REG 				SET 1 MHZ
 *
 				ldy #STATUS
 				sty Z.REG
-				lda CLOCK 				; DOES CLOCK EXIST?
-				bmi GTIM050 			; NO
+				lda CLOCK 				DOES CLOCK EXIST?
+				bmi GTIM050 			NO
 *
-				lda #$10 				; ALLOW $10 RETRYS
+				lda #$10 				ALLOW $10 RETRYS
 				sta UMGR.RETRY
 GTIM010			ldx #CMON+1
 				php
-				sei  					; DISABLE INTERRUPTS
+				sei  					DISABLE INTERRUPTS
 *
 GTIM020			dex
-				bmi GTIM030 			; ALL DONE
+				bmi GTIM030 			ALL DONE
 				stx Z.REG
-				lda CLOCK				; COPY CLOCK COUNTERS
-				sta CLKTEMP,X 			; TO TEMP REGISTERS
+				lda CLOCK				COPY CLOCK COUNTERS
+				sta CLKTEMP,X 			TO TEMP REGISTERS
 				sty Z.REG
-				lda CLOCK 				; CHECK STATUS BIT
+				lda CLOCK 				CHECK STATUS BIT
 				beq GTIM020
 *
-				plp  					; CLOCK READ ERROR
+				plp  					CLOCK READ ERROR
 				dec UMGR.RETRY
-				bpl GTIM010 			; TRY AGAIN
+				bpl GTIM010 			TRY AGAIN
 				bmi GTIM050
 *
-GTIM030			plp  					; RESTORE INTERRUPTS
+GTIM030			plp  					RESTORE INTERRUPTS
 				ldx #LDAY+1
 				stx Z.REG
-				lda CLOCK 				; READ YEAR FROM DAY
-				sec  					; AND MONTH LATCHES
+				lda CLOCK 				READ YEAR FROM DAY
+				sec  					AND MONTH LATCHES
 				rol
 				rol
 				dec Z.REG
@@ -287,8 +287,8 @@ GTIM030			plp  					; RESTORE INTERRUPTS
 				sta CLKTEMP+8
 *
 				ldx #$09
-GTIM040			lda CLKTEMP,X 			; COPY CLOCK DATA
-				sta PCLOCK,X 			; TO PSEUDO CLOCK
+GTIM040			lda CLKTEMP,X 			COPY CLOCK DATA
+				sta PCLOCK,X 			TO PSEUDO CLOCK
 				dex
 				bpl GTIM040
 *
@@ -296,25 +296,25 @@ GTIM050			lda #$19
 				sta PCLOCK+9
 *
 				pla
-				sta E.REG 				; RESTORE ENVIRONMENT
+				sta E.REG 				RESTORE ENVIRONMENT
 				pla
-				sta Z.REG 				; AND ZERO PAGE
+				sta Z.REG 				AND ZERO PAGE
 *
 				ldy #$11
 				ldx #$00
 GTIM060			lda PCLOCK,X ;GET MOST SIGNIFICANT
-				lsr 					; BCD DIGIT
+				lsr 					BCD DIGIT
 				lsr
 				lsr
 				lsr
-				ora #$30 				; CONVERT TO ASCII
+				ora #$30 				CONVERT TO ASCII
 				sta (TIME),Y
 				inx
 				dey
 				bmi GTIM080
-GTIM070			lda PCLOCK,X 			; GET LEAST SIGNIFICANT
-				and #$0F 				; BCD DIGIT
-				ora #$30 				; CONVERT TO ASCII
+GTIM070			lda PCLOCK,X 			GET LEAST SIGNIFICANT
+				and #$0F 				BCD DIGIT
+				ora #$30 				CONVERT TO ASCII
 				sta (TIME),Y
 				dey
 				cpy #$07
@@ -352,40 +352,40 @@ YEAR			.EQ CLKREGS+2
 *
 UMGR.DATETIME	stx OFFSET
 				lda Z.REG
-				pha  					; SAVE ZERO PAGE
+				pha  					SAVE ZERO PAGE
 				lda E.REG
-				pha  					; AND ENVIRONMENT
-				ora #BITON7+BITON6 		; SET 1 MHZ AND
-				sta E.REG 				; ENABLE I/O SPACE
+				pha  					AND ENVIRONMENT
+				ora #BITON7+BITON6 		SET 1 MHZ AND
+				sta E.REG 				ENABLE I/O SPACE
 *
 				ldy #STATUS
 				sty Z.REG
-				lda CLOCK 				; DOES CLOCK EXIST?
-				bmi DT030 				; NO
+				lda CLOCK 				DOES CLOCK EXIST?
+				bmi DT030 				NO
 *
 				lda #8
-				sta ERRCNT				; ALLOW 8 RETRYS
+				sta ERRCNT				ALLOW 8 RETRYS
 DT010			ldx #CMON+1
 				php
-				sei  					; DISABLE INTERRUPTS
+				sei  					DISABLE INTERRUPTS
 *
 DT020			dex
 				cpx #CMIN
 				bcc DT050
 				stx Z.REG
-				lda CLOCK 				; READ THE CLOCK
+				lda CLOCK 				READ THE CLOCK
 				sta CLKREGS-CMIN,X
 				sty Z.REG
-				lda CLOCK 				; CHECK STATUS
+				lda CLOCK 				CHECK STATUS
 				beq DT020
 *
-				plp  					; CLOCK READ ERROR
+				plp  					CLOCK READ ERROR
 				dec ERRCNT
 				bpl DT010
 DT030			pla
-				sta E.REG 				; RESTORE ENVIRONMENT
+				sta E.REG 				RESTORE ENVIRONMENT
 				pla
-				sta Z.REG 				; AND ZERO PAGE
+				sta Z.REG 				AND ZERO PAGE
 				ldx #CMON-CMIN
 DT040			lda PCLOCK+CMIN,X
 				sta CLKREGS,X
@@ -394,7 +394,7 @@ DT040			lda PCLOCK+CMIN,X
 				ldx PCLOCK+8
 				jmp DT060
 *
-DT050			plp  					; READ YEAR FROM LATCHES
+DT050			plp  					READ YEAR FROM LATCHES
 				lda #LDAY+1
 				sta Z.REG
 				lda CLOCK
@@ -406,16 +406,16 @@ DT050			plp  					; READ YEAR FROM LATCHES
 				tax
 *
 				pla
-				sta E.REG 				; RESTORE ENVIRONMENT
+				sta E.REG 				RESTORE ENVIRONMENT
 				pla
-				sta Z.REG 				; AND ZERO PAGE
+				sta Z.REG 				AND ZERO PAGE
 DT060			txa
-				jsr BCDBIN 				; CONVERT YEAR TO BINARY
+				jsr BCDBIN 				CONVERT YEAR TO BINARY
 				sta YEAR
-				lda MON 				; CONVERT MONTH AND DAY
-				jsr BCDBIN 				; TO BINARY THEN
-				asl 					; COMBINE WITH YEAR
-				asl 					; TO FORM DATE STAMP
+				lda MON 				CONVERT MONTH AND DAY
+				jsr BCDBIN 				TO BINARY THEN
+				asl 					COMBINE WITH YEAR
+				asl 					TO FORM DATE STAMP
 				asl
 				asl
 				asl
@@ -428,10 +428,10 @@ DT060			txa
 				sta 0,X
 				lda YEAR
 				sta 1,X
-				lda MIN 				; CONVERT MINUTE
+				lda MIN 				CONVERT MINUTE
 				jsr BCDBIN
 				sta 2,X
-				lda HOUR 				; CONVERT HOUR
+				lda HOUR 				CONVERT HOUR
 				jsr BCDBIN
 				sta 3,X
 				clc
@@ -444,15 +444,15 @@ DT060			txa
 * ERROR CHECKING. Y IS DESTROYED AND X IS UNCHANGED.
 *
 BCDBIN			pha
-				lsr 					; ISOLATE TENS DIGIT FOR
-				lsr 					; INDEXING THE TABLE
-				lsr
-				lsr
-				tay
-				pla
-				and #$0F 				; GET UNITS
-				clc
-				adc TENS,Y 				; ADD IN TENS
+				lsr 					ISOLATE TENS DIGIT FOR
+				lsr 					INDEXING THE TABLE
+				lsr                     
+				lsr                     
+				tay                     
+				pla                     
+				and #$0F 				GET UNITS
+				clc                     
+				adc TENS,Y 				ADD IN TENS
 				rts
 *
 TENS			.DA #00,#10,#20,#30,#40,#50,#60,#70,#80,#90
@@ -464,64 +464,64 @@ AD.INPUT		.EQ $D0
 AD.TEMP			.EQ $D1
 *
 *
-TCHARGE			.EQ 500 				; CHARGE TIME FOR A/D
-TOFFSET			.EQ 360 				; OFFSET TIME TO A/D WINDOW
-*
-ANALOG			.EQ $F4A8 				; ROM ENTRY FOR ANALOG INPUT
-ANLOG1			.EQ $F4AB 				; INTERRUPT REENTRY
-D.T2			.EQ $FFD8 				; TIMER
-*D.ACR			.EQ $FFDB 				; AUXILIARY CONTROL REGISTER
-*D.IFR			.EQ $FFDD 				; INTERRUPT FLAG REGISTER
-*
-*
-*
-JOYSTICK		lda J.MODE 				; VALIDATE J.MODE
-				cmp #$08
-				bcc JS010
-				lda #BADJMODE
-JS.ERR			jsr SYSERR
-*
-JS010			jsr AD.SETUP 			; SET UP RESOURCES
-				bcs JS.ERR
-				lda J.MODE 				; READ PORT B OR PORT A?
-				and #BITON2
-				bne JS020
-				lda PB.SW0 				; PORT B
-				ldx PB.SW1
-				ldy #$01
-				bne JS030
-JS020			lda PA.SW0 				; PORT A
-				ldx PA.SW1
-				ldy #$03
-JS030			sty AD.INPUT 			; SAVE INPUT SELECT
-				and #BITON7
-				beq JS040
-				lda #$FF
-JS040			ldy #$00
-				sta (J.VALUE),Y 		; RETURN SWITCH 0
-				txa
-				and #BITON7
-				beq JS050
-				lda #$FF
-JS050			iny
-				sta (J.VALUE),Y 		; RETURN SWITCH 1
-*
-				lsr J.MODE
-				bcc JS060
-				lda AD.INPUT
-				jsr AD.READ 			; READ A/D
-				ldy #$02
-				sta (J.VALUE),Y 		; RETURN X AXIS
-JS060			inc AD.INPUT
-				lsr J.MODE
-				bcc JS070
-				lda AD.INPUT
-				jsr AD.READ 			; READ A/D
-				ldy #$03
-				sta (J.VALUE),Y 		; RETURN Y AXIS
-*
-JS070			jsr AD.CLNUP 			; CLEAN UP
-				rts  					; AND EXIT
+TCHARGE			.EQ 500 				CHARGE TIME FOR A/D
+TOFFSET			.EQ 360 				OFFSET TIME TO A/D WINDOW
+*                                       
+ANALOG			.EQ $F4A8 				ROM ENTRY FOR ANALOG INPUT
+ANLOG1			.EQ $F4AB 				INTERRUPT REENTRY
+D.T2			.EQ $FFD8 				TIMER
+*D.ACR			.EQ $FFDB 				AUXILIARY CONTROL REGISTER
+*D.IFR			.EQ $FFDD 				INTERRUPT FLAG REGISTER
+*                                       
+*                                       
+*                                       
+JOYSTICK		lda J.MODE 				VALIDATE J.MODE
+				cmp #$08                
+				bcc JS010               
+				lda #BADJMODE           
+JS.ERR			jsr SYSERR              
+*                                       
+JS010			jsr AD.SETUP 			SET UP RESOURCES
+				bcs JS.ERR              
+				lda J.MODE 				READ PORT B OR PORT A?
+				and #BITON2             
+				bne JS020               
+				lda PB.SW0 				PORT B
+				ldx PB.SW1              
+				ldy #$01                
+				bne JS030               
+JS020			lda PA.SW0 				PORT A
+				ldx PA.SW1              
+				ldy #$03                
+JS030			sty AD.INPUT 			SAVE INPUT SELECT
+				and #BITON7             
+				beq JS040               
+				lda #$FF                
+JS040			ldy #$00                
+				sta (J.VALUE),Y 		RETURN SWITCH 0
+				txa                     
+				and #BITON7             
+				beq JS050               
+				lda #$FF                
+JS050			iny                     
+				sta (J.VALUE),Y 		RETURN SWITCH 1
+*                                       
+				lsr J.MODE              
+				bcc JS060               
+				lda AD.INPUT            
+				jsr AD.READ 			READ A/D
+				ldy #$02                
+				sta (J.VALUE),Y 		RETURN X AXIS
+JS060			inc AD.INPUT            
+				lsr J.MODE              
+				bcc JS070               
+				lda AD.INPUT            
+				jsr AD.READ 			READ A/D
+				ldy #$03                
+				sta (J.VALUE),Y 		RETURN Y AXIS
+*                                       
+JS070			jsr AD.CLNUP 			CLEAN UP
+				rts  					AND EXIT
 *
 * SUBROUTINE AD.SETUP
 * THIS SUBROUTINE SETS UP THE ENVIRONMENT AND RESOURCES
@@ -532,28 +532,28 @@ JS070			jsr AD.CLNUP 			; CLEAN UP
 AD.SETUP		lda	#JOYSIRSIZ
 				ldx	#JOYSIRTBL
 				ldy	/JOYSIRTBL
-				jsr	ALLOCSIR 			; ALLOCATE RESOURCES
+				jsr	ALLOCSIR 			ALLOCATE RESOURCES
 				bcc	ADS010
 				lda	#XNORESRC
 				rts
 ADS010			lda E.REG
-				and	#$7F 				; SET 2 MHZ,
-				ora	#$43 				; ENABLE ROM, & I/O SPACE
+				and	#$7F 				SET 2 MHZ,
+				ora	#$43 				ENABLE ROM, & I/O SPACE
 				sta	E.REG
 				php
 				sei
 				lda D.ACR
-				and #BITOFF5 			; SET UP TIMER
+				and #BITOFF5 			SET UP TIMER
 				sta D.ACR
 				plp
-				bit ENSEL 				; DISABLE ENSEL
-				bit ENSIO 				; SET ENSIO FOR INPUT
+				bit ENSEL 				DISABLE ENSEL
+				bit ENSIO 				SET ENSIO FOR INPUT
 				rts
 *
 JOYSIRTBL		.EQ *
-				.HS 0C,00,00,00,00 		; ENSIO
-				.HS 0D,00,00,00,00 		; ENSEL
-				.HS 0E,00,00,00,00 		; 6522 D.T2
+				.HS 0C,00,00,00,00 		ENSIO
+				.HS 0D,00,00,00,00 		ENSEL
+				.HS 0E,00,00,00,00 		6522 D.T2
 JOYSIRSIZ		.EQ *-JOYSIRTBL
 
 *
@@ -562,12 +562,12 @@ JOYSIRSIZ		.EQ *-JOYSIRTBL
 * THE RESOURCES AFTER READING THE JOYSTICKS.
 *
 AD.CLNUP		lda	E.REG
-				and	#$3C 				; RESTORE RAM AT $C000 & $F000
+				and	#$3C 				RESTORE RAM AT $C000 & $F000
 				sta	E.REG
 				lda	#JOYSIRSIZ
 				ldx	#JOYSIRTBL
 				ldy	/JOYSIRTBL
-				jsr	DEALCSIR 			; DEALLOCATE RESOURCES
+				jsr	DEALCSIR 			DEALLOCATE RESOURCES
 				rts
 *
 * SUBROUTINE AD.READ
@@ -584,8 +584,8 @@ AD.CLNUP		lda	E.REG
 * X, Y: UNDEFINED
 *
 *
-AD.READ			lsr	 					; SELECT THE APPROPRIATE
-				bit	AD.SEL0 			; A/D INPUT
+AD.READ			lsr	 					SELECT THE APPROPRIATE
+				bit	AD.SEL0 			A/D INPUT
 				bcc	ADR010
 				bit	AD.SEL0+1
 ADR010			lsr
@@ -599,7 +599,7 @@ ADR020			lsr
 ADR030			php
 *
 ADR040			cli
-				bit	AD.CHRG 			 ; CHARGE A/D CAPACITOR
+				bit	AD.CHRG 			 CHARGE A/D CAPACITOR
 				lda	#TCHARGE
 				sta	D.T2
 				lda	/TCHARGE
@@ -611,22 +611,22 @@ ADR050			bit D.IFR
 				sei
 				sec
 				lda	#TOFFSET
-				sta	D.T2 				; SET UP TIMER
+				sta	D.T2 				SET UP TIMER
 				lda	/TOFFSET
-				bit	AD.STRT 			; START A/D TIMEOUT
-				jsr	ANALOG 				; MEASURE CONVERSION TIME
+				bit	AD.STRT 			START A/D TIMEOUT
+				jsr	ANALOG 				MEASURE CONVERSION TIME
 				bcc	ADR070
 *
-ADR060			cli  					; PROCESS AN INTERRUPT
+ADR060			cli  					PROCESS AN INTERRUPT
 				sei
-				bit AD.FLAG 			; STILL TIMING?
-				bpl ADR040 				; NO -- START OVER
-				jsr ANLOG1 				; YES -- CONTINUE
+				bit AD.FLAG 			STILL TIMING?
+				bpl ADR040 				NO -- START OVER
+				jsr ANLOG1 				YES -- CONTINUE
 				bcs ADR060
 *
 ADR070			plp
-				eor #$FF 				; NORMALIZE RESULT
-				bmi ADR080 				; RESULT < 0
+				eor #$FF 				NORMALIZE RESULT
+				bmi ADR080 				RESULT < 0
 				sta AD.TEMP
 				tya
 				eor #$FF
@@ -635,7 +635,7 @@ ADR070			plp
 				lsr AD.TEMP
 				ror
 				lsr AD.TEMP
-				bne ADR090 				 ; RESULT > 255
+				bne ADR090 				RESULT > 255
 				ror
 				adc #0
 				rts
@@ -652,13 +652,13 @@ ADR090			lda #$FF
 * PERFORMS A HARD RESET.
 *
 *
-COLDSTRT		sei						; SHUT DOWN INTERRUPTS
-				lda	#$40 				; AND IGNORE NMI
+COLDSTRT		sei						SHUT DOWN INTERRUPTS
+				lda	#$40 				AND IGNORE NMI
 				sta	$FFCA
 				lda	#$67
-				sta	E.REG 				; DISABLE RESET
+				sta	E.REG 				DISABLE RESET
 				lda	#$00
-				sta	Z.REG 				; USE PAGE ZERO
+				sta	Z.REG 				USE PAGE ZERO
 *
 				ldx	SYSBANK
 				lda	#$BF
@@ -667,7 +667,7 @@ COLDSTRT		sei						; SHUT DOWN INTERRUPTS
 CS010			sta MEMORY+1
 				stx	B.REG
 				lda	#$A0
-CS020			sta (MEMORY),Y 			; SET MEMORY TO BLANKS
+CS020			sta (MEMORY),Y 			SET MEMORY TO BLANKS
 				dey
 				bne	CS020
 				dec	MEMORY+1
@@ -676,19 +676,19 @@ CS020			sta (MEMORY),Y 			; SET MEMORY TO BLANKS
 				bpl	CS010
 *
 				ldy	#6
-CS030			sta $C050,Y 			; SELECT 40 COLUMN
-				dey 					; BLACK & WHITE TEXT
+CS030			sta $C050,Y 			SELECT 40 COLUMN
+				dey 					BLACK & WHITE TEXT
 				bpl CS030
 *
 				ldy #BOOTLEN
-CS040			lda BOOTMSG-1,Y 		; PRINT BOOT MESSAGE
+CS040			lda BOOTMSG-1,Y 		PRINT BOOT MESSAGE
 				sta BOOTADR-1,Y
 				dey
 				bne CS040
 *
 				lda #$77
-				sta E.REG 				; ENABLE RESET
-				jmp * 					; HANG UNTIL RESET
+				sta E.REG 				ENABLE RESET
+				jmp * 					HANG UNTIL RESET
 
 BOOTMSG			.AS -"INSERT SYSTEM DISKETTE & REBOOT"
 BOOTLEN			.EQ *-BOOTMSG

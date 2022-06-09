@@ -26,8 +26,8 @@ NEW
 ZPBASE			 .EQ $200
 
 				.DUMMY
-				.OR 0					;ZERO PAGE DECLARATIONS
-MSGPTR			.BS 2 					;MESSAGE POINTER
+				.OR 0					ZERO PAGE DECLARATIONS
+MSGPTR			.BS 2 					MESSAGE POINTER
 MSGIDX			.BS 1
 *
 SCRNIDX			.BS 1
@@ -54,43 +54,43 @@ OPMSGRPLY		.EQ *
 OPRMSG.ORG		php
 				sei
 				lda Z.REG
-				sta ZPBASE+SV.ZREG ;SAVE ZERO PAGE
+				sta ZPBASE+SV.ZREG 		SAVE ZERO PAGE
 				lda /ZPBASE
 				sta Z.REG
-				stx MSGPTR ;SAVE MESSAGE ADDRESS
+				stx MSGPTR 				SAVE MESSAGE ADDRESS
 				sty MSGPTR+1
 				lda E.REG
-				sta SV.EREG ;SAVE ENVIRONMENT
+				sta SV.EREG 			SAVE ENVIRONMENT
 				and #$5F
 				ora #$40
-				sta E.REG ;SCREEN OFF, I/O SPACE ON
+				sta E.REG 				SCREEN OFF, I/O SPACE ON
 				lda SCRNMODE
-				sta SV.SMODE ;SAVE SCREEN MODE
+				sta SV.SMODE 			SAVE SCREEN MODE
 				lda #$00
 				sta SCRNMODE
-				bit VM0 ;SET 40 COLUMN
-				bit VM1 ; BLACK & WHITE TEXT
+				bit VM0 				SET 40 COLUMN
+				bit VM1 				BLACK & WHITE TEXT
 				bit VM2
 				bit VM3
 				ldx E.ACR
 				txa
 				and #$20
-				sta SV.EACR ;SAVE AUXILIARY CONTROL REG
+				sta SV.EACR 			SAVE AUXILIARY CONTROL REG
 				txa
 				ora #$20
-				sta E.ACR ;SET UP BL TIMER
+				sta E.ACR 				SET UP BL TIMER
 				ldx E.PCR
 				txa
 				and #$F0
-				sta SV.EPCR ;SAVE PERIPHERAL CONTROL REG
+				sta SV.EPCR 			SAVE PERIPHERAL CONTROL REG
 				txa
 				and #$0F
 				ora #$60
-				sta E.PCR ;SET UP VBL FLAGS
+				sta E.PCR 				SET UP VBL FLAGS
 				lda E.IER
 				and #$38
-				sta E.IER ;MASK VBL & BL INTERRUPTS
-				sta SV.EIER ;SAVE INTERRUPT MASKS
+				sta E.IER 				MASK VBL & BL INTERRUPTS
+				sta SV.EIER 			SAVE INTERRUPT MASKS
 				plp
 *
 *
@@ -101,10 +101,10 @@ OPRMSG.ORG		php
 OPR010			jsr SETPTRS
 				ldy #39
 
-OPR020			lda (SCRNPTR),Y ;SAVE SCREEN DATA
+OPR020			lda (SCRNPTR),Y 		SAVE SCREEN DATA
 				sta (DATAPTR),Y
 				lda #$A0
-				sta (SCRNPTR),Y ;BLANK SCREEN
+				sta (SCRNPTR),Y 		BLANK SCREEN
 				dey
 				bpl OPR020
 
@@ -123,7 +123,7 @@ OPR100			jsr SETPTRS
 
 OPR110			ldy MSGIDX
 				inc MSGIDX
-				lda (MSGPTR),Y ;SET UP MESSAGE
+				lda (MSGPTR),Y 			SET UP MESSAGE
 				beq OPR110
 				bmi OPR200
 				cmp #$0D
@@ -175,21 +175,21 @@ OPR410			lda (DATAPTR),Y
 				sei
 				lda E.ACR
 				and #$DF
-				ora SV.EACR ;RESTORE AUXILIARY CONTROL REG
+				ora SV.EACR 			RESTORE AUXILIARY CONTROL REG
 				sta E.ACR
 				lda E.PCR
 				and #$0F
-				ora SV.EPCR ;RESTORE PERIPHERAL CONTROL REG
+				ora SV.EPCR 			RESTORE PERIPHERAL CONTROL REG
 				sta E.PCR
-				lda SV.EIER ;RESTORE INTERRUPT ENABLE REG
+				lda SV.EIER 			RESTORE INTERRUPT ENABLE REG
 				ora #$80
 				sta E.IER
-				lda SV.SMODE ;RESTORE SCREEN MODE
+				lda SV.SMODE 			RESTORE SCREEN MODE
 				sta SCRNMODE
 				lsr
 				bcc OPR500
 
-				bit VM0+1 ;RESTORE VIDEO MODE
+				bit VM0+1 				RESTORE VIDEO MODE
 
 OPR500			lsr
 				bcc OPR510
@@ -205,9 +205,9 @@ OPR520			bit SCRNMODE
 
 				bit VM3+1
 
-OPR530			lda SV.EREG ;RESTORE ENVIRONMENT
+OPR530			lda SV.EREG 			RESTORE ENVIRONMENT
 				sta	E.REG
-				lda	SV.ZREG ;RESTORE ZERO PAGE
+				lda	SV.ZREG 			RESTORE ZERO PAGE
 				sta	Z.REG
 				plp
 				rts
@@ -233,23 +233,23 @@ OPR530			lda SV.EREG ;RESTORE ENVIRONMENT
 * X, Y -- PRESERVED
 *
 VIDEO			lda E.IFR
-				and #$28 ;GET VBL & BL FLAGS
+				and #$28 				GET VBL & BL FLAGS
 				beq VID030
-				sta E.IFR ;CLEAR FLAGS
-				and #$20 ;WHICH FLAG?
-				bne VID010 ; BL
+				sta E.IFR 				CLEAR FLAGS
+				and #$20 				WHICH FLAG?
+				bne VID010 				BL
 
 				lda #$1F
-				sta E.T2 ;SET UP BL TIMER
+				sta E.T2 				SET UP BL TIMER
 				lda #$00
 				sta E.T2+1
 				lda E.REG
-				ora #$20 ;SET UP FOR SCREEN ON
+				ora #$20 				SET UP FOR SCREEN ON
 				sec
 				bcs VID020
 
 VID010			lda E.REG
-				and #$DF ;SET UP FOR SCREEN OFF
+				and #$DF 				SET UP FOR SCREEN OFF
 				clc
 
 VID020			sta E.REG
