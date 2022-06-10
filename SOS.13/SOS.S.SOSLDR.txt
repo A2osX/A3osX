@@ -143,8 +143,6 @@ WALKLINKS		jsr ALLOC.DEV 		ALLOC.DEV(LINK.P BREG.IN, SDT.TBL BLKDLST.IO)
 				tax
 				iny
 				lda (LINK.P),Y
-
-				lda (LINK.P),Y
 				stx LINK.P
 				sta LINK.P+1
 				jsr ALLOC.DEV 		
